@@ -8,7 +8,7 @@ rm(list=ls())
 # load library for simulating
 library(deSolve)
 
-#population decay with constant death rate and no cannibalism
+#population decay with constant death rate and no cannibalism --> only allows log-linear decline
 persist<-function(t,x,parms){
 	with(as.list(c(parms,x)),{
 		dBdt=-B*d
@@ -18,7 +18,7 @@ persist<-function(t,x,parms){
 	})
 }
 
-# population decay with constant death rate and cannibalism
+# population decay with constant death rate and cannibalism --> only allows log-linear decline
 persistCannibalism<-function(t,x,parms){
 	with(as.list(c(parms,x)),{
 		dBdt=B*umax*C/(C+k)*Yb-B*d
@@ -29,7 +29,7 @@ persistCannibalism<-function(t,x,parms){
 	})
 }
 
-# population decay with constant death rate and death rate evolution, no cannibalism
+# population decay with constant death rate and death rate evolution, no cannibalism --> only allows log-non-linear, but monotonic, decline
 persistEvolveD<-function(t,x,parms){
 	with(as.list(c(parms,x)),{
 		d=d0+dm*t
@@ -40,7 +40,19 @@ persistEvolveD<-function(t,x,parms){
 	})
 }
 
-# population decay with constant death rate and cannibalism with evolving yield
+# population decay with death rate evolution and cannibalism
+persistEvolveDcannibalism<-function(t,x,parms){
+	with(as.list(c(parms,x)),{
+		d=d0+dm*t
+		dBdt=B*umax*C/(C+k)*Yb-B*d
+		dCdt=B*d*Yc-B*umax*C/(C+k)
+		
+		res=c(dBdt,dCdt)
+		list(res)
+	})
+}
+
+# population decay with constant death rate and cannibalism with evolving yield --> can show increase in population after initial decline
 persistCannibalismEvolveYb<-function(t,x,parms){
 	with(as.list(c(parms,x)),{
 		Yb=Yb0+Ybm*t
@@ -52,7 +64,7 @@ persistCannibalismEvolveYb<-function(t,x,parms){
 	})
 }
 
-# population decay with evolving death rate and cannibalism with evolving yield
+# population decay with evolving death rate and cannibalism with evolving yield --> increase after initial decline possible, but depends on parameterization
 persistCannibalismEvolveYbEvolveD<-function(t,x,parms){
 	with(as.list(c(parms,x)),{
 		Yb=Yb0+Ybm*t
@@ -115,6 +127,20 @@ outED=ode(y=xstart,times=times,func=persistEvolveD,parms=parms)
 
 dev.new()
 plot(outED[,1],log10(outED[,2]),type='l',xlab="time",ylab="log Bacteria (cells)",ylim=c(0,9))
+
+print(outED[nrow(outED),])
+
+
+# simulate evolving death rate and cannibalism
+parms=c(d0=d0,dm=dm,Yc=Yc,Yb=Yb,umax=umax,k=k)
+xstart=c(B=1e9,C=0)
+times=seq(0,tsteps,0.1)
+outEDC=ode(y=xstart,times=times,func=persistEvolveDcannibalism,parms=parms)
+
+dev.new()
+par(mfrow=c(2,1))
+plot(outEDC[,1],log10(outEDC[,2]),type='l',xlab="time",ylab="log Bacteria (cells)",ylim=c(0,9))
+plot(outEDC[,1],outEDC[,3],type='l',xlab='time',ylab="Carbon (ug L-1)")
 
 print(outED[nrow(outED),])
 
