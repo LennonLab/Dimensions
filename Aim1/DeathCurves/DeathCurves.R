@@ -27,7 +27,7 @@ obs <- obs[obs$Dilution!="50X",]
 obs$Abund <- as.numeric(obs$Colonies) * 10 ^ as.numeric(obs$Dilution) + 1
 
 # likelihood function for linear fit to log transformed data
-fitLogExpDecay<-function(p,N,time){
+fitLogLinearDecay<-function(p,N,time){
 	k=p[1]
 	N0=p[2]
 	sd=exp(p[3])
@@ -39,13 +39,13 @@ fitLogExpDecay<-function(p,N,time){
 }
 
 # likelihood function for quadratic fit to log transformed data
-fitLogDecDecay<-function(p,N,time){
-	m=p[1]
-	b=p[2]
+fitLogQuadDecay<-function(p,N,time){
+	k2=p[1]
+	k=p[2]
 	N0=p[3]
 	sd=exp(p[4])
 
-	Nt=N0-m*time^2-b*time
+	Nt=N0-k2*time^2-k*time
 	
 	-sum(dnorm(N,Nt,sd,log=TRUE))
 }
@@ -58,8 +58,10 @@ obs=obs[obs$Strain%in%strains,]
 
 #pdf('decayFits.pdf')
 
-summ=matrix(NA,length(strains)*max(obs$Rep),9)
+# matrix for storing model fit output
+summ=matrix(NA,length(strains)*max(obs$Rep),10)
 counter=1
+
 for(i in 1:length(strains)){
 	strainObs=obs[obs$Strain==strains[i],]
 	
@@ -74,35 +76,57 @@ for(i in 1:length(strains)){
 		
 		time=(as.numeric(strptime(repObs$Firstread_date,format="%d-%b-%y",tz="EST"))-as.numeric(strptime(start,format="%d-%b-%y",tz="EST")))/(3600*24)
 		
-		logLinCur=optim(c((log(repObs$Abund[1])-log(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]),log(max(repObs$Abund)),1),fitLogExpDecay,N=log(repObs$Abund),time=time)
-		logLinDecCur=optim(c(((log(repObs$Abund[1])-log(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]))/10,(log(repObs$Abund[1])-log(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]),log(max(repObs$Abund)),1),fitLogDecDecay,N=log(repObs$Abund),time=time)
+		logLinCur=optim(c((log(repObs$Abund[1])-log(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]),log(max(repObs$Abund)),1),fitLogLinearDecay,N=log(repObs$Abund),time=time)
+		logQuadCur=optim(c(((log(repObs$Abund[1])-log(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]))/10,(log(repObs$Abund[1])-log(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]),log(max(repObs$Abund)),1),fitLogQuadDecay,N=log(repObs$Abund),time=time)
 		
 		summ[counter,1]=strains[i]
 		summ[counter,2]=reps[j]
 		summ[counter,3:4]=logLinCur$par[1:2]
 		summ[counter,5]=round(2*logLinCur$value+2*length(logLinCur$par),2)
-		summ[counter,6:8]=logLinDecCur$par[1:3]
-		summ[counter,9]=round(2*logLinDecCur$value+2*length(logLinDecCur$par))
+		summ[counter,6:8]=logQuadCur$par[1:3]
+		summ[counter,9]=round(2*logQuadCur$value+2*length(logQuadCur$par),2)
+		
+		summ[counter,10]=pchisq((2*logLinCur$value-2*logQuadCur$value),df=1,lower.tail=FALSE)
 		
 		counter=counter+1
 		
 		#plot(time,log(repObs$Abund),main=paste(strains[i]," rep ",reps[j]),ylim=c(0,20))
-		predTime=seq(0,max(time))
+		#predTime=seq(0,max(time))
 		#lines(predTime,logLinCur$par[2]-logLinCur$par[1]*predTime,lwd=2,lty=2)
-		#lines(predTime,logLinDecCur$par[3]-logLinDecCur$par[1]*predTime^2-logLinDecCur$par[2]*predTime,col='red',lwd=2,lty=2)
-
-		
+		#lines(predTime,logQuadCur$par[3]-logQuadCur$par[1]*predTime^2-logQuadCur$par[2]*predTime,col='red',lwd=2,lty=2)
 		}
 	}
 	
 }
 
 summ=summ[!is.na(summ[,1]),]
-colnames(summ)=c('strain','rep','linearfit_K','linearfit_N0','linearfit_AIC','quadfit_m','quadfit_b','quadfit_N0','quadfit_AIC')
+colnames(summ)=c('strain','rep','linearfit_K','linearfit_N0','linearfit_AIC','quadfit_m','quadfit_b','quadfit_N0','quadfit_AIC','LRT_pvalue')
 
 
-#percent of tubes that are better fit by quadratic
-sum(as.numeric(summ[,5])>as.numeric(summ[,9]))/nrow(summ)*100
+#percent of tubes that are better fit by quadratic (AIC_linear > AIC_quadratic)
+sum(as.numeric(summ[,5])>as.numeric(summ[,9]))/nrow(summ)*100	# 76%
+
+# percent of tubes that are better based on likelihood ratio test
+sum(as.numeric(summ[,10])<0.05)/nrow(summ)*100	# 63.7%
+
+# add bonferroni correction
+0.05/nrow(summ)	#  0.00044
+sum(as.numeric(summ[,10])<0.0044)/nrow(summ)*100	# 40.7%
+
+## histogram of likelihood ratio p-values
+hist(log10(as.numeric(summ[,10])),breaks=seq(-20,0,1))
+abline(v=log10(0.05),lwd=2,lty=2,col='red')
+abline(v=log10(0.00044),lwd=2,lty=2,col='green')
+legend('topleft',c('alpha=0.05','alpha=0.00044 (bonferroni)'),lty=2,col=c('red','green'),box.lty=0,lwd=2)
+
+### confirm that likelihood ratio test is showing what deltaAIC between linear and quadratic would suggest
+plot(log10(as.numeric(summ[,10])),as.numeric(summ[,9])-as.numeric(summ[,5]),xlab="log10(LRT pvalue)",ylab="deltaAIC (quadratic - linear)")
+abline(v=log10(0.05),lwd=2,lty=2,col='red')
+abline(v=log10(0.00044),lwd=2,lty=2,col='green')
+
+
+
+
 
 
 plot(time,log(repObs$Abund))
@@ -112,5 +136,5 @@ lines(predTime,logLinDecCur$par[3]-logLinDecCur$par[1]*predTime^2-logLinDecCur$p
 
 print(c("AIC of linear model:", round(2*logLinCur$value+2*length(logLinCur$par),2)))
 
-print(c("AIC of quadratic model:",round(2*logLinDecCur$value+2*length(logLinDecCur$par))))
+print(c("AIC of quadratic model:",round(2*logQuadCur$value+2*length(logQuadCur$par))))
 
