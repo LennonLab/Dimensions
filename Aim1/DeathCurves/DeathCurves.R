@@ -136,3 +136,17 @@ legend('topleft',c('alpha=0.05','alpha=0.00044 (bonferroni)'),lty=2,col=c('red',
 plot(log10(as.numeric(summ[,10])),as.numeric(summ[,9])-as.numeric(summ[,5]),xlab="log10(LRT pvalue)",ylab="deltaAIC (quadratic - linear)")
 abline(v=log10(0.05),lwd=2,lty=2,col='red')
 abline(v=log10(0.00044),lwd=2,lty=2,col='green')
+
+
+### look at agreement amongst reps
+repAgreement=matrix(NA,length(strains),4)
+repAgreement[,1]=strains
+for(i in 1:length(strains)){
+	cur=summ[summ[,1]==strains[i],]
+	
+	repAgreement[i,2]=nrow(cur)
+	repAgreement[i,3]=sum(as.numeric(cur[,10])>0.05)
+	repAgreement[i,4]=nrow(cur)-sum(as.numeric(cur[,10])>0.05)
+}
+
+repAgree=data.frame(strain=repAgreement[,1],Nreps=as.numeric(repAgreement[,2]),Nlinear=as.numeric(repAgreement[,3]),Nquad=as.numeric(repAgreement[,4]),stringsAsFactors=FALSE)
