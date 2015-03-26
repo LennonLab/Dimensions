@@ -1,27 +1,30 @@
-#### fitting decelerating decay curves to Jay's starvation persistence data
-#### 10-07-14
-rm(list=ls())
+## Retrieve and Set Your Working Directory
+rm(list = ls())
+getwd()
+setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
+#setwd("/Files/NDongoing/DimensionsBiodiversity/persistence_curves")
 
-setwd("/Files/NDongoing/DimensionsBiodiversity/persistence_curves")
+## Load Data
+obs <- read.csv("longtermdormancy_20150425.csv", header = TRUE, stringsAsFactors = FALSE)
 
-obs=read.csv("longtermdormancyAugust16.csv",header=TRUE,stringsAsFactors=FALSE)
+## Cleaning Up Data
+#obs[1876:1879,1]="14-Feb-13"
+#obs[1876:1879,2]="19-Dec-13"
+#obs[1432:1439,2]="25-Sep-13"
+#obs[1495:1498,2]="4-Oct-13"
+#obs=obs[obs$X!="too many to count",]
+#obs=obs[obs$Strain!="",]
+obs <- obs[obs$Dilution!="50X",]
+#obs=obs[obs$Colonies!="fungus",]
+#obs=obs[obs$Colonies!="dropped due to fungal contamination",]
+#obs=obs[,-8]
+#obs$Dilution[obs$Dilution=="-1"]=1
+#obs$Dilution[obs$Dilution=="-1.7"]=1.7
 
-#### cleaning up data
-obs[1876:1879,1]="14-Feb-13"
-obs[1876:1879,2]="19-Dec-13"
-obs[1432:1439,2]="25-Sep-13"
-obs[1495:1498,2]="4-Oct-13"
-obs=obs[obs$X!="too many to count",]
-obs=obs[obs$Strain!="",]
-obs=obs[obs$Dilution!="50X",]
-obs=obs[obs$Colonies!="fungus",]
-obs=obs[obs$Colonies!="dropped due to fungal contamination",]
-obs=obs[,-8]
-obs$Dilution[obs$Dilution=="-1"]=1
-obs$Dilution[obs$Dilution=="-1.7"]=1.7
+## Estimating CFUs
+## Adding 1 to deal with log(0) observations --> should we just remove instead?
 
-# adding 1 to deal with log(0) issues
-obs$Abund=as.numeric(obs$Colonies)*10^as.numeric(obs$Dilution)+1
+obs$Abund <- as.numeric(obs$Colonies) * 10 ^ as.numeric(obs$Dilution) + 1
 
 # likelihood function for linear fit to log transformed data
 fitLogExpDecay<-function(p,N,time){
