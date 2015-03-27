@@ -1,3 +1,5 @@
+# Install package
+require("deSolve")
 
 # population decay without evolution, but C recycling
 persistCannibalism<-function(t,x,parms){
@@ -35,7 +37,7 @@ dev.new()
 par(mfrow=c(2,1))
 plot(outPC[,1],log10(outPC[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')
 plot(outPC[,1],outPC[,3],type='l',xlab='time',ylab='carbon (g)')
-
+## interesting prameter = time until extinction! (i.e., x-intercept)
 
 # add mutant population
 persistCannibalismMut<-function(t,x,parms){
@@ -62,14 +64,9 @@ initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)
 outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)
 
 # summary plots of model with mutant dynamics
-dev.new()
-par(mfrow=c(2,2))
-plot(outPCmut[,1],log10((outPCmut[,2]+outPCmut[,3])/(20e-15)),xlab="time",ylab="log10 cells",type='l',main="wild-type")
-plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
-plot(outPCmut[,1],log10(outPCmut[,3]/(outPCmut[,2]+outPCmut[,3])),xlab="time",ylab="log10 fraction mutant",type='l')
 
-# compare no mutant to mutant persistence
-dev.new()
-plot(outPC[,1],log10(outPC[,2]/(20e-15)),type='l',xlab="time",ylab="log10 cells")
-lines(outPCmut[,1],log10((outPCmut[,2]+outPCmut[,3])/(20e-15)),col='red')
-legend('topright',c('no mutant','mutant'),lty=1,col=c('black','red'),box.lty=0,lwd=2)
+
+## what are key things we want to see with sims?  
+# Change in frequency of genotypes with associted parameters
+# Carbon should go down initially and then rate should slow down, but dynamics will depend on uptake parms
+# Revisit my box model. 
