@@ -2,24 +2,9 @@
 rm(list = ls())
 getwd()
 setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
-#setwd("/Files/NDongoing/DimensionsBiodiversity/persistence_curves")
 
 ## Load Data
 obs <- read.csv("longtermdormancy_20150425.csv", header = TRUE, stringsAsFactors = FALSE)
-
-## Cleaning Up Data
-#obs[1876:1879,1]="14-Feb-13"
-#obs[1876:1879,2]="19-Dec-13"
-#obs[1432:1439,2]="25-Sep-13"
-#obs[1495:1498,2]="4-Oct-13"
-#obs=obs[obs$X!="too many to count",]
-#obs=obs[obs$Strain!="",]
-obs <- obs[obs$Dilution!="50X",]
-#obs=obs[obs$Colonies!="fungus",]
-#obs=obs[obs$Colonies!="dropped due to fungal contamination",]
-#obs=obs[,-8]
-#obs$Dilution[obs$Dilution=="-1"]=1
-#obs$Dilution[obs$Dilution=="-1.7"]=1.7
 
 ## Estimating CFUs
 ## Adding 1 to deal with log(0) observations --> should we just remove instead?
@@ -136,7 +121,6 @@ legend('topleft',c('alpha=0.05','alpha=0.00044 (bonferroni)'),lty=2,col=c('red',
 plot(log10(as.numeric(summ[,10])),as.numeric(summ[,9])-as.numeric(summ[,5]),xlab="log10(LRT pvalue)",ylab="deltaAIC (quadratic - linear)")
 abline(v=log10(0.05),lwd=2,lty=2,col='red')
 abline(v=log10(0.00044),lwd=2,lty=2,col='green')
-
 
 ### look at agreement amongst reps
 repAgreement=matrix(NA,length(strains),4)
