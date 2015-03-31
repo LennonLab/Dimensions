@@ -49,8 +49,8 @@ To identify key ecological and evolutionary processes that generate and maintain
 
 
 * **TARs:**
-
-
+	* IBMs: Contains Python files for exploring the species/taxa area relationship with individual-based models
+	* MI_Ag: Contains R files, data, and plots resulting from analysis of Michigan agricultural soils
 
 
 
