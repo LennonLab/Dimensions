@@ -48,8 +48,6 @@ To identify key ecological and evolutionary processes that generate and maintain
 	* RGIS2.Rmd: A tutorial for using various GIS tools through R/RStudio	
 
 
-
-
 * **TARs:**
 
 
