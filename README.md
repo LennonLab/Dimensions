@@ -36,7 +36,19 @@ To identify key ecological and evolutionary processes that generate and maintain
 
 * **DocsForMeetings:**
 
+	* Contains R Markdown files and .pdf's detailing findings, the date of which is contained in the filename.
+
 * **GIS:**
+	* **BrownCoData_GeoEco:**
+	
+	* **LandCover:** contains GIS shapefiles and associated files for a GIS layer of percent landcover in south and central Indiana. Obtained from the IndianaMap geographical layer gallery: http://maps.indiana.edu/layerGallery.html.
+	
+	* **Water:** contains GIS shapefiles and associated files for a GIS layer of water bodies in south and central Indiana. Obtained from the **IndianaMap** geographical layer gallery: http://maps.indiana.edu/layerGallery.html. 
+	
+	* RGIS2.Rmd: A tutorial for using various GIS tools through R/RStudio	
+
+
+
 
 * **TARs:**
 
