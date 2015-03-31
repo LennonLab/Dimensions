@@ -55,7 +55,18 @@ To identify key ecological and evolutionary processes that generate and maintain
 
 
 
+## Contributors
 
+[Dr. Jay Lennon](http://www.indiana.edu/~microbes/people.php): Principle Investigator, Associate Professor, Department of Biology, Indiana University, Bloomington. Head of the [Lennon Lab](http://www.indiana.edu/~microbes/people.php).
 
-## Acknowledgments
+[Dr. Ken Locey](http://kenlocey.weecology.org/): co-Principle Investigator, Postdoctoral Fellow in the [Lennon Lab](http://www.indiana.edu/~microbes/people.php)
 
+[Dr. Stuart Jones](http://biology.nd.edu/people/faculty/jones/): co-Principle Investigator, Assistant Professor, Department of Biological Sciences, University of Notre Dame.
+
+[Dr. Sarah Bray](http://www.transy.edu/about/faculty_bio.htm?ID=0246879): Collaborator, Associate Professor of Biology, Transylvania University
+
+[Mario Muscarella](http://mmuscarella.github.io/): Ph.D. candidate in the [Lennon Lab](http://www.indiana.edu/~microbes/people.php)
+
+Megan Larsen: Ph.D. candidate in the [Lennon Lab](http://www.indiana.edu/~microbes/people.php)
+
+Kayla Miller: Ph.D. Student, Indiana University, Bloomington.
