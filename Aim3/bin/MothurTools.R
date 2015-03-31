@@ -10,7 +10,7 @@
 #                                                                              #
 ################################################################################
 #                                                                              #
-# Notes: This code provides numerous functions to be used in the analysis of   #
+# Notes: This code provides functions to be used in the analysis of   #
 #        16S rRNA sequence data post mothur anlaysis                           #
 #                                                                              #
 # Issues: Slow performance reading in OTU tables (common R issue)              #
