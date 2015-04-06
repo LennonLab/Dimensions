@@ -1,0 +1,89 @@
+---
+title: "Dimensios of Biodiversity - Aim 1, Persistence"
+author: "Jay T. Lennon and Stuart E. JOnes"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+   - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+## 1) SETUP
+### A. Retrieve and Set Your Working Directory
+
+```{r, results = 'hide'}
+rm(list = ls())
+getwd()
+setwd("~/GitHub/Dimensions/Aim1/DeathCurves/Phylo")
+```
+
+### B. Load Packages 
+
+```{r, results = 'hide', message = FALSE, warning = FALSE} 
+require("muscle")
+require("seqinr")
+require("ape")
+
+require("phylobase")
+require("adephylo")
+require("geiger") 
+require("picante")
+require("stats")
+require("RColorBrewer")
+require("caper")
+```
+
+## 2) Alignments in R
+### A. Muscle alignment
+Use `muscle` fuction, we will read in our FASTA file and create a FASTA-aligned output file (with an .afa extension).  
+
+```{r, results = 'hide', message = FALSE, warning = FALSE} 
+# Identify input and output files to perform alignment in the `muscle` package
+muscle::muscle(seqs="./persistence.fasta", out = "./persistenceR.afa") 
+```
+
+### B. Visualize muscle alignment
+```{r}
+# Read Alignment File {seqinr}
+read.aln.R <- read.alignment(file = "./persistenceR.afa", format = "fasta")  
+
+# Convert Alignment File to DNAbin Object {ape}
+p.DNAbin.R <- as.DNAbin(read.aln.R) 
+
+# Identify Base Pair Region of 16S rRNA Gene to Visuzlize
+window <- p.DNAbin.R[, 100:500] 
+
+# Command to Visusalize Sequence Alignment {ape}
+image.DNAbin(window, cex.lab = 0.50) 
+
+# Optional Code Adds Grid to Help Visualize Rows of Sequences 
+grid(ncol(window), nrow(window), col = "lightgrey") 
+```
+
+## 3) Alignments from mothur
+
+# Read Alignment File {seqinr}
+```{r}
+read.aln.M <- read.alignment(file = "./persistenceM.afa", format = "fasta")  
+
+# Convert Alignment File to DNAbin Object {ape}
+p.DNAbin.M <- as.DNAbin(read.aln.M) 
+
+# Identify Base Pair Region of 16S rRNA Gene to Visuzlize
+window <- p.DNAbin.M[, 800:50000] 
+
+# Command to Visusalize Sequence Alignment {ape}
+image.DNAbin(window, cex.lab = 0.50) 
+```
+
+##4) Make a tree
+```{r}
+# Create Distance Matrix with "raw" Model {ape}
+seq.dist.raw <- dist.dna(p.DNAbin.R, model = "raw", pairwise.deletion = FALSE)
+
+# Neighbor Joining Algorithm to Construct Tree, a 'phylo' Object {ape}
+nj.tree <- bionj(seq.dist.raw)
+
+
+
+
