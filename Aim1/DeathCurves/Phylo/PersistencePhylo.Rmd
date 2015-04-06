@@ -33,7 +33,7 @@ require("RColorBrewer")
 require("caper")
 ```
 
-## 2) Alignments in R
+## 2) Using muslcle alingments in R to make a tree
 ### A. Muscle alignment
 Use `muscle` fuction, we will read in our FASTA file and create a FASTA-aligned output file (with an .afa extension).  
 
@@ -51,38 +51,95 @@ read.aln.R <- read.alignment(file = "./persistenceR.afa", format = "fasta")
 p.DNAbin.R <- as.DNAbin(read.aln.R) 
 
 # Identify Base Pair Region of 16S rRNA Gene to Visuzlize
-window <- p.DNAbin.R[, 100:500] 
+window.R <- p.DNAbin.R[, 100:500] 
 
 # Command to Visusalize Sequence Alignment {ape}
-image.DNAbin(window, cex.lab = 0.50) 
-
-# Optional Code Adds Grid to Help Visualize Rows of Sequences 
-grid(ncol(window), nrow(window), col = "lightgrey") 
+image.DNAbin(window.R, cex.lab = 0.50) 
 ```
 
-## 3) Alignments from mothur
-
-# Read Alignment File {seqinr}
+### C. Make a muscle-aligned tree
 ```{r}
+# Create Distance Matrix with "raw" Model {ape}
+seq.dist.raw.R <- dist.dna(p.DNAbin.R, model = "raw", pairwise.deletion = FALSE)
+
+# Neighbor Joining Algorithm to Construct Tree, a 'phylo' Object {ape}
+nj.tree.R <- bionj(seq.dist.raw.R)
+
+# Identify Outgroup Sequence
+outgroup.R <- match("Methanosarcina", nj.tree.R$tip.label)
+
+# Root the Tree {ape}
+nj.rooted.R <- root(nj.tree.R, outgroup.R, resolve.root = TRUE)
+
+# Plot the Rooted Tree{ape}
+par(mar = c(1,1,2,1) + 0.1)
+plot.phylo(nj.rooted.R, main = "Neigbor Joining Tree with Muscle", "phylogram", use.edge.length = FALSE,
+           direction = "right", cex = 0.6, label.offset = 1)
+add.scale.bar(cex = 0.7)
+```
+
+## 3) Use mothur alingment based on Silva reference to make a tree
+### A. Performing mothur alignment
+After creating fasta file and moving to Mason folder: 
+
+    ```sh
+    ssh lennonj@mason.indiana.edu
+    cd /N/dc2/projects/Lennon_Sequences/Persistence
+    module load gcc
+    module load mothur/1.31.2
+    mothur
+    align.seqs(fasta=persistence.fasta, reference=silva.bacteria.fasta, flip=T)
+    quit
+    git --version
+  
+Open new terminal and cd to Github project folder.  
+Move the file using the following commands:
+    
+    ```sh
+    scp lennonj@karst.uits.iu.edu:/N/dc2/projects/Lennon_Sequences/Persistence/persistence.align ./
+    scp lennonj@karst.uits.iu.edu:/N/dc2/projects/Lennon_Sequences/Persistence/persistence.align.report ./
+    git --version
+    ```
+Renamed `persistence.align` to `persistenceM.afa` 
+    
+### B. Visualize mothur alignment
+```{r}
+# Read Alignment File {seqinr}
 read.aln.M <- read.alignment(file = "./persistenceM.afa", format = "fasta")  
 
 # Convert Alignment File to DNAbin Object {ape}
 p.DNAbin.M <- as.DNAbin(read.aln.M) 
 
 # Identify Base Pair Region of 16S rRNA Gene to Visuzlize
-window <- p.DNAbin.M[, 800:50000] 
+window.M <- p.DNAbin.M[, 100:50000] 
 
 # Command to Visusalize Sequence Alignment {ape}
-image.DNAbin(window, cex.lab = 0.50) 
+image.DNAbin(window.M, cex.lab = 0.50) 
 ```
 
-##4) Make a tree
+## 3) Make mothur-aligned tree
+# Read Alignment File {seqinr}
 ```{r}
 # Create Distance Matrix with "raw" Model {ape}
-seq.dist.raw <- dist.dna(p.DNAbin.R, model = "raw", pairwise.deletion = FALSE)
+seq.dist.raw.M <- dist.dna(p.DNAbin.M, model = "raw", pairwise.deletion = FALSE)
 
 # Neighbor Joining Algorithm to Construct Tree, a 'phylo' Object {ape}
-nj.tree <- bionj(seq.dist.raw)
+nj.tree.M <- bionjs(seq.dist.raw.M)
+
+# Identify Outgroup Sequence
+outgroup.R <- match("Methanosarcina", nj.tree.R$tip.label)
+
+# Root the Tree {ape}
+nj.rooted.R <- root(nj.tree.R, outgroup.R, resolve.root = TRUE)
+
+# Plot the Rooted Tree{ape}
+par(mar = c(1,1,2,1) + 0.1)
+plot.phylo(nj.rooted.R, main = "Neigbor Joining Tree with Muscle", "phylogram", use.edge.length = FALSE,
+           direction = "right", cex = 0.6, label.offset = 1)
+add.scale.bar(cex = 0.7)
+
+```
+
 
 
 
