@@ -63,8 +63,6 @@ ii) Perform mothur alingnment
 Open new terminal and cd to Github project folder.  
 Move the file using the following commands:
     ```sh
-    #scp lennonj@karst.uits.iu.edu:/N/dc2/projects/Lennon_Sequences/Persistence/persistence.align ./
-    #scp lennonj@karst.uits.iu.edu:/N/dc2/projects/Lennon_Sequences/Persistence/persistence.align.report ./
     scp lennonj@karst.uits.iu.edu:/N/dc2/projects/Lennon_Sequences/Persistence/persistence.good.filter.fasta ./
     ```
 ### B. Visualize mothur alignment
