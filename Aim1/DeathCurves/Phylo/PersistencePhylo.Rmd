@@ -23,7 +23,6 @@ setwd("~/GitHub/Dimensions/Aim1/DeathCurves/Phylo")
 require("muscle")
 require("seqinr")
 require("ape")
-
 require("phylobase")
 require("adephylo")
 require("geiger") 
@@ -33,7 +32,13 @@ require("RColorBrewer")
 require("caper")
 ```
 
-## 2) Use mothur alingment based on Silva reference to make a tree
+## 2) Read in FASTA file and take a look at lenghts of each sequence
+```{r}
+fasta <- read.fasta(file = "./persistence.fasta", seqtype = "DNA")
+summary(fasta)
+```
+
+## 3) Use mothur alingment based on Silva reference to make a tree
 ### A. Performing mothur alignment
 
 i) Copy FASTA file from AFS to Mason
@@ -55,6 +60,7 @@ ii) Perform mothur alingnment
     module load mothur/1.31.2
     mothur
     align.seqs(fasta=persistence.fasta, reference=silva.bacteria.fasta, flip=T, processors=4)
+    align.seqs(fasta=persistence.fasta, reference=silva.bacteria.rdp.tax, flip=T, processors=4)
     summary.seqs(fasta=persistence.align)
     screen.seqs(fasta=persistence.align, minlength=758) 
     filter.seqs(fasta=persistence.good.align, vertical=T, trump=.)
@@ -65,26 +71,38 @@ Move the file using the following commands:
     ```sh
     scp lennonj@karst.uits.iu.edu:/N/dc2/projects/Lennon_Sequences/Persistence/persistence.good.filter.fasta ./
     ```
-### B. Visualize mothur alignment
+### B. Visualize alignments
 ```{r}
-# Read Alignment File {seqinr}
-read.aln.M <- read.alignment(file = "./persistence.good.filter.fasta", format = "fasta")  
+# Read mothur alignment file {seqinr}
+read.aln.M <- read.alignment(file = "./persistence.good.filter.silva.afa", format = "fasta")  
+
+# Read arb full alignment file {seqinr}
+read.aln.M <- read.alignment(file = "./persistence.arb.none.afa", format = "fasta")  
+
+# Read arb alignment file with gap columns removed {seqinr}
+read.aln.M <- read.alignment(file = "./persistence.arb.vert.afa", format = "fasta") 
+
+# Read mega alignment file with gap columns removed {seqinr}
+read.aln.M <- read.alignment(file = "./persistence.mega.short.afa", format = "fasta")
+
+# Read RDP alignment file {seqinr}
+read.aln.M <- read.alignment(file = "./persistence.rdp.afa", format = "fasta")
 
 # Convert Alignment File to DNAbin Object {ape}
 p.DNAbin.M <- as.DNAbin(read.aln.M) 
 
-# Identify Base Pair Region of 16S rRNA Gene to Visuzlize
-window.M <- p.DNAbin.M[, 0:321] 
+# Identify Base Pair Region of 16S rRNA Gene to Visuzlize (adjust range)
+window.M <- p.DNAbin.M[, 0:1500] 
 
 # Command to Visusalize Sequence Alignment {ape}
 image.DNAbin(window.M, cex.lab = 0.50) 
 ```
 
-## 3) Make mothur-aligned tree
+## 3) Make neibhor-joining tree
 # Read Alignment File {seqinr}
 ```{r}
 # Create Distance Matrix with "raw" Model {ape}
-seq.dist.raw.M <- dist.dna(p.DNAbin.M, model = "raw", pairwise.deletion = FALSE)
+seq.dist.raw.M <- dist.dna(p.DNAbin.M, model = "K80", pairwise.deletion = FALSE)
 
 # Neighbor Joining Algorithm to Construct Tree, a 'phylo' Object {ape}
 nj.tree.M <- bionjs(seq.dist.raw.M)
