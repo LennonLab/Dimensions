@@ -98,7 +98,7 @@ window.M <- p.DNAbin.M[, 0:1500]
 image.DNAbin(window.M, cex.lab = 0.50) 
 ```
 
-## 3) Make neibhor-joining tree
+## 4) Make neibhor-joining tree
 # Read Alignment File {seqinr}
 ```{r}
 # Create Distance Matrix with "raw" Model {ape}
@@ -130,3 +130,35 @@ tiplabels(tax.name, adj = c(0,0.5), cex = 0.5, frame = "none",
 
 add.scale.bar(cex = 0.7)
 ```
+
+## 5) Read in maximum likelihood tree
+```{r}
+# Read tree
+ml.tree <- read.tree("persistence.arb.non.fasttree.tre")
+
+# Identify Outgroup Sequence
+outgroup <- match("Methanosarcina", ml.tree$tip.label)
+
+# Root the Tree {ape}
+ml.rooted <- root(ml.tree, outgroup, resolve.root = TRUE)
+
+# Load phylo taxonomy data
+tax <- read.table("persistence.phylo.txt", sep = "\t", header = TRUE)
+rownames(tax) <- tax$Code
+tax.2 <- tax[ml.tree$tip.label, ]
+tax.name <- paste(tax.2$Code, tax.2$Genus)
+tax.name[15] <- "DSM2834 Methanosarcina"
+
+# Plot the Rooted Tree{ape}
+par(mar = c(1,1,2,1) + 0.1)
+plot.phylo(ml.rooted, main = "ML Fast Tree", 
+           "phylogram", use.edge.length = FALSE, direction = "right",
+           cex = 0.6, label.offset = 1, show.tip.label = FALSE, x.lim = 30)
+           
+tiplabels(tax.name, adj = c(0,0.5), cex = 0.5, frame = "none",
+          pch = NULL, thermo = NULL, pie = NULL, piecol = NULL,
+          col = NULL, bg = NULL)
+
+add.scale.bar(cex = 0.7)
+```
+
