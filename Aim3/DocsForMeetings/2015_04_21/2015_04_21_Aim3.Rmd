@@ -30,9 +30,6 @@ require("seqinr")
 require("vegan") # biodiversity estimators and related functions
 require("fossil")
 require("simba")
-
-# Load source file that includes a function for reading in the output files from the community sequencing software `mothur` (http://www.mothur.org/).
-source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
 ```
 
 ## Overview
@@ -68,17 +65,22 @@ These will provide basic diversity-related variables to explore with respect to 
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE} 
 # Load Site-by-Species Matrix
-comm <- read.otu(shared = "~/GitHub/Dimensions/Aim3/Mothur/INPonds.final.shared", cutoff = "1")
+# Import Shared Files
+Pond97 <- read.otu(shared = shared, cutoff = "0.03")         # 97% Similarity
 
+# Remove OTUs with less than two occurances across all sites
+Pond97 <- Pond97[, which(colSums(Pond97) >= 2)]
+```
+
+```{r}
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
-
 # The active portion, based on cDNA 
-active.comm <- comm[grep("*-cDNA", rownames(comm)), ]
+active.comm <- Pond97[grep("*-cDNA", rownames(Pond97)), ]
 rownames(active.comm) <- gsub("\\-cDNA", "", rownames(active.comm))
 rownames(active.comm) <- gsub("\\_", "", rownames(active.comm))
 
 # The community without respect to active or not, 16S rRNA gene sequences
-all.comm <- comm[grep("*-DNA", rownames(comm)), ]
+all.comm <- Pond97[grep("*-DNA", rownames(Pond97)), ]
 rownames(all.comm) <- gsub("\\-DNA", "", rownames(all.comm))
 rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
 
@@ -134,51 +136,11 @@ This pattern addresses whether communities close to one another are more similar
 The distance-decay pattern can also be used to address whether near environments have greater similarity than far ones.
 We looked at decay in both taxonomic level compositional similarity via bray-curtis (should also do for Sorensens) and phylogenetic distance via unifrac distance.
 
-### 2.) Species- or taxa- area relationship (SAR)
-The species-area relationshp describes the rate at which species are discovred with increasing area. 
-The SAR one of ecology's oldest and most intensively studied patterns.
-Arrhenius (1921) first described the general form of the *species-area relationship (SAR)* as a power-law: $S = cA^{z}$ where S is species richnness and A is area.
-Arrhenius's formula predicts a rate of increase in richness that is approximately linear in log-log space. That is, $log(S) = c + zlog(A)$, where z is the scaling exponent.
-
-```{r, results = 'hide'}
-# A function to generate the species-area relationship
-SAR <- function(OTUs){
-  Alist <- c()
-  Slist <- c()
-  
-  num.ponds <- c(1,2,3,4,6,8,12,16,24,32,42,51)
-  for (i in num.ponds) {   
-    areas <- c() # hold iterated area values 
-    Ss <- c() # hold iterated S values
-    
-    for(j in 1:200){
-      pond.sample <- sample(51, replace = FALSE, size = i) 
-      area <- 0
-      cum.abs <- vector(mode = "numeric", length = length(comm))
-  
-      for (k in pond.sample) { # Loop through each randomly drawn pond
-        area <- area + pond.areas[k] # aggregating area, (incrementing)
-        cum.abs <- cum.abs + as.numeric(comm[k, ])
-    
-      } # End random pond samples loop
-      S <- length(cum.abs[cum.abs > 0])
-      areas <- c(areas, area)
-      Ss <- c(Ss, S)
-    }
-    Alist <- rbind(Alist, mean(areas))
-    Slist <- rbind(Slist, mean(Ss))
-    print(c(mean(areas), mean(Ss)))
-  }
-  return(cbind(log10(Alist), log10(Slist)))
-}
-
-```
-
 
 # RESULTS: Distance-Decay
 
 ```{r}
-#plot.new()
+plot.new()
 #par(mfrow=c(2, 2))
 
 # Geographic Distances (Kilometers) Among Ponds
@@ -195,9 +157,8 @@ all.bray.curtis.dist.ls <- liste(all.bray.curtis.dist, entry = "bray.curtis")
 coord.dist.ls <- liste(coord.dist, entry = "geo.dist")
 
 # Create a Data Frame from the Lists of Distances
-df <- data.frame(coord.dist.ls, 
-          active.bray.curtis.dist.ls[, 3],
-          all.bray.curtis.dist.ls[, 3],
+df <- data.frame(coord.dist.ls, active.bray.curtis.dist.ls[, 3],
+          all.bray.curtis.dist.ls[, 3])
           
 names(df)[4:5] <- c("active.bray.curtis", "all.bray.curtis") 
 attach(df)
@@ -205,7 +166,7 @@ attach(df)
 # Now, let's plot the DD relationships:
 
 # Set Initial Plot Parameters
-par(mfrow=c(2, 2))#, mar = c(1, 5, 2, 1) + 0.1, oma = c(2, 0, 0, 0))
+par(mfrow=c(1, 2))#, mar = c(1, 5, 2, 1) + 0.1, oma = c(2, 0, 0, 0))
 
 # Make Plot for Taxonomic DD
 plot(coord.dist, active.bray.curtis, xlab = "", xaxt = "n", las = 1, ylim = c(0.1, 0.9),
@@ -237,15 +198,91 @@ diffslope(geo.dist, active.bray.curtis, geo.dist, all.bray.curtis)
 ```
 
 
+### 2.) Species- or taxa- area relationship (SAR)
+The species-area relationshp describes the rate at which species are discovred with increasing area. 
+The SAR one of ecology's oldest and most intensively studied patterns.
+Arrhenius (1921) first described the general form of the *species-area relationship (SAR)* as a power-law: $S = cA^{z}$ where S is species richnness and A is area.
+Arrhenius's formula predicts a rate of increase in richness that is approximately linear in log-log space. That is, $log(S) = c + zlog(A)$, where z is the scaling exponent.
+
+```{r, results = 'hide'}
+# A function to generate the species-area relationship
+SAR <- function(com){
+  Alist <- c()
+  Slist <- c()
+  
+  num.ponds <- c(1,2,3,4,6,8,12,16,24,32,42,51)
+  for (i in num.ponds) {   
+    areas <- c() # hold iterated area values 
+    Ss <- c() # hold iterated S values
+    
+    for(j in 1:200){
+      pond.sample <- sample(51, replace = FALSE, size = i) 
+      area <- 0
+      cum.abs <- vector(mode = "numeric", length = length(com))
+  
+      for (k in pond.sample) { # Loop through each randomly drawn pond
+        area <- area + pond.areas[k] # aggregating area
+        cum.abs <- cum.abs + as.numeric(com[k, ]) 
+      
+      } # End random pond samples loop
+      
+      S <- length(cum.abs[cum.abs > 0])
+      print(S)
+      areas <- c(areas, area)
+      Ss <- c(Ss, S)
+    }
+    Alist <- rbind(Alist, mean(areas))
+    Slist <- rbind(Slist, mean(Ss))
+    print(c(mean(areas), mean(Ss)))
+  }
+  return(cbind(log10(Alist), log10(Slist)))
+}
+
+```
+
+
+```{r, results = 'hide'}
+# A function to generate the species-area relationship
+com <- active.comm
+Alist <- c()
+Slist <- c()
+  
+num.ponds <- c(1,2,3,4,6,8,12,16,24,32,42,51)
+for (i in num.ponds) {   
+  areas <- c() # hold iterated area values 
+  Ss <- c() # hold iterated S values
+    
+  for(j in 1:10){
+    pond.sample <- sample(51, replace = FALSE, size = 1) 
+    area <- 0
+    cum.abs <- vector(length = length(com[1,]))
+  
+    for (k in pond.sample) { # Loop through each randomly drawn pond
+      area <- area + pond.areas[k] # aggregating area
+      cum.abs <- cum.abs + com[k, ]
+      
+    } # End random pond samples loop
+      
+    S <- length(cum.abs[cum.abs > 0])
+    print(S)
+    areas <- c(areas, area)
+    Ss <- c(Ss, S)
+  }
+  Alist <- rbind(Alist, mean(areas))
+  Slist <- rbind(Slist, mean(Ss))
+  print(c(mean(areas), mean(Ss)))
+}
+```
+
 # RESULTS: Taxa-area relationship
 
 ```{r}
-#plot.new()
-#par(mfrow=c(2, 1))
+plot.new()
+par(mfrow=c(2, 1))
 pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
 coms <- as.list(active.comm, all.comm)
 
-sar <- SAR(active.com)
+sar <- SAR(active.comm)
 sar <- as.data.frame(sar)
 plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
   main = "Species-Area Relationship (Active)", col = "SteelBlue")
@@ -256,7 +293,7 @@ slope <- round(coefficients(OLS)[2], 3)
   legend("topleft", legend = paste("slope =", slope), 
          bty = "n", lw = 2, col = "red")
 
-sar <- SAR(all.com)
+sar <- SAR(all.comm)
 sar <- as.data.frame(sar)
 plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
   main = "Species-Area Relationship (All)", col = "SteelBlue")
