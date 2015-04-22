@@ -205,8 +205,10 @@ Arrhenius (1921) first described the general form of the *species-area relations
 Arrhenius's formula predicts a rate of increase in richness that is approximately linear in log-log space. That is, $log(S) = c + zlog(A)$, where z is the scaling exponent.
 
 ```{r, results = 'hide'}
-# A function to generate the species-area relationship
-SAR <- function(com){
+# A function to generate the species-area relationship by
+# Random Accumulating Sites
+
+SAR.rand.accum <- function(com){
   Alist <- c()
   Slist <- c()
   
@@ -218,16 +220,15 @@ SAR <- function(com){
     for(j in 1:200){
       pond.sample <- sample(51, replace = FALSE, size = i) 
       area <- 0
-      cum.abs <- vector(mode = "numeric", length = length(com))
+      cum.abs <- vector(length = length(com[1, ]))
   
       for (k in pond.sample) { # Loop through each randomly drawn pond
         area <- area + pond.areas[k] # aggregating area
-        cum.abs <- cum.abs + as.numeric(com[k, ]) 
+        cum.abs <- cum.abs + com[k, ]
       
       } # End random pond samples loop
       
       S <- length(cum.abs[cum.abs > 0])
-      print(S)
       areas <- c(areas, area)
       Ss <- c(Ss, S)
     }
@@ -242,67 +243,84 @@ SAR <- function(com){
 
 
 ```{r, results = 'hide'}
-# A function to generate the species-area relationship
-com <- active.comm
-Alist <- c()
-Slist <- c()
+# A function to generate the species-area relationship by
+# Random Accumulating Sites
+
+SAR.accum.dist <- function(com){
+  Alist <- c()
+  Slist <- c()
   
-num.ponds <- c(1,2,3,4,6,8,12,16,24,32,42,51)
-for (i in num.ponds) {   
-  areas <- c() # hold iterated area values 
-  Ss <- c() # hold iterated S values
+  num.ponds <- c(1,2,3,4,6,8,12,16,24,32,42,51)
+  for (i in num.ponds) {   
+    areas <- c() # hold iterated area values 
+    Ss <- c() # hold iterated S values
     
-  for(j in 1:10){
-    pond.sample <- sample(51, replace = FALSE, size = 1) 
-    area <- 0
-    cum.abs <- vector(length = length(com[1,]))
+    for(j in 1:100){
+      pondID <- sample(51, size = 1) 
+      used <- as.vector(pondID)
+      area <- 0
+      cum.abs <- vector(length = length(com[1, ]))
   
-    for (k in pond.sample) { # Loop through each randomly drawn pond
-      area <- area + pond.areas[k] # aggregating area
-      cum.abs <- cum.abs + com[k, ]
+      for (k in 1:i) { # Loop through ponds
+        
+        sdata <- subset(coord.dist.ls, FALSE == is.element(NBX, used) & FALSE == is.element(NBY, used))
+        sdata <- subset(coord.dist.ls, NBX == pondID | NBY == pondID)
+        sdata <- subset(sdata, geo.dist == min(sdata[, 3]))
+        
+        if (sdata[1] == pondID) {
+          pondID <- as.integer(sdata[2])
+          } else {
+            pondID <- as.integer(sdata[1])
+        }
+        
+        used <- c(used, pondID)
+        area <- area + pond.areas[pondID] # aggregating area
+        cum.abs <- cum.abs + com[pondID, ]
       
-    } # End random pond samples loop
+      } # End random pond samples loop
       
-    S <- length(cum.abs[cum.abs > 0])
-    print(S)
-    areas <- c(areas, area)
-    Ss <- c(Ss, S)
+      S <- length(cum.abs[cum.abs > 0])
+      areas <- c(areas, area)
+      Ss <- c(Ss, S)
+    }
+    Alist <- rbind(Alist, mean(areas))
+    Slist <- rbind(Slist, mean(Ss))
+    print(c(mean(areas), mean(Ss)))
   }
-  Alist <- rbind(Alist, mean(areas))
-  Slist <- rbind(Slist, mean(Ss))
-  print(c(mean(areas), mean(Ss)))
+  return(cbind(log10(Alist), log10(Slist)))
 }
+
 ```
+
 
 # RESULTS: Taxa-area relationship
 
 ```{r}
 plot.new()
-par(mfrow=c(2, 1))
+par(mfrow=c(1, 1))
 pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
 coms <- as.list(active.comm, all.comm)
 
-sar <- SAR(active.comm)
+sar <- SAR.accum.dist(active.comm)
 sar <- as.data.frame(sar)
 plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
-  main = "Species-Area Relationship (Active)", col = "SteelBlue")
+  main = "Species-Area Relationship (Active)", col = "red")
 
 OLS <- lm(sar$V2 ~ sar$V1)
 abline(OLS, col = "red", lw = 2)
 slope <- round(coefficients(OLS)[2], 3)
-  legend("topleft", legend = paste("slope =", slope), 
+  legend("topleft", legend = paste("slope(Active) =", slope), 
          bty = "n", lw = 2, col = "red")
 
-sar <- SAR(all.comm)
+sar <- SAR.accum.dist(all.comm)
 sar <- as.data.frame(sar)
-plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
   main = "Species-Area Relationship (All)", col = "SteelBlue")
 
 OLS <- lm(sar$V2 ~ sar$V1)
-abline(OLS, col = "red", lw = 2)
+abline(OLS, col = "SteelBlue", lw = 2)
 slope <- round(coefficients(OLS)[2], 3)
-  legend("topleft", legend = paste("slope =", slope), 
-         bty = "n", lw = 2, col = "red")
-
+  legend("bottomright", legend = paste("slope(All) =", slope), 
+         bty = "n", lw = 2, col = "SteelBlue")
 ```
 
