@@ -217,7 +217,7 @@ SAR.rand.accum <- function(com){
     areas <- c() # hold iterated area values 
     Ss <- c() # hold iterated S values
     
-    for(j in 1:200){
+    for(j in 1:1000){
       pond.sample <- sample(51, replace = FALSE, size = i) 
       area <- 0
       cum.abs <- vector(length = length(com[1, ]))
@@ -255,7 +255,7 @@ SAR.accum.dist <- function(com){
     areas <- c() # hold iterated area values 
     Ss <- c() # hold iterated S values
     
-    for(j in 1:100){
+    for(j in 1:1000){
       pondID <- sample(51, size = 1) 
       used <- as.vector(pondID)
       area <- 0
@@ -301,9 +301,21 @@ par(mfrow=c(1, 1))
 pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
 coms <- as.list(active.comm, all.comm)
 
-sar <- SAR.accum.dist(active.comm)
+sar <- SAR.accum.dist(all.comm)
 sar <- as.data.frame(sar)
 plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+  main = "Taxa-Area Relationship
+  aggregating area by distance", col = "SteelBlue")
+
+OLS <- lm(sar$V2 ~ sar$V1)
+abline(OLS, col = "SteelBlue", lw = 2)
+slope <- round(coefficients(OLS)[2], 3)
+  legend("bottomright", legend = paste("slope(All) =", slope), 
+         bty = "n", lw = 2, col = "SteelBlue")
+
+sar <- SAR.accum.dist(active.comm)
+sar <- as.data.frame(sar)
+points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
   main = "Species-Area Relationship (Active)", col = "red")
 
 OLS <- lm(sar$V2 ~ sar$V1)
@@ -312,15 +324,31 @@ slope <- round(coefficients(OLS)[2], 3)
   legend("topleft", legend = paste("slope(Active) =", slope), 
          bty = "n", lw = 2, col = "red")
 
-sar <- SAR.accum.dist(all.comm)
+
+#plot.new()
+par(mfrow=c(1, 1))
+
+sar <- SAR.rand.accum(all.comm)
 sar <- as.data.frame(sar)
-points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
-  main = "Species-Area Relationship (All)", col = "SteelBlue")
+plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+  main = "Taxa-Area Relationship
+  aggregating area at random", col = "SteelBlue")
 
 OLS <- lm(sar$V2 ~ sar$V1)
 abline(OLS, col = "SteelBlue", lw = 2)
 slope <- round(coefficients(OLS)[2], 3)
   legend("bottomright", legend = paste("slope(All) =", slope), 
          bty = "n", lw = 2, col = "SteelBlue")
+
+sar <- SAR.rand.accum(active.comm)
+sar <- as.data.frame(sar)
+points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+  main = "Species-Area Relationship (Active)", col = "red")
+
+OLS <- lm(sar$V2 ~ sar$V1)
+abline(OLS, col = "red", lw = 2)
+slope <- round(coefficients(OLS)[2], 3)
+  legend("topleft", legend = paste("slope(Active) =", slope), 
+         bty = "n", lw = 2, col = "red")
 ```
 
