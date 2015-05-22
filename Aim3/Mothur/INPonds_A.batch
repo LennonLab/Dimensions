@@ -18,5 +18,5 @@ summary.seqs(fasta=INPonds.trim.contigs.good.unique.good.filter.unique.fasta, co
 pre.cluster(fasta=INPonds.trim.contigs.good.unique.good.filter.unique.fasta, count=INPonds.trim.contigs.good.unique.good.filter.count_table, diffs=2, processors=1)
 chimera.uchime(fasta=INPonds.trim.contigs.good.unique.good.filter.unique.precluster.fasta, reference=silva.gold.ng.fasta, processors=10)
 remove.seqs(fasta=INPonds.trim.contigs.good.unique.good.filter.unique.precluster.fasta, count=INPonds.trim.contigs.good.unique.good.filter.unique.precluster.count_table, accnos=INPonds.trim.contigs.good.unique.good.filter.unique.precluster.uchime.accnos)
-summary.seqs(fasta=INPonds.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta, count=current, processors=10)
+summary.seqs(fasta=INPonds.trim.contigs.good.unique.good.filter.unique.precluster.pick.fasta, count=INPonds.trim.contigs.good.unique.good.filter.unique.precluster.pick.count_table, processors=10)
 
