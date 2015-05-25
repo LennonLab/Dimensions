@@ -191,7 +191,7 @@ table.phylo4d(x.decay, treetype = "phylo", symbol = "colors", show.node = TRUE,
               ratio.tree = 0.90, cex.legend = 1.5, center = FALSE)
 
 
-## 6) Look at some trait correlations
+## 6) Look at the traits
 ```{r}
 traits <- tax[,7:17]
 pairs(traits)
@@ -199,5 +199,34 @@ fold.decay <- max(traits$Decay, na.rm = TRUE)/min(traits$Decay, na.rm = TRUE)
 plot(log10(traits$Decay),log10(traits$Evol*-1 + 0.001))
 plot(log10(traits$Decay),traits$umax)
 plot(log10(traits$Decay),traits$Lag)
+
+
+par(mfrow=c(1,2),mar = c(4, 6, 3, 5))
+decay.kern <- density(log10(traits$Decay), na.rm = TRUE) 
+evol.kern <- density(log10((traits$Evol*-1)+0.000001), na.rm = TRUE) 
+plot(decay.kern, main = NA, xlab = "Decay rate", ylab = "Density", cex.lab = 1.5) 
+plot(evol.kern, main = NA, xlab = "Evol rate", ylab = "Density", cex.lab = 1.5)
+
+plot(log10(traits$Decay), log10((traits$Evol*-1)+0.000001))
 ```
 
+```{r}
+ml.lambda.0 <- rescale(ml.rooted, "lambda", 0)
+fitContinuous(ml.rooted, decay, model = "lambda")
+fitContinuous(ml.lambda.0, decay, model = "lambda")
+
+
+p.phylosignal <- matrix(NA, 6, 18)
+colnames(p.phylosignal) <- colnames(p.growth.std)
+rownames(p.phylosignal) <- c("K", "PIC.var.obs", "PIC.var.mean", 
+                             "PIC.var.P", "PIC.var.z", "PIC.P.BH")
+
+# Use a For Loop to Calculate Blomberg's K for Each Resource
+for (i in 1:18){
+  x <- as.matrix(p.growth.std[ ,i, drop = FALSE])
+  out <- phylosignal(x, nj.rooted)
+  p.phylosignal[1:5, i] <- round(t(out), 3)
+}
+
+# Use the BH Correction on P-values: 
+p.phylosignal[6, ] <- round(p.adjust(p.phylosignal[4, ], method = "BH"), 3)
