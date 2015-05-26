@@ -1,0 +1,158 @@
+---
+title: "Two-Pop Persistence"
+author: "Stuart E. Jones and Jay T. Lennon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+   - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+Model looking at factors that affect bacterial persistence
+
+```{r}
+getwd()
+setwd("~/GitHub/Dimensions/Aim1/PersistenceModel")
+```
+
+Install packages
+```{r}
+require("deSolve")
+```
+
+# Model 1: First-order decay
+```{r}
+# Function for persistence
+persist <- function(t, x, parms){
+  with(as.list(c(parms, x)),{
+		dBadt = -Ba*da		#g (L*day)^-1
+		
+		res=c(dBadt)
+		list(res)
+	})
+}
+
+# Parameters
+parms = c(da = 0.1)
+times = seq(0, 1000, 0.1)
+init = c(Ba = 0.00002)
+
+# Output
+outP <- ode(y = init, times = times, func = persist, parms = parms)
+outP <- data.frame(outP, log10(outP[,2]/(20e-15)))
+colnames(outP)[3] <- "logcells.ml"
+outP <- subset(outP, outP[,3] >= 0)
+```
+
+# Model 2: Cannibalism
+```{r}
+# Function for cannibalsims where dead bacteria are consumed by live bacteria
+persistCannibalism <- function(t, x, parms){
+  with(as.list(c(parms, x)),{
+		dBadt = Ba*(C*Va)/(C+Ka)*Ea-Ba*da		#g (L*day)^-1
+		dCdt = Ba*da*m-Ba*(C*Va)/(C+Ka)		#g (L*day)^-1
+		
+		res=c(dBadt,dCdt)
+		list(res)
+	})
+}
+
+# Parameters
+parms = c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, m = 0.5)
+times = seq(0, 1000, 0.1)
+init = c(Ba = 0.00002, C = 0)
+
+# Output
+outPC = ode(y = init, times = times, func = persistCannibalism, parms = parms)
+outPC <- data.frame(outPC, log10(outPC[,2]/(20e-15)))
+colnames(outPC)[4] <- "logcells.ml"
+outPC <- subset(outPC, outPC[,4] >= 0)
+```
+
+# Model 3: Adaptation
+```{r}
+# Function for two-species model with mutant and ancestros with different traits
+persistCannibalismMut <- function(t, x, parms){
+  with(as.list(c(parms, x)),{
+		dBadt = Ba*(C*Va)/(C+Ka)*Ea-Ba*da
+		dBmdt = Bm*(C*Vm)/(C+Km)*Em-Bm*dm
+		dCdt = Ba*da*m-Ba*(C*Va)/(C+Ka)+Bm*dm*m-Bm*(C*Vm)/(C+Km)
+		
+		res=c(dBadt, dBmdt, dCdt)
+		list(res)
+	})
+}
+
+# Parameters
+fracMut <- 1e-5 # fraction of initial population that are mutant
+parmsMut <- c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, Vm = 12, Km = 0.0011, 
+             Em = 0.9, dm = 0.05, m = 0.5)
+initMut <- c(Ba = 0.00002-(0.00002*fracMut), Bm = 0.00002*fracMut, C = 0)
+
+# Output
+outPCmut <- ode(y = initMut, times = times, func = persistCannibalismMut, 
+            parms = parmsMut)
+outPCmut <- data.frame(outPCmut, log10(outPCmut[,2]/(20e-15)), log10(outPCmut[,3]/(20e-15)))
+outPCmut <- data.frame(outPCmut, log10((outPCmut[,2] + outPCmut[,3])/(20e-15)))
+outPCmut <- subset(outPCmut, outPCmut[,7] >= 0)
+colnames(outPCmut)[5:7] <- c("a.logcells.ml", "m.logcells.ml", "t.logcells.ml")
+```
+
+Plotting
+```{r}
+plot.new
+
+png(filename="~/GitHub/Dimensions/Aim1/PersistenceModel/figures/decay.png",
+    width = 1200, height = 1200, res = 96*2)
+
+# par(mfrow = c(1, 1), mar=c(2, 4, 2, 2) + 0.1)
+
+par(mar = c(5, 7, 5, 7))
+decay.plot <- plot(outP[,1], outP[,3], type = "l", yaxt = "n", xaxt = "n", lwd = 2,
+        cex.lab = 2, cex.axis = 1.5, xlab = "Time (days)", ylab = NA,
+        xlim = c(-25, 1000))
+box(lwd=2)
+
+mtext(expression('Cell ml'^-1), side = 2, outer = TRUE, cex = 2, line = -3, adj = 0.5)
+
+
+# Add ticks and tick labels
+
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     labels = expression(10^0, 10^1, 10^2, 10^3, 10^4, 10^5, 10^6, 10^7, 10^8, 10^9),
+     at = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
+ 
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+    at=c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), labels = F)
+ 
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+    labels = c(0, 50, 100, 150, 200, 250, 300, 350, 400), at = c(0, 50, 100, 150, 200, 250, 300, 350, 400))
+
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+    at = c(0, 50, 100, 150, 200, 250, 300, 350, 400), labels = F)
+
+# Add cannibalism
+points(outPC[,1], outPC[,4], type = "l", lty = 2)
+
+# Add adaptation
+points(outPCmut[,1], outPCmut[,7], type = "l", lty = 3)
+```
+
+plot.new
+
+par(mar = c(5, 7, 5, 7))
+two.pop.plot <- plot(outPCmut[,1], outPCmut[,5], type = "l", yaxt = "n", xaxt = "n", lwd = 2,
+        cex.lab = 2, cex.axis = 1.5, xlab = "Time (days)", ylab = NA,
+        xlim = c(-25, 1500), ylim = c(0,9))
+box(lwd=2)
+mtext(expression('Cell ml'^-1), side = 2, outer = TRUE, cex = 2, line = -3, adj = 0.5)
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+     labels = expression(10^0, 10^1, 10^2, 10^3, 10^4, 10^5, 10^6, 10^7, 10^8, 10^9),
+     at = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
+ 
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+    at=c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), labels = F)
+
+
+
+points(outPCmut[,1], outPCmut[,6], type = "l", lty = 2)

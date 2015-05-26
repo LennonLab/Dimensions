@@ -61,8 +61,15 @@ for(i in 1:length(strains)){
 		
 			time=(as.numeric(strptime(repObs$Firstread_date,format="%d-%b-%y",tz="EST"))-as.numeric(strptime(start,format="%d-%b-%y",tz="EST")))/(3600*24)
 		
-			logLinCur=optim(c((log(repObs$Abund[1])-log(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]),log(max(repObs$Abund)),1),fitLogLinearDecay,N=log(repObs$Abund),time=time)
-			logQuadCur=optim(c(((log(repObs$Abund[1])-log(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]))/10,(log(repObs$Abund[1])-log(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]),log(max(repObs$Abund)),1),fitLogQuadDecay,N=log(repObs$Abund),time=time)
+			logLinCur=optim(c((log10(repObs$Abund[1])-log10(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]),log10(max(repObs$Abund)),1),fitLogLinearDecay,N=log10(repObs$Abund),time=time)
+			tempQuad=optim(c(((log10(repObs$Abund[1])-log10(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]))/10,(log10(repObs$Abund[1])-log10(repObs$Abund[nrow(repObs)]))/(time[length(time)]-time[1]),log10(max(repObs$Abund)),1),fitLogQuadDecay,N=log10(repObs$Abund),time=time)
+			tempQuad2=optim(c(-5e-6,0.005,5,log(0.1)),fitLogQuadDecay,N=log10(repObs$Abund),time=time)
+		
+			if(tempQuad2$value<=tempQuad$value){
+				logQuadCur=tempQuad2
+			}else{
+				logQuadCur=tempQuad	
+			}
 		
 			summ[counter,1]=strains[i]
 			summ[counter,2]=reps[j]
@@ -85,7 +92,7 @@ for(i in 1:length(strains)){
 #				title=paste(strains[i]," rep ",reps[j])
 #			}
 			
-#			plot(time,log(repObs$Abund),main=title,ylim=c(0,20))
+#			plot(time,log10(repObs$Abund),main=title,ylim=c(0,9))
 #			predTime=seq(0,max(time))
 #			lines(predTime,logLinCur$par[2]-logLinCur$par[1]*predTime,lwd=2,lty=2)
 #			lines(predTime,logQuadCur$par[3]-logQuadCur$par[1]*predTime^2-logQuadCur$par[2]*predTime,col='red',lwd=2,lty=2)
@@ -134,3 +141,35 @@ for(i in 1:length(strains)){
 }
 
 repAgree=data.frame(strain=repAgreement[,1],Nreps=as.numeric(repAgreement[,2]),Nlinear=as.numeric(repAgreement[,3]),Nquad=as.numeric(repAgreement[,4]),stringsAsFactors=FALSE)
+
+
+### generate trait output table
+# when quadratic is not significantly better by likelihood ratio test report "evolvability" of 0
+traitsReport=matrix(NA,nrow(summ),5)
+traitsReport[,1]=summ[,1]
+traitsReport[,2]=summ[,2]
+for(i in 1:nrow(summ)){
+	if(as.numeric(summ[i,10])<(0.05/nrow(summ))){
+		traitsReport[i,3]=summ[i,7]
+		traitsReport[i,4]=summ[i,6]
+		traitsReport[i,5]=summ[i,8]
+	}else{
+		traitsReport[i,3]=summ[i,3]
+		traitsReport[i,4]=0
+		traitsReport[i,5]=summ[i,4]
+	}
+}
+colnames(traitsReport)=c('strain','rep','decay','evolvability','N0')
+
+# remove the extremely bad fit
+traitsReport=traitsReport[-27,]
+
+strains=sort(unique(traitsReport[,1]))
+meanDecay=tapply(as.numeric(traitsReport[,3]),traitsReport[,1],FUN=mean)
+meanEvolve=tapply(as.numeric(traitsReport[,4]),traitsReport[,1],FUN=mean)
+meanN0=tapply(as.numeric(traitsReport[,5]),traitsReport[,1],FUN=mean)
+
+summaryTraitsReport=data.frame(strains=strains,decay=meanDecay,evolvability=meanEvolve,N0=meanN0,stringsAsFactors=FALSE)
+
+write.table(traitsReport,"perRepDeathCurveTraits.txt",row.names=FALSE,quote=FALSE)
+write.table(summaryTraitsReport,"DeathCurveTraits.txt",row.names=FALSE,quote=FALSE)
