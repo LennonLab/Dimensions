@@ -4,7 +4,7 @@ getwd()
 setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
 
 ## Load Data
-obs <- read.csv("longtermdormancy_20150425.csv", header = TRUE, stringsAsFactors = FALSE)
+obs <- read.csv("longtermdormancy_20150526b.csv", header = TRUE, stringsAsFactors = FALSE)
 
 ## Estimating CFUs
 ## Adding 1 to deal with log(0) observations --> should we just remove instead?
