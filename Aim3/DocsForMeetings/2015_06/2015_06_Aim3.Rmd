@@ -28,6 +28,7 @@ require("seqinr")
 require("vegan") # biodiversity estimators and related functions
 require("fossil")
 require("simba")
+require("reshape")
 ```
 
 ### C. Load Source Code
@@ -37,7 +38,7 @@ The benefit of source files is that they contain "vetted" code that can be used 
 Here, we will be using a source code file that includes a function for reading in the output files from the popular community sequencing software `mothur` (http://www.mothur.org/).
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE}
-load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
+load('~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData')
 ```
 
 ## Overview
@@ -92,7 +93,7 @@ active.comm <- active.comm[ , colSums(active.comm) > 0]
 all.comm <- all.comm[ , colSums(all.comm) > 0]
 
 # Import Taxonomy Data Using `read.tax()` from Source Code
-#tax <- read.tax(taxonomy = "./Mothur/INPonds.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.an.unique_list.0.03.cons.taxonomy")
+tax <- read.tax(taxonomy = "./Mothur/INPonds.bac.final.0.03.taxonomy")
 ```
 
 ```{r}
@@ -118,7 +119,6 @@ env$all.H <- as.vector(diversity(all.comm, index = "shannon"))
 # Evenness is Simpsons; divide Simpson's Diversity by S
 env$active.De <- as.vector(diversity(active.comm, index = "invsimpson")/env$active.S)
 env$all.De <- as.vector(diversity(all.comm, index = "invsimpson")/env$all.S)
-
 ```
 
 ## Primary geographic patterns
@@ -196,7 +196,6 @@ mtext("Geographic Distance, km", side = 1, adj = 0.55,
 diffslope(geo.dist, active.bray.curtis, geo.dist, all.bray.curtis)
 ```
 
-
 ### 2.) Species- or taxa- area relationship (SAR)
 The species-area relationshp describes the rate at which species are discovred with increasing area. 
 The SAR one of ecology's oldest and most intensively studied patterns.
@@ -224,24 +223,19 @@ SAR.rand.accum <- function(com){
       for (k in pond.sample) { # Loop through each randomly drawn pond
         area <- area + pond.areas[k] # aggregating area
         cum.abs <- cum.abs + com[k, ]
-        if (length(cum.abs) > length(com[1,])) {
-          print('cum.abs is too long') 
-          break
-          }
-      } # End random pond samples loop
+        } # End random pond samples loop
       
       Ss <- c(Ss, length(cum.abs[cum.abs > 0]))
       areas <- c(areas, area)
-    }
+      }
     
     Alist <- rbind(Alist, mean(areas))
     Slist <- rbind(Slist, mean(Ss))
     print(c(mean(areas), mean(Ss)))
-  }
-  print(length(com[1,]))
-  print(mean(Ss))
+    }
+  
   return(cbind(log10(Alist), log10(Slist)))
-}
+  }
 
 ```
 
