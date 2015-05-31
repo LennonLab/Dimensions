@@ -1,10 +1,9 @@
 ---
 title: "The geographical ecology of pond bacteria"
-date: "April 21, 2015"
-header-includes:
-   - \usepackage{array}
-output: pdf_document
 geometry: margin=2.54cm
+date: "April 21, 2015"
+output: pdf_document
+header-includes: \usepackage{array}
 ---
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
@@ -29,6 +28,9 @@ require("vegan") # biodiversity estimators and related functions
 require("fossil")
 require("simba")
 require("reshape")
+require("knitr")
+
+source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
 ```
 
 ### C. Load Source Code
@@ -38,7 +40,7 @@ The benefit of source files is that they contain "vetted" code that can be used 
 Here, we will be using a source code file that includes a function for reading in the output files from the popular community sequencing software `mothur` (http://www.mothur.org/).
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE}
-load('~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData')
+load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ```
 
 ## Overview
@@ -93,7 +95,7 @@ active.comm <- active.comm[ , colSums(active.comm) > 0]
 all.comm <- all.comm[ , colSums(all.comm) > 0]
 
 # Import Taxonomy Data Using `read.tax()` from Source Code
-tax <- read.tax(taxonomy = "./Mothur/INPonds.bac.final.0.03.taxonomy")
+tax <- read.tax(taxonomy = "~/GitHub/Dimensions/Aim3/Mothur/INPonds.bac.final.0.03.taxonomy")
 ```
 
 ```{r}
