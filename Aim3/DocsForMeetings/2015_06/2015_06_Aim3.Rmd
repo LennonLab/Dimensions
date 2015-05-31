@@ -8,8 +8,6 @@ geometry: margin=2.54cm
 ---
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-# SETUP
-
 # Retrieve and set the working directory
 rm(list=ls())
 getwd()
@@ -32,6 +30,16 @@ require("fossil")
 require("simba")
 ```
 
+### C. Load Source Code
+In addition to relying on contributed packages, we will also be using a source code file.
+A source code file has user-defined functions that are required for certain analyses.
+The benefit of source files is that they contain "vetted" code that can be used across multiple projects. 
+Here, we will be using a source code file that includes a function for reading in the output files from the popular community sequencing software `mothur` (http://www.mothur.org/).
+
+```{r, results = 'hide', message = FALSE, warning = FALSE}
+load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
+```
+
 ## Overview
 Here, we will explore our primary geographical patterns of interest: the taxa-area relationship (TAR), the phylogenetic diversity-area relationship, and the distance-decay relationship in taxonomic and phylogenetic community similarity.
 
@@ -45,7 +53,7 @@ We sampled aspects of water chemistry, physical properties, and bacterial commun
 
 ```{r}
 # Load Environmental and Geographical Data
-env <- read.table("~/GitHub/Dimensions/Aim3/DATA/CurrentData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
+env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
 lats <- as.numeric(env[, 3]) # latitudes (north and south)
 lons <- as.numeric(env[, 4]) # longitudes (east and west)
 ```
@@ -62,15 +70,6 @@ We then used a `mothur` pipeline to quality-trim our data set and assign sequenc
 For each pond, we used the observed taxonomic richness (S), total number of gene reads (N), and number of gene reads per OTU (Ni) to estimate Shannon's diversity index (H), and Simpson's evenness (D/S). 
 We should estimate a handful of diversity and evenness metrics, as well conduct richness estimation for each site (Chao1, ACE, rarefaction, jacknife).
 These will provide basic diversity-related variables to explore with respect to geograpy and environmental conditions.
-
-```{r, results = 'hide', message = FALSE, warning = FALSE} 
-# Load Site-by-Species Matrix
-# Import Shared Files
-Pond97 <- read.otu(shared = shared, cutoff = "0.03")         # 97% Similarity
-
-# Remove OTUs with less than two occurances across all sites
-Pond97 <- Pond97[, which(colSums(Pond97) >= 2)]
-```
 
 ```{r}
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
