@@ -212,12 +212,12 @@ SAR.rand.accum <- function(com){
   Alist <- c()
   Slist <- c()
   
-  num.ponds <- c(1,2,3,4,6,8,12,16,24,32,42,51)
+  num.ponds <- c(1,2,4,6,8,12,16,24,32,42,51)
   for (i in num.ponds) {   
     areas <- c() # hold iterated area values 
     Ss <- c() # hold iterated S values
     
-    for(j in 1:10){
+    for(j in 1:50){
       pond.sample <- sample(51, replace = FALSE, size = i) 
       area <- 0
       cum.abs <- vector(length = length(com[1, ]))
@@ -252,58 +252,51 @@ SAR.rand.accum <- function(com){
 # accumulating area according to distance
 
 SAR.accum.dist <- function(com){
-  mymatrix <- data.matrix(coord.dist.ls)
-  mymatrix <- as.data.frame(mymatrix)
   Alist <- c()
   Slist <- c()
+  num.ponds <- c(1,2,4,6,8,12,16,24,32,42,51)
   
-  num.ponds <- c(1,2,3,4,6,8,12,16,24,32,42,50)
   for (i in num.ponds) {   
     areas <- c() # hold iterated area values 
     Ss <- c() # hold iterated S values
     
-    for(j in 1:10){
-      used <- c(0)
-      area1 <- 0
-      cum.abs <- as.numeric(vector(length = length(com[1, ])))
+    for(j in 1:50){
+      pondID <- sample(51, size = 1)
+      Area <- as.numeric(pond.areas[pondID]) # aggregating area
+      cum.abs <- com[pondID, ]
+      used <- c()
       
-      for (k in 1:i) { # Loop through ponds
-        if (k == 1) {
-          pondID <- sample(51, size = 1)
-          } else {
+      for (k in 2:i) { # Loop through ponds
+        sdata <- subset(coord.dist.ls, FALSE == is.element(NBX, used) & FALSE == is.element(NBY, used))
+        sdata <- subset(sdata, NBX == pondID | NBY == pondID)
+        sdata <- subset(sdata, geo.dist == min(sdata[, 3]))
             
-            sdata <- subset(mymatrix, FALSE == is.element(NBX, used) & FALSE == is.element(NBY, used))
-            sdata <- subset(sdata, NBX == pondID | NBY == pondID)
-            sdata <- subset(sdata, geo.dist == min(sdata[, 3]))
-            sdata <- data.matrix(sdata)
-            print(sdata)
+        if (dim(sdata)[1] > 1) {
+          x <- sample(dim(sdata)[1], size=1)
+          sdata <- sdata[x,]
+          }
             
-            used <- c(used, pondID)
-            area1 <- area1 + pond.areas[pondID] # aggregating area
-            cum.abs <- cum.abs + com[pondID, ]
+        sdata <- t(as.matrix(as.numeric(as.matrix(sdata))))
+        used <- c(used, as.integer(pondID))
+        Area <- Area + as.numeric(pond.areas[pondID]) # aggregating area
+        cum.abs <- cum.abs + com[pondID, ]
             
-            if (sdata[1] == pondID) {
-              pondID <- sdata[2]
-              } else {
-                pondID <- sdata[1]
-              }
-            }
-        
-      
-      } # End random pond samples loop
-      
+        if (sdata[1] - pondID == 0) {
+          pondID <- sdata[2]
+        } else {
+          pondID <- sdata[1]
+        }
+      }
       Ss <- c(Ss, length(cum.abs[cum.abs > 0]))
-      areas <- c(areas, area)
+      areas <- c(areas, Area)
     }
+    # End random pond samples loop  
     Alist <- rbind(Alist, mean(areas))
     Slist <- rbind(Slist, mean(Ss))
     print(c(mean(areas), mean(Ss)))
   }
-  print(length(com[1,]))
-  print(mean(Ss))
   return(cbind(log10(Alist), log10(Slist)))
 }
-
 ```
 
 
@@ -312,21 +305,20 @@ SAR.accum.dist <- function(com){
 ```{r}
 
 plot.new()
-#par(mfrow=c(1, 1))
+par(mfrow=c(1, 1))
 pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
 
 sar <- SAR.accum.dist(all.comm)
 sar <- as.data.frame(sar)
-plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+plot(sar, xlab = "log(Area)", ylab = "log(Richness)",
   main = "Taxa-Area Relationship
   aggregating area by distance", col = "SteelBlue")
 
 OLS <- lm(sar$V2 ~ sar$V1)
 abline(OLS, col = "SteelBlue", lw = 2)
 slope <- round(coefficients(OLS)[2], 3)
-  legend("bottomright", legend = paste("slope(All) =", slope), 
+  legend("bottomright", legend = paste("slope(All) =", slope),
          bty = "n", lw = 2, col = "SteelBlue")
-
 
 sar <- SAR.accum.dist(active.comm)
 sar <- as.data.frame(sar)
@@ -339,31 +331,29 @@ slope <- round(coefficients(OLS)[2], 3)
   legend("topleft", legend = paste("slope(Active) =", slope), 
          bty = "n", lw = 2, col = "red")
 
+par(mfrow=c(1, 1))
 
-#plot.new()
-#par(mfrow=c(1, 1))
+sar <- SAR.rand.accum(all.comm)
+sar <- as.data.frame(sar)
+plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+  main = "Taxa-Area Relationship
+  aggregating area at random", col = "SteelBlue")
 
-#sar <- SAR.rand.accum(all.comm)
-#sar <- as.data.frame(sar)
-#plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
-#  main = "Taxa-Area Relationship
-#  aggregating area at random", col = "SteelBlue")
+OLS <- lm(sar$V2 ~ sar$V1)
+abline(OLS, col = "SteelBlue", lw = 2)
+slope <- round(coefficients(OLS)[2], 3)
+  legend("bottomright", legend = paste("slope(All) =", slope), 
+         bty = "n", lw = 2, col = "SteelBlue")
 
-#OLS <- lm(sar$V2 ~ sar$V1)
-#abline(OLS, col = "SteelBlue", lw = 2)
-#slope <- round(coefficients(OLS)[2], 3)
-#  legend("bottomright", legend = paste("slope(All) =", slope), 
-#         bty = "n", lw = 2, col = "SteelBlue")
+sar <- SAR.rand.accum(active.comm)
+sar <- as.data.frame(sar)
+points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+  main = "Species-Area Relationship (Active)", col = "red")
 
-#sar <- SAR.rand.accum(active.comm)
-#sar <- as.data.frame(sar)
-#points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
-#  main = "Species-Area Relationship (Active)", col = "red")
-
-#OLS <- lm(sar$V2 ~ sar$V1)
-#abline(OLS, col = "red", lw = 2)
-#slope <- round(coefficients(OLS)[2], 3)
-#  legend("topleft", legend = paste("slope(Active) =", slope), 
-#         bty = "n", lw = 2, col = "red")
+OLS <- lm(sar$V2 ~ sar$V1)
+abline(OLS, col = "red", lw = 2)
+slope <- round(coefficients(OLS)[2], 3)
+  legend("topleft", legend = paste("slope(Active) =", slope), 
+         bty = "n", lw = 2, col = "red")
 ```
 
