@@ -100,14 +100,14 @@ Now, let's load and process the phylogenetic data:
 
 ```{r}
 # Import the Alignment File {seqinr}
-ponds.cons <- read.alignment(file = "./data/INPonds.final.rdp.1.rep.fasta", 
+ponds.cons <- read.alignment(file = "./Mothur/INPonds.bac.final.0.03.fasta", 
                              format = "fasta")  
 
 # Rename OTUs in the FASTA File
 ponds.cons$nam <- gsub("\\|.*$", "", gsub("^.*?\t", "", ponds.cons$nam))
 
 # Import the Outgroup FASTA File {seqinr}
-outgroup <- read.alignment(file = "./data/methanosarcina.fasta", format = "fasta")
+outgroup <- read.alignment(file = "./DATA/Methanosarcina_align.fasta", format = "fasta")
 
 # Convert Alignment File to DNAbin Object {ape}
 DNAbin <- rbind(as.DNAbin(outgroup), as.DNAbin(ponds.cons))
