@@ -28,10 +28,11 @@ require("vegan") # biodiversity estimators and related functions
 require("fossil")
 require("simba")
 require("reshape")
+```
 
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # We used a source code file that includes a function for reading in the output files from the popular community sequencing software `mothur` (http://www.mothur.org/).
 source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
-
 load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ```
 
@@ -185,7 +186,7 @@ mtext("Geographic Distance, km", side = 1, adj = 0.55,
 ```
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-diffslope(geo.dist, active.bray.curtis, geo.dist, all.bray.curtis)
+#diffslope(geo.dist, active.bray.curtis, geo.dist, all.bray.curtis)
 ```
 
 ### 2.) Species- or taxa- area relationship (SAR)
@@ -347,26 +348,26 @@ Let's load and process the phylogenetic data:
 
 ```{r}
 # Import the Alignment File {seqinr}
-ponds.cons <- read.alignment(file = "./Mothur/INPonds.bac.final.0.05.fasta", 
+ponds.cons <- read.alignment(file = "./Mothur/INPonds.bac.final.0.03.fasta", 
                              format = "fasta")  
 
 # Rename OTUs in the FASTA File
 ponds.cons$nam <- gsub("\\|.*$", "", gsub("^.*?\t", "", ponds.cons$nam))
 
 # Import the Outgroup FASTA File {seqinr}
-outgroup <- read.alignment(file = "./DATA/EnvData/methanosarcina.fasta", format = "fasta")
+outgroup <- read.alignment(file = "./DATA/Methanosarcina_align.fasta", format = "fasta")
 
 # Convert Alignment File to DNAbin Object {ape}
 DNAbin <- rbind(as.DNAbin(outgroup), as.DNAbin(ponds.cons))
 
 # Visusalize Sequence Alignment {ape}
-image.DNAbin(DNAbin, show.labels=T, cex.lab = 0.05, las = 1) 
+#image.DNAbin(DNAbin, show.labels=T, cex.lab = 0.05, las = 1) 
 
 # Create Distance Matrix with the Jukes Cantor "JC" Model {ape}
 seq.dist.jc <- dist.dna(DNAbin, model = "JC", pairwise.deletion = FALSE)
 
 # Use Neighbor Joining Algorithm to Construct a Full Tree (DNA and RNA sequences) {ape}
-phy.all <- bionj(seq.dist.jc)
+phy.all <- bionjs(seq.dist.jc)
 
 # Drop Tips of Zero-Occurrence OTUs (Removes Taxa Only Found via RNA Sequencing) {ape}
 phy <- drop.tip(phy.all, phy.all$tip.label[!phy.all$tip.label %in% 
