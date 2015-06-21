@@ -367,7 +367,7 @@ DNAbin <- rbind(as.DNAbin(outgroup), as.DNAbin(ponds.cons))
 seq.dist.jc <- dist.dna(DNAbin, model = "JC", pairwise.deletion = FALSE)
 
 # Use Neighbor Joining Algorithm to Construct a Full Tree (DNA and RNA sequences) {ape}
-phy.all <- bionjs(seq.dist.jc)
+phy.all <- bionj(seq.dist.jc)
 
 # Drop Tips of Zero-Occurrence OTUs (Removes Taxa Only Found via RNA Sequencing) {ape}
 phy <- drop.tip(phy.all, phy.all$tip.label[!phy.all$tip.label %in% 
