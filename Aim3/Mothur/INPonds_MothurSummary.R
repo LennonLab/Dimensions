@@ -44,7 +44,7 @@ shared <- "./INPonds.bac.final.shared"
 
 # Import Shared Files
 Pond97 <- read.otu(shared = shared, cutoff = "0.03")         # 97% Similarity
-#Pond95 <- read.otu(shared = shared, cutoff = "0.05")         # 95% Similarity
+Pond95 <- read.otu(shared = shared, cutoff = "0.05")         # 95% Similarity
 
 # Remove OTUs with less than two occurances across all sites
 Pond97 <- Pond97[, which(colSums(Pond97) >= 2)]
