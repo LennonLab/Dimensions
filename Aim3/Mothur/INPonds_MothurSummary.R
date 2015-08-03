@@ -37,13 +37,14 @@ se <- function(x, ...){sd(x, ...)/sqrt(length(na.omit(x)))}
 # Design = general design file for experiment
 # shared = OTU table from mothur with sequence similarity clustering
 design <- ""
-shared <- "./INPonds.final.shared"
+shared <- "./INPonds.bac.final.shared"
 
 # Import Design
-design <- read.delim(design, header=T, row.names=1)
+# design <- read.delim(design, header=T, row.names=1)
 
 # Import Shared Files
 Pond97 <- read.otu(shared = shared, cutoff = "0.03")         # 97% Similarity
+Pond95 <- read.otu(shared = shared, cutoff = "0.05")         # 95% Similarity
 
 # Remove OTUs with less than two occurances across all sites
 Pond97 <- Pond97[, which(colSums(Pond97) >= 2)]
@@ -55,7 +56,7 @@ summary(coverage)
 # Make Presence Absence Matrices
 PondsPA <- (Pond97 > 0) * 1
 
-#rich <- rowSums(PondsPA)
+rich <- rowSums(PondsPA)
 summary(rich)
 
 # Make Relative Abundence Matrices
