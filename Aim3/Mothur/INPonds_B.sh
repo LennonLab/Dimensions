@@ -5,6 +5,6 @@
 #PBS -m abe
 #PBS -j oe
 module load gcc
-module load mothur/1.32.1
+PATH=$PATH:/N/dc2/projects/Lennon_Sequences/mothur/mothur-1.35.1/source
 cd /N/dc2/projects/Lennon_Sequences/2015_INPonds
 mothur INPonds_B.batch
