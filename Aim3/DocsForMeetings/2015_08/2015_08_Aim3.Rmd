@@ -222,107 +222,16 @@ abline(DD.active.sorensen , col = "red4")
 ```
 
 ## Are the slopes of the DD's different?
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-diffslope(geo.dist, active.bray.curtis, geo.dist, all.bray.curtis)
-diffslope(geo.dist, active.sorensen, geo.dist, all.sorensen)
-```
+#```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+#diffslope(geo.dist, active.bray.curtis, geo.dist, all.bray.curtis)
+#diffslope(geo.dist, active.sorensen, geo.dist, all.sorensen)
+#```
 
 ### 2.) Species- or taxa- area relationship (SAR)
 The species-area relationshp describes the rate at which species are discovred with increasing area. 
 The SAR one of ecology's oldest and most intensively studied patterns.
 Arrhenius (1921) first described the general form of the *species-area relationship (SAR)* as a power-law: $S = cA^{z}$ where S is species richnness and A is area.
 Arrhenius's formula predicts a rate of increase in richness that is approximately linear in log-log space. That is, $log(S) = c + zlog(A)$, where z is the scaling exponent.
-
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-# A function to generate the species-area relationship by
-# Random Accumulating Sites
-
-SAR.rand.accum <- function(com){
-  Alist <- c()
-  Slist <- c()
-  
-  num.ponds <- c(1,2,4,6,8,12,16,24,32,42,51)
-  for (i in num.ponds) {   
-    areas <- c() # hold iterated area values 
-    Ss <- c() # hold iterated S values
-    
-    for(j in 1:5){
-      pond.sample <- sample(51, replace = FALSE, size = i) 
-      area <- 0
-      cum.abs <- vector(length = length(com[1, ]))
-  
-      for (k in pond.sample) { # Loop through each randomly drawn pond
-        area <- area + pond.areas[k] # aggregating area
-        cum.abs <- cum.abs + com[k, ]
-        } # End random pond samples loop
-      
-      Ss <- c(Ss, length(cum.abs[cum.abs > 0]))
-      areas <- c(areas, area)
-      }
-    
-    Alist <- rbind(Alist, mean(areas))
-    Slist <- rbind(Slist, mean(Ss))
-    #print(c(mean(areas), mean(Ss)))
-    }
-  
-  return(cbind(log10(Alist), log10(Slist)))
-  }
-
-```
-
-
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=7}
-# A function to generate the species-area relationship by
-# accumulating area according to distance
-
-SAR.accum.dist <- function(com){
-  Alist <- c()
-  Slist <- c()
-  num.ponds <- c(1,2,4,6,8,12,16,24,32,42,51)
-  
-  for (i in num.ponds) {   
-    areas <- c() # hold iterated area values 
-    Ss <- c() # hold iterated S values
-    
-    for(j in 1:5){
-      pondID <- sample(51, size = 1)
-      Area <- as.numeric(pond.areas[pondID]) # aggregating area
-      cum.abs <- com[pondID, ]
-      used <- c()
-      
-      for (k in 2:i) { # Loop through ponds
-        sdata <- subset(coord.dist.ls, FALSE == is.element(NBX, used) & FALSE == is.element(NBY, used))
-        sdata <- subset(sdata, NBX == pondID | NBY == pondID)
-        sdata <- subset(sdata, geo.dist == min(sdata[, 3]))
-            
-        if (dim(sdata)[1] > 1) {
-          x <- sample(dim(sdata)[1], size=1)
-          sdata <- sdata[x,]
-          }
-            
-        sdata <- t(as.matrix(as.numeric(as.matrix(sdata))))
-        used <- c(used, as.integer(pondID))
-        Area <- Area + as.numeric(pond.areas[pondID]) # aggregating area
-        cum.abs <- cum.abs + com[pondID, ]
-            
-        if (sdata[1] - pondID == 0) {
-          pondID <- sdata[2]
-        } else {
-          pondID <- sdata[1]
-        }
-      }
-      Ss <- c(Ss, length(cum.abs[cum.abs > 0]))
-      areas <- c(areas, Area)
-    }
-    # End random pond samples loop  
-    Alist <- rbind(Alist, mean(areas))
-    Slist <- rbind(Slist, mean(Ss))
-    #print(c(mean(areas), mean(Ss)))
-  }
-  return(cbind(log10(Alist), log10(Slist)))
-}
-```
-
 
 # RESULTS: Taxa-area relationship
 
@@ -331,7 +240,8 @@ plot.new()
 par(mfrow=c(1, 1))
 pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
 
-sar <- SAR.accum.dist(all.comm)
+source("~/GitHub/Dimensions/Aim3/bin/SAR.R")
+sar <- SAR.accum.dist(all.comm, coord.dist.ls$geo.dist)
 sar <- as.data.frame(sar)
 plot(sar, xlab = "log(Area)", ylab = "log(Richness)",
   main = "Taxa-Area Relationship
@@ -343,7 +253,7 @@ slope <- round(coefficients(OLS)[2], 3)
   legend("bottomright", legend = paste("slope(All) =", slope),
          bty = "n", lw = 2, col = "SteelBlue")
 
-sar <- SAR.accum.dist(active.comm)
+sar <- SAR.accum.dist(active.comm, coord.dist.ls$geo.dist)
 sar <- as.data.frame(sar)
 points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
   main = "Species-Area Relationship (Active)", col = "red")
@@ -379,23 +289,4 @@ slope <- round(coefficients(OLS)[2], 3)
   legend("topleft", legend = paste("slope(Active) =", slope), 
          bty = "n", lw = 2, col = "red")
 ```
-
-
-## Live-Dead Demographic
-
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=4, fig.height=4}
-plot.new()
-fc.data <- read.csv(file = "~/GitHub/Dimensions/Aim3/DATA/FlowCytometryData/20150621_INPondsFlowData-Prelim.csv")
-
-# Kernel Density Plot
-kdens.total <- density(fc.data$total) # returns the density data 
-kdens.live <- density(fc.data$live)
-kdens.dead <- density(fc.data$dead)
-
-plot(ld, xlab = 'Cell density', main = 'Flow Cytometry cell counts', ylab = 'probability density', col ='darkred') # plots the results
-lines(dd, col='SteelBlue')
-lines(td, col='grey')
-legend("topright", legend = c("Live\n", "Dead\n", "Total\n"), bty = "n", lw = 4, col = c("darkred", "SteelBlue", "grey"), xjust=1, yjust=1)
-```
-
 
