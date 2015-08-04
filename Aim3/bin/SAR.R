@@ -11,7 +11,7 @@
 #                                                                              #
 ################################################################################
 
-iterations = 10
+iterations = 100
 
 # A function to generate the species-area relationship by
 # accumulating area according to distance

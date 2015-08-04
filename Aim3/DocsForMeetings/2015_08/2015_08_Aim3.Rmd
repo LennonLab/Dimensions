@@ -1,7 +1,7 @@
 ---
 title: "The geographical ecology of pond bacteria"
 geometry: margin=2.54cm
-date: "April 21, 2015"
+date: "August 4, 2015"
 output: pdf_document
 header-includes: \usepackage{array}
 ---
@@ -42,7 +42,7 @@ load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ```
 
 ## Overview
-We explored primary geographical patterns: the taxa-area relationship (TAR), the phylogenetic diversity-area relationship, and the distance-decay relationship in taxonomic and phylogenetic community similarity.
+We asked whether "Active" and "All" differ in primary aspects of alpha-diversity, beta-diversity, and geographical patterns: the taxa-area relationship (TAR), the distance-decay relationship in taxonomic and phylogenetic community similarity.
 
 ## Study area
 We analyzed environmental and bacterial community data from a survey of shallow ponds found east of Bloomington, IN.
