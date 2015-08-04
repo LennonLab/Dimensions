@@ -163,8 +163,6 @@ df <- data.frame(coord.dist.ls, active.bray.curtis.dist.ls[, 3], all.bray.curtis
           
 names(df)[4:7] <- c("active.bray.curtis", "all.bray.curtis", "active.sorensen", "all.sorensen")
 attach(df)
-
-# Now, let's plot the DD relationships:
 ```
 
 
