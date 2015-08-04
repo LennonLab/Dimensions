@@ -1,0 +1,71 @@
+---
+title: "Long-term dormancy - proportion active"
+author: "Jay T. Lennon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+   - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+Estimating distribution of activity among samples at end of experiment
+
+```{r}
+rm(list=ls())
+getwd()
+setwd("/Users/lennonj/GitHub/Dimensions/Aim1/DeathCurves")
+```
+
+```{r}
+require("png")
+```
+
+## Load Daata
+
+```{r}
+stain <- read.csv("staining.txt", head = TRUE, sep = "\t")
+```
+
+Plot biofilm data
+```{r}
+# Set-up for printing 
+png(filename="/Users/lennonj/GitHub/Dimensions/Aim1/DeathCurves/stain.kernel.png",
+    width = 1200, height = 1200, res = 96*2)
+
+# Set plotting parameters
+
+kern.act <- density(stain$Active, bw = 0.1) 
+kern.dead <- density(stain$Dead, bw = 0.1)
+kern.dorm <- density(stain$Dormant, bw = 0.1)
+
+plot.new()
+par(mar = c(7, 7, 5, 7))
+plot(kern.act, main = NA, xaxt = "n", yaxt = "n", cex.lab = 1.5, ylab = "",
+     xlab = "", xlim = c(-0.1, 1.1), ylim = c(0, 4.5), type = "l", lwd = 3, col = "red")
+
+points(kern.dead, type = "l", lwd = 3, col = "darkgreen")
+points(kern.dorm, type = "l", lwd = 3, col = "blue")
+
+mtext('Density', side = 2, outer = TRUE, cex = 2.25, 
+      line = -3, adj = 0.55)
+
+mtext(expression('Metabolic Status (%)'), side = 1, outer = TRUE, 
+      cex = 2.25, line = -3, adj = 0.5)
+    
+     axis(side = 1, lwd.ticks = 2.25, cex.axis = 2, las = 1,
+        at = c(0, 0.50, 1.0), labels = T)
+
+     axis(side = 3, lwd.ticks = 2.25, cex.axis = 2, las = 1,
+        at = c(0, 0.50, 1.0), labels = F)
+
+     axis(side = 2, lwd.ticks = 2.25, cex.axis = 2, las = 1,
+        at = c(0, 2, 4), labels = T)
+
+    axis(side = 4, lwd.ticks = 2.25, cex.axis = 2, las = 1,
+        at = c(0, 2, 4), labels = F)
+
+box(lwd = 2.25)
+
+dev.off() # this writes plot to folder
+graphics.off() # shuts down open devices
+```
