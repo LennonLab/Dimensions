@@ -1,20 +1,11 @@
 ################################################################################
 #                                                                              #
 # Functions for generating species-area relationships                          #
-#                                                                              #
-################################################################################
-#                                                                              #
 # Written by: Ken Locey                                                        #
-#                                                                              #
-#                                                                              #
-################################################################################
 #                                                                              #
 # Notes: This code provides functions to construct species-area relationship   #
 #                                                                              #
-#                                                                              #
-# Recent Changes:                                                              #
-#                                                                              #
-# Future Changes (To-Do List):                                                 #
+# To-Do List:                                                                  #
 #         1.                                                                   #
 #         2. Add warnings                                                      #
 #                                                                              #
@@ -28,20 +19,19 @@ iterations = 10
 SAR.accum.dist <- function(com, geo.dist){
   Alist <- c()
   Slist <- c()
-  num.ponds <- c(1, 2, 4, 6, 8, 12, 16, 24, 32, 42, 51)
+  num.ponds <- c(1, 2, 4, 6, 8, 12, 16, 24, 32, 42, 48)
   
   for (i in num.ponds) {   
     areas <- c() # hold iterated area values 
     Ss <- c() # hold iterated S values
     
-    for(j in 1:iterations){
+    for(j in 2:iterations){
       pondID <- sample(51, size = 1)
-      
-      while(pondID == 29 | pondID == 31){
-        pondID <- sample(51, size = 1)
+      while(pondID == 29 | pondID == 31){ 
+        pondID <- sample(51, size = 1) 
       }
       
-      Area <- as.numeric(pond.areas[pondID]) # aggregating area
+      area <- as.numeric(pond.areas[pondID]) # aggregating area
       cum.abs <- com[pondID, ]
       used <- c()
       
@@ -58,9 +48,10 @@ SAR.accum.dist <- function(com, geo.dist){
         
         sdata <- t(as.matrix(as.numeric(as.matrix(sdata))))
         used <- c(used, as.integer(pondID))
-        Area <- Area + as.numeric(pond.areas[pondID]) # aggregating area
+        area <- area + as.numeric(pond.areas[pondID]) # aggregating area
         cum.abs <- cum.abs + com[pondID, ]
         
+        # update pondID to find next nearest neighbor
         if (sdata[1] == pondID) {
           pondID <- sdata[2]
         } else {
@@ -69,7 +60,7 @@ SAR.accum.dist <- function(com, geo.dist){
         
       }
       Ss <- c(Ss, length(cum.abs[cum.abs > 0]))
-      areas <- c(areas, Area)
+      areas <- c(areas, area)
     }
     # End random pond samples loop  
     Alist <- rbind(Alist, mean(areas))
@@ -78,6 +69,7 @@ SAR.accum.dist <- function(com, geo.dist){
   }
   
   return(cbind(log10(Alist), log10(Slist)))
+  #return(cbind(Alist, Slist))
 }
 
 
@@ -88,12 +80,12 @@ SAR.rand.accum <- function(com){
   Alist <- c()
   Slist <- c()
   
-  num.ponds <- c(1, 2, 4, 6, 8, 12, 16, 24, 32, 42, 51)
+  num.ponds <- c(1, 2, 4, 6, 8, 12, 16, 24, 32, 42, 48)
   for (i in num.ponds) {   
     areas <- c() # hold iterated area values 
     Ss <- c() # hold iterated S values
     
-    for(j in 1:iterations){
+    for(j in 2:iterations){
       pond.sample <- sample(51, replace = FALSE, size = i)
       pond.sample <- pond.sample[pond.sample != 29]
       pond.sample <- pond.sample[pond.sample != 31]
@@ -116,4 +108,5 @@ SAR.rand.accum <- function(com){
   }
   
   return(cbind(log10(Alist), log10(Slist)))
+  #return(cbind(Alist, Slist))
 }
