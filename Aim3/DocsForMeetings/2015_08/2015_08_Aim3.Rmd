@@ -31,8 +31,10 @@ require("reshape")
 ```
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-# We used a source code file that includes a function for reading in the output files from the popular community sequencing software `mothur` (http://www.mothur.org/).
+# We used a source code file that includes a function for reading in output files from community sequencing software `mothur` (http://www.mothur.org/).
 source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
+# We also generated code for constructing species-area relationships by aggregating sites at random, with or without respect to distance
+source("~/GitHub/Dimensions/Aim3/bin/SAR.R")
 load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ```
 
@@ -45,6 +47,10 @@ These ponds were constructed in the 1940s as wildlife refuge ponds, and are scat
 In the summer of 2013, we visited approximately 50 of these ponds and recorded their geographic locations.
 We sampled aspects of water chemistry, physical properties, and bacterial community composition.
 
+## Environmental data
+We measured 19 environmental and geographic variables.
+These included elevation (m), geographical coordinates (lat-long; data: WGS84), temperature (C), Diameter(m), Depth(m), redox potential (ORP), specific conductivity or SpC (uS/cm), dissolved Oxygen (mg/L), total dissolved solids (g/L), salinity (p.s.u.=ppm), color - measured at absorbance = 660; an estimate of carbon in the water sample, chlorophyll a (ug/ml), dissolved organic carbon (mg/L), dissolved organic nitrogen (mg/L), and total phosphorus (ug/L).
+
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load Environmental and Geographical Data
 env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
@@ -52,9 +58,6 @@ lats <- as.numeric(env[, 3]) # latitudes (north and south)
 lons <- as.numeric(env[, 4]) # longitudes (east and west)
 ```
 
-## Environmental data
-We measured 19 environmental and geographic variables.
-These included elevation (m), geographical coordinates (lat-long; data: WGS84), temperature (C), Diameter(m), Depth(m), redox potential (ORP), specific conductivity or SpC (uS/cm), dissolved Oxygen (mg/L), total dissolved solids (g/L), salinity (p.s.u.=ppm), color - measured at absorbance = 660; an estimate of carbon in the water sample, chlorophyll a (ug/ml), dissolved organic carbon (mg/L), dissolved organic nitrogen (mg/L), and total phosphorus (ug/L).
 
 ## Microbial community data
 In addition to measuring a suite of geographic and environmental variables, we characterized the diversity of bacteria in the ponds using molecular-based approaches.
@@ -89,10 +92,6 @@ all.comm <- all.comm[ , colSums(all.comm) > 0]
 tax <- read.tax(taxonomy = "~/GitHub/Dimensions/Aim3/Mothur/INPonds.bac.final.0.03.taxonomy")
 ```
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-#### A function to generate observed richness
-S.obs <- function(x = ""){ rowSums(x > 0) * 1}
-```
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 #### For each site:
@@ -238,7 +237,6 @@ plot.new()
 par(mfrow=c(1, 1))
 pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
 
-source("~/GitHub/Dimensions/Aim3/bin/SAR.R")
 sar <- SAR.accum.dist(all.comm, coord.dist.ls$geo.dist)
 sar <- as.data.frame(sar)
 plot(sar, xlab = "log(Area)", ylab = "log(Richness)",
