@@ -11,12 +11,10 @@
 #                                                                              #
 ################################################################################
 
-iterations = 100
-
 # A function to generate the species-area relationship by
 # accumulating area according to distance
 
-SAR.accum.dist <- function(com, geo.dist){
+SAR.accum.dist <- function(com, geo.dist, iterations){
   Alist <- c()
   Slist <- c()
   num.ponds <- c(1, 2, 4, 6, 8, 12, 16, 24, 32, 42, 48)
@@ -76,7 +74,7 @@ SAR.accum.dist <- function(com, geo.dist){
 # A function to generate the species-area relationship by
 # Random Accumulating Sites
 
-SAR.rand.accum <- function(com){
+SAR.rand.accum <- function(com, iterations){
   Alist <- c()
   Slist <- c()
   
