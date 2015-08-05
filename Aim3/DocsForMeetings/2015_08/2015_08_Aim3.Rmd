@@ -44,16 +44,6 @@ load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ## Overview
 We asked whether "Active" and "All" differ in primary aspects of alpha-diversity, beta-diversity, and geographical patterns: the taxa-area relationship (TAR), the distance-decay relationship in taxonomic and phylogenetic community similarity.
 
-## Study area
-We analyzed environmental and bacterial community data from a survey of shallow ponds found east of Bloomington, IN.
-These ponds were constructed in the 1940s as wildlife refuge ponds, and are scattered throughout Brown County State Park, Yellowood State Forest, and Hoosier National Forest.
-In the summer of 2013, we visited approximately 50 of these ponds and recorded their geographic locations.
-We sampled aspects of water chemistry, physical properties, and bacterial community composition.
-
-## Environmental data
-We measured 19 environmental and geographic variables.
-These included elevation (m), geographical coordinates (lat-long; data: WGS84), temperature (C), Diameter(m), Depth(m), redox potential (ORP), specific conductivity or SpC (uS/cm), dissolved Oxygen (mg/L), total dissolved solids (g/L), salinity (p.s.u.=ppm), color - measured at absorbance = 660; an estimate of carbon in the water sample, chlorophyll a (ug/ml), dissolved organic carbon (mg/L), dissolved organic nitrogen (mg/L), and total phosphorus (ug/L).
-
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load Environmental and Geographical Data
 env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
@@ -68,11 +58,6 @@ coord.dist[which(!is.finite(coord.dist))] = NA
 coord.dist.ls <- liste(coord.dist, entry = "geo.dist")
 ```
 
-
-## Microbial community data
-In addition to measuring a suite of geographic and environmental variables, we characterized the diversity of bacteria in the ponds using molecular-based approaches.
-Specifically, we amplified the 16S rRNA gene (i.e., "DNA") and 16S rRNA transcripts (i.e., "RNA") of bacteria using barcoded primers on the Illumina MiSeq platform.
-We then used a `mothur` pipeline to quality-trim our data set and assign sequences to operational taxonomic units (OTU).
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
@@ -103,7 +88,7 @@ tax <- read.tax(taxonomy = "~/GitHub/Dimensions/Aim3/Mothur/INPonds.bac.final.0.
 ## 1.) No differences in distributions of observed N, S, Diversity, and Evenness
 For each pond, we used the observed taxonomic richness (S), total number of gene reads (N), and number of gene reads per OTU (Ni) to estimate Shannon's diversity index (H), and Simpson's evenness (D/S).
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=5, fig.height=5}
 plot.new()
 par(mfrow=c(2, 2), mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
 
@@ -150,16 +135,17 @@ Arrhenius (1921) first described the general form of the *species-area relations
 Arrhenius's formula predicts a rate of increase in richness that is approximately linear in log-log space. That is, $log(S) = c + zlog(A)$, where z is the scaling exponent.
 
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=4, fig.height=8}
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=4}
 #Taxa-area relationship, accumulating ponds by nearest-neighbor
 
+iterations = 10
 plot.new()
-par(mfrow=c(2, 1))
+par(mfrow=c(1, 2))
 pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
 
 source("~/GitHub/Dimensions/Aim3/bin/SAR.R")
 
-sar <- SAR.accum.dist(all.comm, coord.dist.ls$geo.dist)
+sar <- SAR.accum.dist(all.comm, coord.dist.ls$geo.dist, iterations)
 sar <- as.data.frame(sar)
 plot(sar, xlab = "log(Area)", ylab = "log(Richness)",
   main = "Taxa-Area Relationship
@@ -171,7 +157,7 @@ slope <- round(coefficients(OLS)[2], 3)
   legend("topleft", legend = paste("slope(All) =", slope),
          bty = "n", lw = 2, col = "SteelBlue")
 
-sar <- SAR.accum.dist(active.comm, coord.dist.ls$geo.dist)
+sar <- SAR.accum.dist(active.comm, coord.dist.ls$geo.dist, iterations)
 sar <- as.data.frame(sar)
 points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
   main = "Species-Area Relationship (Active)", col = "red")
@@ -183,9 +169,8 @@ slope <- round(coefficients(OLS)[2], 3)
          bty = "n", lw = 2, col = "red")
 
 
-
 #Taxa-area relationship, accumulating ponds at random
-sar <- SAR.rand.accum(all.comm)
+sar <- SAR.rand.accum(all.comm, iterations)
 sar <- as.data.frame(sar)
 plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
   main = "Taxa-Area Relationship
@@ -197,7 +182,7 @@ slope <- round(coefficients(OLS)[2], 3)
   legend("topleft", legend = paste("slope(All) =", slope), 
          bty = "n", lw = 2, col = "SteelBlue")
 
-sar <- SAR.rand.accum(active.comm)
+sar <- SAR.rand.accum(active.comm, iterations)
 sar <- as.data.frame(sar)
 points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
   main = "Species-Area Relationship (Active)", col = "red")
@@ -213,7 +198,6 @@ slope <- round(coefficients(OLS)[2], 3)
 ## 3.) Slight differences in distance-decay relationships
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-#plot.new()
 # Geographic Distances (Kilometers) Among Ponds
 long.lat <- as.matrix(cbind(env$long, env$lat))
 coord.dist <- earth.dist(long.lat, dist = TRUE)
@@ -372,4 +356,55 @@ p4 <- levelplot(as.matrix(all.BrayCurtis)[, order], aspect = "iso",
           main = "Bray-Curtis (all)")
 
 grid.arrange(p1, p2, p3, p4, ncol=2, nrow=2)
+```
+
+
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=4}
+# Set Initial Plot Parameters
+par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
+
+# Perform Cluster Analysis
+active.BC.ward <- hclust(active.BrayCurtis, method = "ward.D2")
+
+# Plot Cluster
+plot(active.BC.ward, main = "IN Ponds: Ward's Clustering", 
+     ylab = "Squared Bray-Curtis Distance")
+```
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=5}
+# Set Initial Plot Parameters
+par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
+
+# Perform Cluster Analysis
+all.BC.ward <- hclust(all.BrayCurtis, method = "ward.D2")
+
+# Plot Cluster
+plot(all.BC.ward, main = "IN Ponds: Ward's Clustering", 
+     ylab = "Squared Bray-Curtis Distance")
+```
+
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=8}
+
+all.comm.dom <- log10(all.comm[, 1:10]+1)
+ac.comm.dom <- log10(active.comm[, 1:10]+1)
+
+# Set Initial Plot Parameters
+par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
+
+require(gplots)
+heatmap.2(as.matrix(all.comm.dom), distfun = function(x) vegdist(x, method = "bray"),
+          hclustfun = function(x) hclust(x, method = "ward.D2"), 
+          col = jet.colors(100), trace = "none", density.info = "none",
+          main='10 most dominant (All)')
+```
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=8}
+# Set Initial Plot Parameters
+par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
+heatmap.2(as.matrix(ac.comm.dom), distfun = function(x) vegdist(x, method = "bray"),
+          hclustfun = function(x) hclust(x, method = "ward.D2"), 
+          col = jet.colors(100), trace = "none", density.info = "none",
+          main='10 most dominant (Active)')
 ```
