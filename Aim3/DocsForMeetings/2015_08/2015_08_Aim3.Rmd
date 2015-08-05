@@ -359,6 +359,7 @@ grid.arrange(p1, p2, p3, p4, ncol=2, nrow=2)
 ```
 
 
+## 5.) Cluster analysis reveals greater clustering among Active. Note the tight cluster of primarily HNF sites on the left side of Active.
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=4}
 # Set Initial Plot Parameters
@@ -385,6 +386,9 @@ plot(all.BC.ward, main = "IN Ponds: Ward's Clustering",
 ```
 
 
+## 6.) Heat-mapping cluster analysis among dominant OTUs reveals that dominance in abundance does not reflect dominance in activity. Colormap represents log-transformed numbers of reads.
+
+
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=8}
 
 all.comm.dom <- log10(all.comm[, 1:10]+1)
@@ -401,6 +405,7 @@ heatmap.2(as.matrix(all.comm.dom), distfun = function(x) vegdist(x, method = "br
 ```
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=8}
+
 # Set Initial Plot Parameters
 par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
 heatmap.2(as.matrix(ac.comm.dom), distfun = function(x) vegdist(x, method = "bray"),
