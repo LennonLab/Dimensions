@@ -103,7 +103,7 @@ for(i in 1:length(strains)){
 			summ[counter,5]=round(2*logLinCur$value+2*length(logLinCur$par),2)
 			summ[counter,6:8]=logQuadCur$par[1:3]
 			summ[counter,9]=round(2*logQuadCur$value+2*length(logQuadCur$par),2)
-```
+
 		
 			# run likelihood ratio test to compare the linear and quadratic model; store p-value in summ
 			summ[counter,10]=pchisq((2*logLinCur$value-2*logQuadCur$value),df=1,lower.tail=FALSE)
