@@ -1,0 +1,401 @@
+---
+title: "The geographical ecology of pond bacteria"
+geometry: margin=2.54cm
+date: "April 21, 2015"
+output: pdf_document
+header-includes: \usepackage{array}
+---
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Retrieve and set the working directory
+rm(list=ls())
+getwd()
+setwd("~/GitHub/Dimensions/Aim3")
+```
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Load Packages 
+require("sp")          # Classes and methods for handling spatial data
+require("geoR")        # Methods for geostatistical analyses
+require("rgdal")       # Geospatial Data Abstraction Library
+require("raster")      # Methods to create a RasterLayer object
+require("maptools")    # Tools for manipulating and reading geospatial data
+
+require("picante")
+require("ape")
+require("seqinr")
+require("vegan") # biodiversity estimators and related functions
+require("fossil")
+require("simba")
+require("reshape")
+```
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# We used a source code file that includes a function for reading in the output files from the popular community sequencing software `mothur` (http://www.mothur.org/).
+source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
+load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
+```
+
+## Overview
+We explored primary geographical patterns: the taxa-area relationship (TAR), the phylogenetic diversity-area relationship, and the distance-decay relationship in taxonomic and phylogenetic community similarity.
+
+## Study area
+We analyzed environmental and bacterial community data from a survey of shallow ponds found east of Bloomington, IN.
+These ponds were constructed in the 1940s as wildlife refuge ponds, and are scattered throughout Brown County State Park, Yellowood State Forest, and Hoosier National Forest.
+In the summer of 2013, we visited approximately 50 of these ponds and recorded their geographic locations.
+We sampled aspects of water chemistry, physical properties, and bacterial community composition.
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Load Environmental and Geographical Data
+env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
+lats <- as.numeric(env[, 3]) # latitudes (north and south)
+lons <- as.numeric(env[, 4]) # longitudes (east and west)
+```
+
+## Environmental data
+We measured 19 environmental and geographic variables.
+These included elevation (m), geographical coordinates (lat-long; data: WGS84), temperature (C), Diameter(m), Depth(m), redox potential (ORP), specific conductivity or SpC (uS/cm), dissolved Oxygen (mg/L), total dissolved solids (g/L), salinity (p.s.u.=ppm), color - measured at absorbance = 660; an estimate of carbon in the water sample, chlorophyll a (ug/ml), dissolved organic carbon (mg/L), dissolved organic nitrogen (mg/L), and total phosphorus (ug/L).
+
+## Microbial community data
+In addition to measuring a suite of geographic and environmental variables, we characterized the diversity of bacteria in the ponds using molecular-based approaches.
+Specifically, we amplified the 16S rRNA gene (i.e., "DNA") and 16S rRNA transcripts (i.e., "RNA") of bacteria using barcoded primers on the Illumina MiSeq platform.
+We then used a `mothur` pipeline to quality-trim our data set and assign sequences to operational taxonomic units (OTU).
+
+For each pond, we used the observed taxonomic richness (S), total number of gene reads (N), and number of gene reads per OTU (Ni) to estimate Shannon's diversity index (H), and Simpson's evenness (D/S). 
+We should estimate a handful of diversity and evenness metrics, as well conduct richness estimation for each site (Chao1, ACE, rarefaction, jacknife).
+These will provide basic diversity-related variables to explore with respect to geograpy and environmental conditions.
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
+# The active portion, based on cDNA 
+active.comm <- Pond97[grep("*-cDNA", rownames(Pond97)), ]
+rownames(active.comm) <- gsub("\\-cDNA", "", rownames(active.comm))
+rownames(active.comm) <- gsub("\\_", "", rownames(active.comm))
+
+# The community without respect to active or not, 16S rRNA gene sequences
+all.comm <- Pond97[grep("*-DNA", rownames(Pond97)), ]
+rownames(all.comm) <- gsub("\\-DNA", "", rownames(all.comm))
+rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
+
+# Remove Sites Not in the Environmental Data Set
+active.comm <- active.comm[rownames(active.comm)  %in% env$Sample_ID, ]
+all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
+
+# Remove Zero-Occurrence Taxa 
+active.comm <- active.comm[ , colSums(active.comm) > 0]
+all.comm <- all.comm[ , colSums(all.comm) > 0]
+
+# Import Taxonomy Data Using `read.tax()` from Source Code
+tax <- read.tax(taxonomy = "~/GitHub/Dimensions/Aim3/Mothur/INPonds.bac.final.0.03.taxonomy")
+```
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+#### A function to generate observed richness
+S.obs <- function(x = ""){ rowSums(x > 0) * 1}
+```
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+#### For each site:
+# N equals numbers of reads
+env$active.N <- as.vector(rowSums(active.comm)) 
+env$all.N <- as.vector(rowSums(all.comm))
+
+# S equals the number of non-zero abundances
+env$active.S <- S.obs(active.comm)
+env$all.S <- S.obs(all.comm)
+
+# Diversity is Shannon's
+env$active.H <- as.vector(diversity(active.comm, index = "shannon"))
+env$all.H <- as.vector(diversity(all.comm, index = "shannon"))
+
+# Evenness is Simpsons; divide Simpson's Diversity by S
+env$active.De <- as.vector(diversity(active.comm, index = "invsimpson")/env$active.S)
+env$all.De <- as.vector(diversity(all.comm, index = "invsimpson")/env$all.S)
+```
+
+
+## Primary geographic patterns
+We examined three taxa-level geographic patterns: Distanct-decay (DD), Taxa-area relationship (TAR), and the specific spatial abundance distribution (SSAD).
+While the DD and TAR have been more or less frequently studied in microbial ecology and microbial biogeography, the SSAD has been mainly, if not entirely examined in studies of macroscopic plants and animals.
+
+### 1.) Distance Decay, taxonomic and phylogenetic
+**Tobler's first law of geography** states that "Everything is related to everything else, but near things are more related than distant things" (Tobler 1970).
+This law is a formulation of the concept of spatial autocorrelation.
+In short, spatial autocorrelation is the degree to which spatial variables are either clustered in space (positive autocorrelation) or over-dispersed (negative autocorrelation).
+
+The distance-decay relationship is a primary biogeographic pattern of spatial autocorrelation, and captures the rate of decreasing similarity with increasing distance. 
+This pattern addresses whether communities close to one another are more similar than communities that are farther away.
+The distance-decay pattern can also be used to address whether near environments have greater similarity than far ones.
+We looked at decay in both taxonomic level compositional similarity via bray-curtis (should also do for Sorensens) and phylogenetic distance via unifrac distance.
+
+
+# RESULTS: Distance-Decay
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+#plot.new()
+# Geographic Distances (Kilometers) Among Ponds
+long.lat <- as.matrix(cbind(env$long, env$lat))
+coord.dist <- earth.dist(long.lat, dist = TRUE)
+coord.dist <- log(coord.dist)
+coord.dist[which(!is.finite(coord.dist))] = NA
+coord.dist.ls <- liste(coord.dist, entry = "geo.dist")
+
+# Taxonomic Distances Among Ponds (Bray-Curits)
+active.bray.curtis.dist <- 1 - vegdist(active.comm, method="bray", binary=FALSE) 
+active.bray.curtis.dist <- log(active.bray.curtis.dist)
+all.bray.curtis.dist <- 1 - vegdist(all.comm, method="bray", binary=FALSE)
+all.bray.curtis.dist <- log(all.bray.curtis.dist)
+
+active.sorensen.dist <- 1 - vegdist(active.comm, method="bray", binary=TRUE) 
+active.sorensen.dist <- log(active.sorensen.dist)
+all.sorensen.dist <- 1 - vegdist(all.comm, method="bray", binary=TRUE)
+all.sorensen.dist <- log(all.sorensen.dist)
+
+
+# Transform All Distances Into List Format:
+active.bray.curtis.dist.ls <- liste(active.bray.curtis.dist, entry = "bray.curtis")
+all.bray.curtis.dist.ls <- liste(all.bray.curtis.dist, entry = "bray.curtis")
+active.sorensen.dist.ls <- liste(active.sorensen.dist, entry = "sorensen")
+all.sorensen.dist.ls <- liste(all.sorensen.dist, entry = "sorensen")
+
+# Create a Data Frame from the Lists of Distances
+df <- data.frame(coord.dist.ls, active.bray.curtis.dist.ls[, 3], all.bray.curtis.dist.ls[, 3], active.sorensen.dist.ls[, 3], all.sorensen.dist.ls[, 3])
+          
+names(df)[4:7] <- c("active.bray.curtis", "all.bray.curtis", "active.sorensen", "all.sorensen")
+attach(df)
+
+# Now, let's plot the DD relationships:
+```
+
+
+# Plot Taxonomic Distance-Decays
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=4, fig.height=4}
+# Set Initial Plot Parameters
+par(mfrow=c(2, 2), mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
+
+# Regression for active Bray Curtis
+DD.active.bray.curtis <- lm(active.bray.curtis.dist ~ geo.dist)
+summary(DD.active.bray.curtis, correlation = TRUE)
+
+# Regression for all Bray Curtis 
+DD.all.bray.curtis <- lm(all.bray.curtis.dist ~ geo.dist)
+coeff <- summary(DD.all.bray.curtis, correlation = TRUE)
+
+# Regression for active Sorensen
+DD.active.sorensen <- lm(active.sorensen.dist ~ geo.dist)
+summary(DD.active.sorensen, correlation = TRUE)
+
+# Regression for all Sorensen 
+DD.all.sorensen <- lm(all.sorensen.dist ~ geo.dist)
+summary(DD.all.sorensen, correlation = TRUE)
+
+# Make Plot for all Bray Curtis 
+slope <- round(coefficients(DD.all.bray.curtis)[2], 3)
+p <- round(summary(DD.all.bray.curtis)$coefficients[8], 3)
+plot(coord.dist, all.bray.curtis.dist, xaxt = "s", las = 1, ylab="log(similarity)", xlab="log(distance, km)", main = paste("Bray-Curtis, All\nslope=",slope," p = ",p), col = "SteelBlue")
+abline(DD.all.bray.curtis , col = "red4")
+
+
+# Make Plot for active Bray Curtis
+slope <- round(coefficients(DD.active.bray.curtis)[2], 3)
+p <- round(summary(DD.active.bray.curtis)$coefficients[8],3)
+plot(coord.dist, active.bray.curtis.dist, xaxt = "s", las = 1, ylab="log(similarity)", xlab="log(distance, km)", main = paste("Bray-Curtis, Active\nslope=",slope," p = ",p), col = "SteelBlue")
+abline(DD.active.bray.curtis , col = "red4")
+
+# Make Plot for all Sorensen
+slope <- round(coefficients(DD.all.sorensen)[2], 3)
+p <- round(summary(DD.all.sorensen)$coefficients[8],3)
+plot(coord.dist, all.sorensen.dist, xaxt = "s", las = 1, ylab="log(similarity)", xlab="log(distance, km)",
+     main = paste("Sorensen, All\nslope = ",slope," p = ",p), col = "SteelBlue")
+abline(DD.all.sorensen , col = "red4")
+
+# Make Plot for active Sorensen
+slope <- round(coefficients(DD.active.sorensen)[2], 3)
+p <- round(summary(DD.active.sorensen)$coefficients[8],3)
+plot(coord.dist, active.sorensen.dist, xaxt = "s", las = 1, ylab="log(similarity)", xlab="log(distance, km)", 
+     main = paste("Sorensen, Active\nslope=",slope," p = ",p), col = "SteelBlue")
+abline(DD.active.sorensen , col = "red4")
+
+# Add X-Axis Label to Plot
+#mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
+```
+
+## Are the slopes of the DD's different?
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+diffslope(geo.dist, active.bray.curtis, geo.dist, all.bray.curtis)
+diffslope(geo.dist, active.sorensen, geo.dist, all.sorensen)
+```
+
+### 2.) Species- or taxa- area relationship (SAR)
+The species-area relationshp describes the rate at which species are discovred with increasing area. 
+The SAR one of ecology's oldest and most intensively studied patterns.
+Arrhenius (1921) first described the general form of the *species-area relationship (SAR)* as a power-law: $S = cA^{z}$ where S is species richnness and A is area.
+Arrhenius's formula predicts a rate of increase in richness that is approximately linear in log-log space. That is, $log(S) = c + zlog(A)$, where z is the scaling exponent.
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# A function to generate the species-area relationship by
+# Random Accumulating Sites
+
+SAR.rand.accum <- function(com){
+  Alist <- c()
+  Slist <- c()
+  
+  num.ponds <- c(1,2,4,6,8,12,16,24,32,42,51)
+  for (i in num.ponds) {   
+    areas <- c() # hold iterated area values 
+    Ss <- c() # hold iterated S values
+    
+    for(j in 1:5){
+      pond.sample <- sample(51, replace = FALSE, size = i) 
+      area <- 0
+      cum.abs <- vector(length = length(com[1, ]))
+  
+      for (k in pond.sample) { # Loop through each randomly drawn pond
+        area <- area + pond.areas[k] # aggregating area
+        cum.abs <- cum.abs + com[k, ]
+        } # End random pond samples loop
+      
+      Ss <- c(Ss, length(cum.abs[cum.abs > 0]))
+      areas <- c(areas, area)
+      }
+    
+    Alist <- rbind(Alist, mean(areas))
+    Slist <- rbind(Slist, mean(Ss))
+    #print(c(mean(areas), mean(Ss)))
+    }
+  
+  return(cbind(log10(Alist), log10(Slist)))
+  }
+
+```
+
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=7}
+# A function to generate the species-area relationship by
+# accumulating area according to distance
+
+SAR.accum.dist <- function(com){
+  Alist <- c()
+  Slist <- c()
+  num.ponds <- c(1,2,4,6,8,12,16,24,32,42,51)
+  
+  for (i in num.ponds) {   
+    areas <- c() # hold iterated area values 
+    Ss <- c() # hold iterated S values
+    
+    for(j in 1:5){
+      pondID <- sample(51, size = 1)
+      Area <- as.numeric(pond.areas[pondID]) # aggregating area
+      cum.abs <- com[pondID, ]
+      used <- c()
+      
+      for (k in 2:i) { # Loop through ponds
+        sdata <- subset(coord.dist.ls, FALSE == is.element(NBX, used) & FALSE == is.element(NBY, used))
+        sdata <- subset(sdata, NBX == pondID | NBY == pondID)
+        sdata <- subset(sdata, geo.dist == min(sdata[, 3]))
+            
+        if (dim(sdata)[1] > 1) {
+          x <- sample(dim(sdata)[1], size=1)
+          sdata <- sdata[x,]
+          }
+            
+        sdata <- t(as.matrix(as.numeric(as.matrix(sdata))))
+        used <- c(used, as.integer(pondID))
+        Area <- Area + as.numeric(pond.areas[pondID]) # aggregating area
+        cum.abs <- cum.abs + com[pondID, ]
+            
+        if (sdata[1] - pondID == 0) {
+          pondID <- sdata[2]
+        } else {
+          pondID <- sdata[1]
+        }
+      }
+      Ss <- c(Ss, length(cum.abs[cum.abs > 0]))
+      areas <- c(areas, Area)
+    }
+    # End random pond samples loop  
+    Alist <- rbind(Alist, mean(areas))
+    Slist <- rbind(Slist, mean(Ss))
+    #print(c(mean(areas), mean(Ss)))
+  }
+  return(cbind(log10(Alist), log10(Slist)))
+}
+```
+
+
+# RESULTS: Taxa-area relationship
+
+```{r, echo=FALSE, message = FALSE, warning = FALSE}
+plot.new()
+par(mfrow=c(1, 1))
+pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
+
+sar <- SAR.accum.dist(all.comm)
+sar <- as.data.frame(sar)
+plot(sar, xlab = "log(Area)", ylab = "log(Richness)",
+  main = "Taxa-Area Relationship
+  aggregating area by distance", col = "SteelBlue")
+
+OLS <- lm(sar$V2 ~ sar$V1)
+abline(OLS, col = "SteelBlue", lw = 2)
+slope <- round(coefficients(OLS)[2], 3)
+  legend("bottomright", legend = paste("slope(All) =", slope),
+         bty = "n", lw = 2, col = "SteelBlue")
+
+sar <- SAR.accum.dist(active.comm)
+sar <- as.data.frame(sar)
+points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+  main = "Species-Area Relationship (Active)", col = "red")
+
+OLS <- lm(sar$V2 ~ sar$V1)
+abline(OLS, col = "red", lw = 2)
+slope <- round(coefficients(OLS)[2], 3)
+  legend("topleft", legend = paste("slope(Active) =", slope), 
+         bty = "n", lw = 2, col = "red")
+
+par(mfrow=c(1, 1))
+
+sar <- SAR.rand.accum(all.comm)
+sar <- as.data.frame(sar)
+plot(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+  main = "Taxa-Area Relationship
+  aggregating area at random", col = "SteelBlue")
+
+OLS <- lm(sar$V2 ~ sar$V1)
+abline(OLS, col = "SteelBlue", lw = 2)
+slope <- round(coefficients(OLS)[2], 3)
+  legend("bottomright", legend = paste("slope(All) =", slope), 
+         bty = "n", lw = 2, col = "SteelBlue")
+
+sar <- SAR.rand.accum(active.comm)
+sar <- as.data.frame(sar)
+points(sar, xlab = "log(Area)", ylab = "log(Richness)", 
+  main = "Species-Area Relationship (Active)", col = "red")
+
+OLS <- lm(sar$V2 ~ sar$V1)
+abline(OLS, col = "red", lw = 2)
+slope <- round(coefficients(OLS)[2], 3)
+  legend("topleft", legend = paste("slope(Active) =", slope), 
+         bty = "n", lw = 2, col = "red")
+```
+
+
+## Live-Dead Demographic
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=4, fig.height=4}
+plot.new()
+fc.data <- read.csv(file = "~/GitHub/Dimensions/Aim3/DATA/FlowCytometryData/20150621_INPondsFlowData-Prelim.csv")
+
+# Kernel Density Plot
+kdens.total <- density(fc.data$total) # returns the density data 
+kdens.live <- density(fc.data$live)
+kdens.dead <- density(fc.data$dead)
+
+plot(ld, xlab = 'Cell density', main = 'Flow Cytometry cell counts', ylab = 'probability density', col ='darkred') # plots the results
+lines(dd, col='SteelBlue')
+lines(td, col='grey')
+legend("topright", legend = c("Live\n", "Dead\n", "Total\n"), bty = "n", lw = 4, col = c("darkred", "SteelBlue", "grey"), xjust=1, yjust=1)
+```
+
+
