@@ -67,6 +67,6 @@ To identify key ecological and evolutionary processes that generate and maintain
 
 [Mario Muscarella](http://mmuscarella.github.io/): Ph.D. candidate in the [Lennon Lab](http://www.indiana.edu/~microbes/people.php)
 
-Megan Larsen: Ph.D. candidate in the [Lennon Lab](http://www.indiana.edu/~microbes/people.php)
+[Megan Larsen](http://meganllarsen.wordpress.com): Ph.D. candidate in the [Lennon Lab](http://www.indiana.edu/~microbes/people.php)
 
 Kayla Miller: Ph.D. Student, Indiana University, Bloomington.
