@@ -43,7 +43,7 @@ summ <- matrix(NA,length(strains)*max(obs$Rep),10)
 
 ## 5) FIT MODELS
 ```{r}
-# pdf('decayFits.pdf') # Uncomment to create pdf that will plot data and fits
+pdf('output/decayFits.pdf') # Uncomment to create pdf that will plot data and fits
 counter <- 1
 
 for(i in 1:length(strains)){
@@ -58,7 +58,8 @@ for(i in 1:length(strains)){
 			
 			start=repObs[1,1]
 		
-			time=(as.numeric(strptime(repObs$Firstread_date,format="%d-%b-%y",tz="EST"))-as.numeric(strptime(start,format="%d-%b-%y",tz="EST")))/(3600*24)
+			time=(as.numeric(strptime(repObs$Firstread_date,format="%d-%b-%y",tz="EST"))-
+              as.numeric(strptime(start,format="%d-%b-%y",tz="EST")))/(3600*24)
 			time2=time*time
 	
 			# Fit log linear and log quadratic models using glm()	
@@ -77,27 +78,30 @@ for(i in 1:length(strains)){
 			summ[counter,10]=as.numeric(pchisq(2*(logLik(logQuadCur)-logLik(logLinCur)),df=1,lower.tail=FALSE))
 		
 			#### add indicator of non-linearity (****) to plot title if quadratic model is better
-#			if(!is.na(summ[counter,10])){
-#				if(as.numeric(summ[counter,10])<0.05){
-#					title=paste(strains[i]," rep ",reps[j],"****")
-#				}else{
-#					title=paste(strains[i]," rep ",reps[j])
-#				}
-#			}else{
-#				title=paste(strains[i]," rep ",reps[j])
-#			}
-			
-#			plot(time,log10(repObs$Abund),main=title,ylim=c(0,9))
-#			predTime=seq(0,max(time))
-#			lines(predTime,logLinCur$par[2]-logLinCur$par[1]*predTime,lwd=2,lty=2)
-#			lines(predTime,logQuadCur$par[3]-logQuadCur$par[1]*predTime^2-logQuadCur$par[2]*predTime,col='red',lwd=2,lty=2)
-		
+      
+      ### *** Comment/Uncomment following code to make pdf figs*** ###
+# 			if(!is.na(summ[counter,10])){
+# 				if(as.numeric(summ[counter,10])<0.05){
+# 					title=paste(strains[i]," rep ",reps[j],"****")
+# 				}else{
+# 					title=paste(strains[i]," rep ",reps[j])
+# 				}
+# 			}else{
+# 				title=paste(strains[i]," rep ",reps[j])
+# 			}
+# 			
+# 			plot(time,log10(repObs$Abund),main=title,ylim=c(0,9))
+# 			predTime=seq(0,max(time))
+# 			lines(predTime,logLinCur$par[2]-logLinCur$par[1]*predTime,lwd=2,lty=2)
+# 			lines(predTime,logQuadCur$par[3]-logQuadCur$par[1]*predTime^2-logQuadCur$par[2]*predTime,col='red',lwd=2,lty=2)
+      ### *** Comment/Uncomment above code to make pdf figs*** ###		
+
 			counter=counter+1
 		}
 	}
 }
 
-#dev.off() # uncomment line and `pdf()` above if you want plots of data and fits 
+dev.off() # uncomment line and `pdf()` above if you want plots of data and fits 
 ```
 
 ## 6) SUMMARY OF MODEL FITS
@@ -109,14 +113,14 @@ colnames(summ)=c('strain','rep','linearfit_K','linearfit_N0','linearfit_AIC','qu
 ## 7) HOW DID EACH TUBE BEHAVE?
 ```{r}
 #percent of tubes better fit by quadratic (AIC_linear > AIC_quadratic)
-sum(as.numeric(summ[,5])>as.numeric(summ[,9]))/nrow(summ)*100  # 51.3%
+sum(as.numeric(summ[,5])>as.numeric(summ[,9]))/nrow(summ)*100  # 82%
 
 # percent of tubes better fit by quadratic using likelihood ratio test
-sum(as.numeric(summ[,10])<0.05)/nrow(summ)*100	# 46%
+sum(as.numeric(summ[,10])<0.05)/nrow(summ)*100	# 69%
 
 # add bonferroni correction
 0.05/nrow(summ)	#  0.00044
-sum(as.numeric(summ[,10])<0.0044)/nrow(summ)*100	# 31.9%
+sum(as.numeric(summ[,10])<0.0044)/nrow(summ)*100	# 49%
 
 # histogram of likelihood ratio p-values
 hist(log10(as.numeric(summ[,10])),breaks=seq(-20,0,1))
@@ -132,8 +136,9 @@ abline(v=log10(0.00044),lwd=2,lty=2,col='green')
 
 ## 8) IS BEHAVIOR CONSISTENT AMONG REPS (TUBES) WITHIN STRAINS?
 ```{r}
-# look at agreement amongst reps
+# look at agreement among reps
 repAgreement=matrix(NA,length(strains),4)
+
 repAgreement[,1]=strains
 for(i in 1:length(strains)){
   cur=summ[summ[,1]==strains[i],]
@@ -143,7 +148,7 @@ for(i in 1:length(strains)){
 	repAgreement[i,4]=nrow(cur)-sum(as.numeric(cur[,10])>0.05)
 }
 
-repAgree=data.frame(strain=repAgreement[,1],Nreps=as.numeric(repAgreement[,2]),Nlinear=as.numeric(repAgreement[,3]),Nquad=as.numeric(repAgreement[,4]),stringsAsFactors=FALSE)}
+repAgree=data.frame(strain=repAgreement[,1],Nreps=as.numeric(repAgreement[,2]),Nlinear=as.numeric(repAgreement[,3]),Nquad=as.numeric(repAgreement[,4]),stringsAsFactors=FALSE)
 ```
 
 ## 9) GENERATE TRAITS OUTPUT TABLE
@@ -176,6 +181,6 @@ meanN0=tapply(as.numeric(traitsReport[,5]),traitsReport[,1],FUN=mean)
 
 summaryTraitsReport=data.frame(strains=strains,decay=meanDecay,evolvability=meanEvolve,N0=meanN0,stringsAsFactors=FALSE)
 
-write.table(traitsReport,"perRepDeathCurveTraits.txt",row.names=FALSE,quote=FALSE)
-write.table(summaryTraitsReport,"DeathCurveTraits.txt",row.names=FALSE,quote=FALSE)
+write.table(traitsReport,"output/perRepDeathCurveTraits.txt",row.names=FALSE,quote=FALSE)
+write.table(summaryTraitsReport,"output/DeathCurveTraits.txt",row.names=FALSE,quote=FALSE)
 ```
