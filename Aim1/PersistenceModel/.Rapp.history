@@ -1,0 +1,1542 @@
+a$length
+names=c("walleye","perch")
+weight=c(270,57)
+d=data.frame(names=names,weight=weigth,stringsAsFactors=FALSE)
+d=data.frame(names=names,weight=weight,stringsAsFactors=FALSE)
+d
+d[1,1]
+d[,1]
+d$names
+students=c(#
+"Amanda",#
+"Maggie",#
+"Martha",#
+"Meg",#
+"Meredith",#
+"Brandon",#
+"Julia",#
+"Peter",#
+"Lainey",#
+"Mike",#
+"Toby"#
+)#
+#
+sample(students,length(students),replace=FALSE)
+t=1:180#
+#
+a=0.5#
+b=1#
+c=-0.5
+plot(t,a+b*exp(c),type='l')
+plot(t,a+b*exp(c*t),type='l')
+?glm
+?guassian
+?gaussian
+?glm
+?gaussian
+88633*1.609
+87975/91089.32
+87975*1.035
+(91089.32-87975)/87975
+250*12
+87975*0.035
+91000*1.03
+91000*1.03^3
+91000*1.03^4
+require("deSolve")
+persistCannibalism<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da		#g (L*day)^-1#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)		#g (L*day)^-1#
+		res=c(dBadt,dCdt)#
+		list(res)#
+	})#
+}
+parms = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, m=0.5)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02, C = 0)#
+#
+outPC=ode(y=init,times=times,func=persistCannibalism,parms=parms)#
+#
+dev.new()#
+par(mfrow=c(2,1))#
+plot(outPC[,1],log10(outPC[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPC[,1],outPC[,3],type='l',xlab='time',ylab='carbon (g)')
+persist<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=-Ba*da		#g (L*day)^-1#
+		res(c(dBadt))#
+		list(res)#
+	})#
+}
+parms = c(da = 0.1)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02)
+persist<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=-Ba*da		#g (L*day)^-1#
+		res(c(dBadt))#
+		list(res)#
+	})#
+}#
+#
+#parameters#
+# da= mortality rate [day^-1]#
+#
+# assumptions#
+# 20e-15 g (femtograms of C per cell)#
+# start with 1e12 cells per L (0.02 g C in Ba)#
+#
+parms = c(da = 0.1)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02)#
+#
+outP=ode(y=init,times=times,func=persist,parms=parms)
+persist<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=-Ba*da		#g (L*day)^-1#
+		res=c(dBadt)#
+		list(res)#
+	})#
+}
+parms = c(da = 0.1)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02)#
+#
+outP=ode(y=init,times=times,func=persist,parms=parms)
+dev.new()#
+plot(outP[,1],log10(outP[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')
+# population decay without evolution, but C recycling#
+persistCannibalism<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da		#g (L*day)^-1#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)		#g (L*day)^-1#
+		res=c(dBadt,dCdt)#
+		list(res)#
+	})#
+}#
+#
+# parameters#
+# Va= mass-specific maximum uptake rate [g (g*day)^-1]#
+# Ka= carbon half-saturation constant [g L^-1]#
+# Ea= growth efficiency#
+# da= mortality rate [day^-1]#
+# m= fraction of dead bacteria available for consumption#
+#
+# assumptions#
+# 20e-15 g (femtograms of C per cell)#
+# start with 1e12 cells per L (0.02 g C in Ba)#
+#
+# Apsergillus niger??? Ka=15 uM glucose, Va=1 umol (gram dry weight)^-1 second^-1 Jorgensen et al. 2007 Microbiology, 153: 1963-1973#
+					#  Ka=0.0011 g C L^-1; Va=12.4 g C (g bacterial C)^-1 day^-1#
+#
+#parms = c(Va = 10^-10, Ka = 10^-10, Ea = 0.75, da = 0.1, m=0.5) # these are from Jay's old script#
+parms = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, m=0.5)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02, C = 0)#
+#
+outPC=ode(y=init,times=times,func=persistCannibalism,parms=parms)#
+#
+dev.new()#
+par(mfrow=c(2,1))#
+plot(outPC[,1],log10(outPC[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPC[,1],outPC[,3],type='l',xlab='time',ylab='carbon (g)')
+persistCannibalismMut<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da#
+		dBmdt=Bm*(C*Vm)/(C+Km)*Em-Bm*dm#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)+Bm*dm*m-Bm*(C*Vm)/(C+Km)#
+		res=c(dBadt,dBmdt,dCdt)#
+		list(res)#
+	})#
+}#
+# simulate with lower death rate in mutant#
+#
+# fraction of initial population that are mutant#
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics
+dev.new()#
+par(mfrow=c(2,2))#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],rowSums(outPCmut[,2:3]),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)',type="l")
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)',type="l")
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 0, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=0, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.8, dm=0.1, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.1, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.1, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+200*1000/3.8
+200*1000/3.8/8/60
+200*1000/3.8/24/60
+17440/60
+37*60
+200*1000*3.8/24
+200*1000/3.8/24
+#following taken from box.nd.edu from Zwart#
+I0<-c(0,0,0,0,0,0,6.2,188,456,618,1418,1566,1718,1303,1261,1156,766,263,158,81,21,0,0,0) #incident light from May 11 2014 Long Lake#
+date.time<-strptime(seq(0,23),format='%H')#
+dailyPAR<-data.frame(datetime=date.time,I0=I0,zmix=rep(1,24),z=rep(1,24),kD=rep(1,24))#
+#
+lightAtten<-function(z,I0,kD){#
+	Iz=I0*exp(-kD*z)#
+	return(Iz)#
+}#
+#
+lightProfileCalc<-function(I0,z,kD=NULL,DOC=NULL,chloro=NULL,zmix=NULL){#
+	Ibar=NULL#
+	if(is.null(kD)){#
+		# from GLEON 25 lakes (Solomon et al 2013) and UNDERC lakes (M2M database)#
+		kD=-0.217+0.0537*chloro+0.186*DOC#
+	}#
+	if(length(I0)==1){#
+		Iz=lightAtten(z=z,I0=I0,kD=kD)#
+		if(!is.null(zmix)){#
+			Ibar=integrate(lightAtten,0,zmix,I0=I0,kD=kD)$value/zmix#
+		}#
+	}else{#
+		Iz=matrix(NA,length(z),length(I0))#
+		Ibar=numeric(length(I0))#
+		for(i in 1:ncol(Iz)){#
+			Iz[,i]=lightAtten(z,I0[i],kD)#
+			Ibar[i]=integrate(lightAtten,0,zmix,I0=I0[i],kD=kD)$value/zmix#
+		}#
+	}#
+	return(list(Iz=Iz,Ibar=Ibar))#
+}#
+#
+require(LakeMetabolizer) #
+# time series wrapper for light profile calculation; JAZ 2015-01-16 #
+ts.lightProfileCalc<-function(ts.data){#
+  data<-ts.data#
+  if(has.vars(data,'I0')){#
+    I0=get.vars(data,'I0')#
+  }else{#
+    stop('Data must have I0 column\n')#
+  }#
+  if(has.vars(data,'z')){#
+    z=get.vars(data,'z')#
+  }else{#
+    stop('Data must have z column\n')#
+  }#
+  if(has.vars(data,'zmix')){#
+    zmix=get.vars(data,'zmix')#
+  }else{#
+    stop('Data must have zmix column\n')#
+  }#
+  if(has.vars(data,'kD')){#
+    kD=get.vars(data,'kD')#
+  }else if(has.vars(data,'DOC')){#
+    DOC=get.vars(data,'DOC')#
+    chloro=get.vars(data,'chloro')#
+  }else{#
+    stop('Data must have kD or DOC and chloro column\n')#
+  }#
+  if(has.vars(data,'kD')){#
+    lightProf<-unlist(Map(f=lightProfileCalc,I0=I0[,2],z=z[,2],kD=kD[,2],zmix=zmix[,2]))#
+    lightClimate<-as.numeric(lightProf[names(lightProf)=='Ibar'])#
+    light_z<-as.numeric(lightProf[names(lightProf)=='Iz'])#
+  }else if(has.vars(data,'DOC')){#
+    lightProf<-unlist(Map(f=lightProfileCalc,I0=I0[,2],z=z[,2],DOC=DOC[,2],chloro=chloro[,2],zmix=zmix[,2]))#
+    lightClimate<-as.numeric(lightProf[names(lightProf)=='Ibar'])#
+    light_z<-as.numeric(lightProf[names(lightProf)=='Iz'])#
+  }#
+  return(data.frame(datetime=data$datetime,lightClimate=lightClimate,light_z=light_z))#
+}#
+#
+#differential equation models from Hall et al. -> models algal biomass, P quota, and Phosporus concentration as a function of light and nutrients#
+hall<-function(t,y,params){#
+	A<-y[1]#
+	Q<-y[2]#
+	P<-y[3]#
+	DOC<-y[4]#
+	with(as.list(params),{#
+	chl<-A*50	#
+	kD=0.0213+0.0177*chl+0.0514*DOC	#
+	zmix<-10^(-0.518*log10(DOC)+1.006)	#
+	u<-umax*(1-(kQP/Q))#
+	dailyPAR$zmix<-rep(zmix,24)#
+	dailyPAR$kD<-rep(kD,24)#
+	lightClimate<-ts.lightProfileCalc(dailyPAR)#
+	Iz<-mean(lightClimate$lightClimate)#
+	B<-Iz/(b+Iz) #Iz=average light climate, b=half sat constant from Hall#
+	dA.dt<-A*(u*B-m-a-g)#
+	dQ.dt<-vj*(P/(hp+P))-u*B*Q#
+	dP.dt<-a*(Sp-P)+A*(-vj*(P/(hp+P))+m*Q)#
+	dDOC.dt<-a*(DOCin-DOC)-decay*DOC#
+return(list(c(dA.dt,dQ.dt,dP.dt,dDOC.dt)))#
+})#
+}#
+n<-c(A=0.8,Q=0.015,P=100,DOC=8)
+times<-seq(1,500,by=1)#
+DOCs<-seq(1,30,by=2)#
+TPs<-seq(1,300,by=10)#
+As<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+Qs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+Ps<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+docs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+for(i in 1:length(DOCs)){#
+	for(j in 1:length(TPs)){#
+	parms<-c(Sp=TPs[j],a=0.2,b=36,hp=0.7,kQP=0.004,m=0.05,g=0.5,umax=1,vj=0.04,decay=0.005,DOCin=DOCs[i],V=10^6)#
+	run<-ode(y=n,times=times,func=hall,parms=parms)#
+	As[j,i]<-run[500,2]#
+	Qs[j,i]<-run[500,3]#
+	Ps[j,i]<-run[500,4]#
+	docs[j,i]<-run[500,5]#
+}#
+}#
+colnames(As)<-DOCs#
+rownames(As)<-TPs#
+#
+filled.contour(t(As),x=DOCs,y=TPs)
+library(deSolve)
+times<-seq(1,500,by=1)#
+DOCs<-seq(1,30,by=2)#
+TPs<-seq(1,300,by=10)#
+As<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+Qs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+Ps<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+docs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+for(i in 1:length(DOCs)){#
+	for(j in 1:length(TPs)){#
+	parms<-c(Sp=TPs[j],a=0.2,b=36,hp=0.7,kQP=0.004,m=0.05,g=0.5,umax=1,vj=0.04,decay=0.005,DOCin=DOCs[i],V=10^6)#
+	run<-ode(y=n,times=times,func=hall,parms=parms)#
+	As[j,i]<-run[500,2]#
+	Qs[j,i]<-run[500,3]#
+	Ps[j,i]<-run[500,4]#
+	docs[j,i]<-run[500,5]#
+}#
+}#
+colnames(As)<-DOCs#
+rownames(As)<-TPs
+filled.contour(t(As),x=DOCs,y=TPs)
+filled.contour(t(Qs),x=DOCs,y=TPs)
+filled.contour(t(As),x=DOCs,y=TPs)
+dim(As)
+length(TPs)
+filled.contour(t(As[1:10,]),x=DOCs,y=TPs[1:10])
+filled.contour(t(As[1:10,]),x=DOCs,y=TPs[1:10],color.palette=colorRampPalette(c('purple','blue','green','yellow','orange','red')))
+filled.contour(t((1-kQP/Qs[1:10,])),x=DOCs,y=TPs[1:10],color.palette=colorRampPalette(c('purple','blue','green','yellow','orange','red')))
+kQP=0.004
+filled.contour(t((1-kQP/Qs[1:10,])),x=DOCs,y=TPs[1:10],color.palette=colorRampPalette(c('purple','blue','green','yellow','orange','red')))
+Plim=1-kQP/Qs
+dim(Plim)
+plot(DOCs,Plim[1,])
+plot(DOCs,Plim[3,])
+plot(DOCs,Plim[12,])
+plot(DOCs,Plim[25,])
+plot(DOCs,Plim[1,])
+plot(DOCs,Qs[1,])
+getwd()
+list.files()
+d=read.table("NLA2007_WaterQuality_20091123.csv",header=TRUE,sep=",",stringsAsFactors=FALSE)
+d=read.csv("NLA2007_WaterQuality_20091123.csv",header=TRUE,sep=",",stringsAsFactors=FALSE)
+d=read.csv("NLA2007_WaterQuality_20091123.csv",header=TRUE,stringsAsFactors=FALSE)
+dim(d)
+colnames(d)
+plot(d$DOC,d$PTL)
+plot(log10(d$DOC),log10(d$PTL))
+plot(d$DO,d$PTL)
+plot(d$DOC,d$PTL)
+plot(d$DOC,d$PTL,xlim=c(0,50),ylim=c(0,500))
+plot(d$DOC,d$PTL,xlim=c(0,30),ylim=c(0,100))
+dRed=d[d$DOC<=30,]
+dRed=dRed[d$PTL<=100,]
+plot(dRed$DOC,dRed$PTL)
+dRed=d[d$DOC<=30,]#
+dRed=dRed[dRed$PTL<=100,]
+plot(dRed$DOC,dRed$PTL)
+plot(log(dRed$DOC,log(dRed$PTL)))
+plot(log(dRed$DOC),log(dRed$PTL))
+LLfit=lm(log(dRed$PTL)~log(dRed$DOC))
+sum(dRed$DOC<0)
+sum(dRed$PTL<0)
+sum(dRed$PTL==0)
+sum(dRed$DOC==0)
+dRed=d[d$DOC<=30,]#
+dRed=dRed[dRed$PTL<=100,]#
+dRed=Dred[dRed$PTL>0,]
+plot(dRed$DOC,dRed$PTL)#
+plot(log(dRed$DOC),log(dRed$PTL))
+LLfit=lm(log(dRed$PTL)~log(dRed$DOC))
+dRed=dRed[dRed$PTL>0,]
+plot(dRed$DOC,dRed$PTL)#
+plot(log(dRed$DOC),log(dRed$PTL))#
+#
+LLfit=lm(log(dRed$PTL)~log(dRed$DOC))
+summary(LLfit)
+abline(LLfit,lwd=2,col='red')
+TP=exp(1.44849+0.85889*log(DOC))
+DOC=1:30#
+TP=exp(1.44849+0.85889*log(DOC))
+plot(DOC,TP)
+DOC=1:30#
+TP=exp(1.44849+0.85889*log(DOC))#
+plot(DOC,TP)
+chl=0.41*TP^0.87
+DOC=1:30#
+TP=exp(1.44849+0.85889*log(DOC))#
+plot(DOC,TP,type='l',lwd=2)#
+#
+chl=0.41*TP^0.87		#mg m-3#
+lines(DOC,chl,lwd=2,col='red')
+kD=0.0213+0.0177*chl+0.0514*DOC
+kD=0.0213+0.0177*chl+0.0514*DOC	#
+plot(DOC,kD,type='l',lwd=2)
+zmix<-10^(-0.518*log10(DOC)+1.006)
+lines(DOC,zmix,lwd=2,col='red')
+plot(DOC,kD,type='l',lwd=2,ylim=c(0,20))#
+zmix<-10^(-0.518*log10(DOC)+1.006)#
+lines(DOC,zmix,lwd=2,col='red')
+plot(DOC,kD,type='l',lwd=2,ylim=c(0,10))#
+zmix<-10^(-0.518*log10(DOC)+1.006)#
+lines(DOC,zmix,lwd=2,col='red')
+I0<-c(0,0,0,0,0,0,6.2,188,456,618,1418,1566,1718,1303,1261,1156,766,263,158,81,21,0,0,0) #incident light from May 11 2014 Long Lake#
+date.time<-strptime(seq(0,23),format='%H')#
+dailyPAR<-data.frame(datetime=date.time,I0=I0,zmix=rep(1,24),z=rep(1,24),kD=rep(1,24))#
+lightAtten<-function(z,I0,kD){#
+	Iz=I0*exp(-kD*z)#
+	return(Iz)#
+}#
+#
+lightProfileCalc<-function(I0,z,kD=NULL,DOC=NULL,chloro=NULL,zmix=NULL){#
+	Ibar=NULL#
+	if(is.null(kD)){#
+		# from GLEON 25 lakes (Solomon et al 2013) and UNDERC lakes (M2M database)#
+		kD=-0.217+0.0537*chloro+0.186*DOC#
+	}#
+	if(length(I0)==1){#
+		Iz=lightAtten(z=z,I0=I0,kD=kD)#
+		if(!is.null(zmix)){#
+			Ibar=integrate(lightAtten,0,zmix,I0=I0,kD=kD)$value/zmix#
+		}#
+	}else{#
+		Iz=matrix(NA,length(z),length(I0))#
+		Ibar=numeric(length(I0))#
+		for(i in 1:ncol(Iz)){#
+			Iz[,i]=lightAtten(z,I0[i],kD)#
+			Ibar[i]=integrate(lightAtten,0,zmix,I0=I0[i],kD=kD)$value/zmix#
+		}#
+	}#
+	return(list(Iz=Iz,Ibar=Ibar))#
+}#
+#
+require(LakeMetabolizer) #
+# time series wrapper for light profile calculation; JAZ 2015-01-16 #
+ts.lightProfileCalc<-function(ts.data){#
+  data<-ts.data#
+  if(has.vars(data,'I0')){#
+    I0=get.vars(data,'I0')#
+  }else{#
+    stop('Data must have I0 column\n')#
+  }#
+  if(has.vars(data,'z')){#
+    z=get.vars(data,'z')#
+  }else{#
+    stop('Data must have z column\n')#
+  }#
+  if(has.vars(data,'zmix')){#
+    zmix=get.vars(data,'zmix')#
+  }else{#
+    stop('Data must have zmix column\n')#
+  }#
+  if(has.vars(data,'kD')){#
+    kD=get.vars(data,'kD')#
+  }else if(has.vars(data,'DOC')){#
+    DOC=get.vars(data,'DOC')#
+    chloro=get.vars(data,'chloro')#
+  }else{#
+    stop('Data must have kD or DOC and chloro column\n')#
+  }#
+  if(has.vars(data,'kD')){#
+    lightProf<-unlist(Map(f=lightProfileCalc,I0=I0[,2],z=z[,2],kD=kD[,2],zmix=zmix[,2]))#
+    lightClimate<-as.numeric(lightProf[names(lightProf)=='Ibar'])#
+    light_z<-as.numeric(lightProf[names(lightProf)=='Iz'])#
+  }else if(has.vars(data,'DOC')){#
+    lightProf<-unlist(Map(f=lightProfileCalc,I0=I0[,2],z=z[,2],DOC=DOC[,2],chloro=chloro[,2],zmix=zmix[,2]))#
+    lightClimate<-as.numeric(lightProf[names(lightProf)=='Ibar'])#
+    light_z<-as.numeric(lightProf[names(lightProf)=='Iz'])#
+  }#
+  return(data.frame(datetime=data$datetime,lightClimate=lightClimate,light_z=light_z))#
+}
+i=1
+dailyPAR$zmix=rep(zmix[i],24)#
+	dailyPAR$kD=rep(kD[i],24)
+temp=ts.lightProfileCalc(dailyPAR)
+dim(temp)
+temp
+avgI=numeric(length(DOC))#
+for(i in 1:length(DOC)){#
+	dailyPAR$zmix=rep(zmix[i],24)#
+	dailyPAR$kD=rep(kD[i],24)#
+	temp=ts.lightProfileCalc(dailyPAR)#
+	avgI[i]=mean(temp$lightClimate)#
+}
+plot(DOC,avgI,type='l',lwd=2)
+Ktp=15#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2)
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))
+Ktp=30#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))
+Ktp=10#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))
+Ktp=15#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))
+Ktp=35#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))
+Ktp=25#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))
+Ktp=25#
+Ki=36#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))#
+lines(DOC,avgI/(avgI+Ki),lwd=2,col='red')
+Ktp=25#
+Ki=16#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))#
+lines(DOC,avgI/(avgI+Ki),lwd=2,col='red')
+Ktp=25#
+Ki=60#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))#
+lines(DOC,avgI/(avgI+Ki),lwd=2,col='red')
+Ktp=20#
+Ki=75#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))#
+lines(DOC,avgI/(avgI+Ki),lwd=2,col='red')
+kD=0.0213+0.0177*chl+0.08*DOC			# was originally 0.0514*DOC#
+plot(DOC,kD,type='l',lwd=2,ylim=c(0,10))#
+zmix<-10^(-0.518*log10(DOC)+1.006)#
+lines(DOC,zmix,lwd=2,col='red')	#
+avgI=numeric(length(DOC))#
+for(i in 1:length(DOC)){#
+	dailyPAR$zmix=rep(zmix[i],24)#
+	dailyPAR$kD=rep(kD[i],24)#
+	temp=ts.lightProfileCalc(dailyPAR)#
+	avgI[i]=mean(temp$lightClimate)#
+}#
+#
+plot(DOC,avgI,type='l',lwd=2)#
+Ktp=20#
+Ki=75#
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1))#
+lines(DOC,avgI/(avgI+Ki),lwd=2,col='red')
+plot(DOC,TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1),ylab="limitation strength")#
+lines(DOC,avgI/(avgI+Ki),lwd=2,col='red')
+plot(DOC,(TP/(TP+Ktp))/(avgI/(avgI+Ki)),type='l',lwd=2)
+plot(DOC,1-TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1),ylab="limitation strength")#
+lines(DOC,avgI/(avgI+Ki),lwd=2,col='red')
+plot(DOC,1-TP/(TP+Ktp),type='l',lwd=2,ylim=c(0,1),ylab="limitation strength")#
+lines(DOC,1-avgI/(avgI+Ki),lwd=2,col='red')
+out=read.table("USGSstreamCP_5-15-15.txt",header=TRUE,sep="\t",stringsAsFactors=FALSE)
+plot(log10(as.numeric(out[,3])),log10(as.numeric(out[,2])),xlab="DOC mgL-1",ylab="TP mgL-1")#
+#
+hist(log10(as.numeric(out[,3])/as.numeric(out[,2])),seq(-1,4,0.1))
+plot(,log10(as.numeric(out[,2])),log10(as.numeric(out[,3])/as.numeric(out[,2])))
+dim(out)
+head(out)
+plot(log10(as.numeric(out[,3])),log10(as.numeric(out[,3])/as.numeric(out[,2])))
+plot(out[,3],out[,3]/out[,2])
+plot(out[,3],out[,3]/out[,2],xlim=c(0,50),ylim=c(0,250))
+rm(list=ls())
+setwd("/Volumes/JonesExternal/External/activeStuff/NHLD_Cmodel/NHLDwatershedDelineations")#
+#
+sheds=read.csv("NHLD_Final_Watersheds_All_4-24-15.txt",header=TRUE,stringsAsFactors=FALSE)#
+lakes=read.csv("NHLD_lakes_Final_Cut_4-24-15.txt",header=TRUE,stringsAsFactors=FALSE)#
+#
+sheds=sheds[order(sheds$Permanent_),]#
+lakes=lakes[order(lakes$Permanent_),]#
+sum(sheds$Permanent_==lakes$Permanent_)#
+dim(sheds)#
+dim(lakes)#
+#
+NHLDsheds=lakes[,c(2,5,6,10,14:17,22:23)]
+sheds=read.csv("NHLD_Final_Watersheds_All_4-24-15.txt",header=TRUE,stringsAsFactors=FALSE)#
+lakes=read.table("NHLDLakesTable_5-7-15.txt",header=TRUE,sep=",",stringsAsFactors=FALSE)#
+lulc=read.table("NHLD_WtrShds_LandCoverData_5-6-15.csv",header=TRUE,sep=",",stringsAsFactors=FALSE)#
+#
+sheds=sheds[sheds$Permanent_%in%lakes$Permanent_,]#
+sheds=sheds[order(sheds$Permanent_),]#
+lakes=lakes[order(lakes$Permanent_),]#
+dim(sheds)#
+dim(lakes)#
+sum(sheds$Permanent_==lakes$Permanent_)#
+#
+lulc=lulc[lulc$Permanent_%in%lakes$Permanent_,]#
+lulc=lulc[order(lulc$Permanent_),]#
+dim(lulc)#
+dim(lakes)#
+sum(lulc$Permanent_==lakes$Permanent_)#
+#
+# 2 of the lulc lakes didn't work (have -2147483648 for all pixel counts)#
+lakes=lakes[lulc[,8]!=-2147483648,]#
+lulc=lulc[lulc[,8]!=-2147483648,]#
+dim(lulc)#
+dim(lakes)#
+sum(lulc$Permanent_==lakes$Permanent_)#
+#
+NHLDsheds=lakes[,c(2,5,6,10,14:17,22:23,25:27)]#
+#
+NHLDsheds$percentWetland=round(rowSums(lulc[,23:24])/rowSums(lulc[,9:24])*100,2)
+undercIDs=c(123397162,123397262,123397434,123397504,123397532,123397594,123397672,123397767,123397860,123397928,123148113,123397776,123397798,123397806,123397340,123397403,123397370,123397415,123397307,123397332,'JAZ_19',123397745,123397975,123148151,123397683,123397285,123397563)#
+#
+UNDERCsheds=NHLDsheds[NHLDsheds$Permanent_%in%undercIDs,]#
+UNDERCsheds=UNDERCsheds[order(UNDERCsheds$Permanent_),]#
+UNDERCsheds$GNIS_Name[c(3,5,8,9,11,17,19,27)]=c("Reddington","Mullahy","Ward","Peter","Paul","Long","Bolger","North Gate")
+V=exp(-0.01857+1.11563*log(NHLDsheds$NHLD_lakes))#
+WAV=NHLDsheds$Area_m2/V#
+range(WAV)	#    0.2910168 3159.4607924#
+hist(log10(WAV),breaks=seq(-1,4,0.1))#
+# distances from UNDERC#
+lat1=46.21920#
+lon1=-89.52970#
+#
+lat2=NHLDsheds$Latitude#
+lon2=NHLDsheds$Longitude#
+#
+toRadians<-function(x){#
+	x*pi/180#
+}#
+#
+R=6371000	#m#
+phi1=toRadians(lat1)#
+phi2=toRadians(lat2)#
+deltalambda=toRadians(lon2-lon1)#
+deltaphi=toRadians(lat2-lat1)#
+phim=(phi1+phi2)/2#
+#
+x=deltalambda*cos(phim)#
+y=deltaphi#
+D=R*sqrt(x^2+y^2)/1000	#m#
+#
+plot(log10(D),log10(WAV))
+setwd("NLA_LakeClassification")
+lc1=read.csv("NLA_LakeClass.csv",header=TRUE,stringsAsFactors=FALSE)#
+lc2=read.csv("NLA_LakeClass2.csv",header=TRUE,stringsAsFactors=FALSE)#
+lc=rbind(lc1,lc2)#
+#only lakes >= 1 ha (0.01 SqKm) classified#
+#
+setwd("..")#
+#
+# number of lakes classified in vilas county#
+sum(NHLDsheds$Permanent_%in%lc$Permanent_)		#1865 out of 3728 classified#
+#
+NHLDinLC=NHLDsheds[NHLDsheds$Permanent_%in%lc$Permanent_,]#
+#
+NHLDinLC$WALV=NHLDinLC$Area_m2/exp(-0.01857+1.11563*log(NHLDinLC$NHLD_lakes))#
+#
+# distances from UNDERC (Tenderfoot Lake) as the crow flies#
+lat1=46.21920#
+lon1=-89.52970#
+#
+lat2=NHLDinLC$Latitude#
+lon2=NHLDinLC$Longitude#
+#
+toRadians<-function(x){#
+	x*pi/180#
+}#
+#
+R=6371000	#m#
+phi1=toRadians(lat1)#
+phi2=toRadians(lat2)#
+deltalambda=toRadians(lon2-lon1)#
+deltaphi=toRadians(lat2-lat1)#
+phim=(phi1+phi2)/2#
+#
+x=deltalambda*cos(phim)#
+y=deltaphi#
+NHLDinLC$travelDist=R*sqrt(x^2+y^2)/1000	#m#
+#
+NHLDinLC$classification=lc[match(NHLDinLC$Permanent_,lc$Permanent_),15]#
+#
+table(NHLDinLC$classification)
+NHLDinLCdrain=NHLDinLC[NHLDinLC$classification%in%c("ST","STLA"),]	#419 of the classified lakes are drainage; almost 50-50 lake and no lake above#
+#
+boxplot(log10(NHLDinLCdrain$WALV)~NHLDinLCdrain$classification)#
+#
+classPCH=rep(15,nrow(NHLDinLCdrain))	# no lake#
+classPCH[NHLDinLCdrain$classification=="STLA"]=21	# lake above#
+#
+plot(NHLDinLCdrain$travelDist,log10(NHLDinLCdrain$WALV),pch=classPCH,cex=1.25,xlab="travel distance (km)",ylab="log10(WA:LV)")#
+legend('topleft',c('lake above','no lake above'),pch=c(15,21),box.lty=0)
+forPat=NHLDinLCdrain[NHLDinLCdrain$travelDist<40,]#
+forPatPCH=classPCH[NHLDinLCdrain$travelDist<40]#
+dev.new()#
+par(mfrow=c(1,2))#
+plot(forPat$travelDist,log10(forPat$WALV),pch=forPatPCH,cex=1.25,xlab="travel distance (km)",ylab="log10(WA:LV)")#
+legend('topleft',c('lake above','no lake above'),pch=c(21,15),box.lty=0)#
+plot(log10(forPat$NHLD_lakes),log10(forPat$WALV),pch=forPatPCH,cex=1.25,xlab="log10(LA) (m^2)",ylab="log10(WA:LV)")#
+legend('topright',c('lake above','no lake above'),pch=c(21,15))
+forPatSorted=forPat[order(forPat$WALV),]#
+#
+breaks=seq(min(log10(forPatSorted$WALV)),max(log10(forPatSorted$WALV)),length.out=10)
+lakes2sample=matrix(NA,9,6)#
+for(i in 1:9){#
+	cur=forPat$Permanent_[(log10(forPat$WALV)>=breaks[i] & log10(forPat$WALV)<breaks[(i+1)])]#
+	weight=forPat$travelDist[(log10(forPat$WALV)>=breaks[i] & log10(forPat$WALV)<breaks[(i+1)])]#
+	weight=1-(weight/max(weight))#
+	if(length(cur)>=6){#
+		lakes2sample[i,]=sample(cur,6,prob=weight)#
+	}else{#
+		lakes2sample[i,]=c(sample(cur,length(cur)),rep(NA,(6-length(cur))))#
+	}#
+}#
+#
+rownames(lakes2sample)=paste("bin",1:9,sep="_")#
+colnames(lakes2sample)=paste("choice",1:6,sep="_")
+cur=forPat$Permanent_[(log10(forPat$WALV)>=breaks[i] & log10(forPat$WALV)<breaks[(i+1)])]#
+	weight=forPat$travelDist[(log10(forPat$WALV)>=breaks[i] & log10(forPat$WALV)<breaks[(i+1)])]#
+	weight=1-(weight/max(weight))
+length(cur)
+cur
+i=5
+cur=forPat$Permanent_[(log10(forPat$WALV)>=breaks[i] & log10(forPat$WALV)<breaks[(i+1)])]#
+	weight=forPat$travelDist[(log10(forPat$WALV)>=breaks[i] & log10(forPat$WALV)<breaks[(i+1)])]#
+	weight=1-(weight/max(weight))
+length(cur)
+sample(cur,32,prob=weight)
+length(weight)
+sample(cur,32,prob=weight)
+weight
+weight[32]=0.000001
+sample(cur,32,prob=weight)
+require("deSolve")#
+#
+# straight decay#
+persist<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=-Ba*da		#g (L*day)^-1#
+		res=c(dBadt)#
+		list(res)#
+	})#
+}#
+#
+#parameters#
+# da= mortality rate [day^-1]#
+#
+# assumptions#
+# 20e-15 g (femtograms of C per cell)#
+# start with 1e12 cells per L (0.02 g C in Ba)#
+#
+parms = c(da = 0.1)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02)#
+#
+outP=ode(y=init,times=times,func=persist,parms=parms)#
+#
+dev.new()#
+plot(outP[,1],log10(outP[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')
+persistCannibalism<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da		#g (L*day)^-1#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)		#g (L*day)^-1#
+		res=c(dBadt,dCdt)#
+		list(res)#
+	})#
+}#
+#
+# parameters#
+# Va= mass-specific maximum uptake rate [g (g*day)^-1]#
+# Ka= carbon half-saturation constant [g L^-1]#
+# Ea= growth efficiency#
+# da= mortality rate [day^-1]#
+# m= fraction of dead bacteria available for consumption#
+#
+# assumptions#
+# 20e-15 g (femtograms of C per cell)#
+# start with 1e12 cells per L (0.02 g C in Ba)#
+#
+# Apsergillus niger??? Ka=15 uM glucose, Va=1 umol (gram dry weight)^-1 second^-1 Jorgensen et al. 2007 Microbiology, 153: 1963-1973#
+					#  Ka=0.0011 g C L^-1; Va=12.4 g C (g bacterial C)^-1 day^-1#
+#
+#parms = c(Va = 10^-10, Ka = 10^-10, Ea = 0.75, da = 0.1, m=0.5) # these are from Jay's old script#
+parms = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, m=0.5)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02, C = 0)#
+#
+outPC=ode(y=init,times=times,func=persistCannibalism,parms=parms)#
+#
+dev.new()#
+par(mfrow=c(2,1))#
+plot(outPC[,1],log10(outPC[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPC[,1],outPC[,3],type='l',xlab='time',ylab='carbon (g)')
+persistCannibalismMut<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da#
+		dBmdt=Bm*(C*Vm)/(C+Km)*Em-Bm*dm#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)+Bm*dm*m-Bm*(C*Vm)/(C+Km)#
+		res=c(dBadt,dBmdt,dCdt)#
+		list(res)#
+	})#
+}#
+# simulate with lower death rate in mutant; no recycling#
+#
+# fraction of initial population that are mutant#
+fracMut=1e-5#
+#
+parmsMut = c(Va = 0, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=0, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.1, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+require("deSolve")#
+#
+# straight decay#
+persist<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=-Ba*da		#g (L*day)^-1#
+		res=c(dBadt)#
+		list(res)#
+	})#
+}#
+#
+#parameters#
+# da= mortality rate [day^-1]#
+#
+# assumptions#
+# 20e-15 g (femtograms of C per cell)#
+# start with 1e12 cells per L (0.02 g C in Ba)#
+#
+parms = c(da = 0.1)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02)#
+#
+outP=ode(y=init,times=times,func=persist,parms=parms)#
+#
+dev.new()#
+plot(outP[,1],log10(outP[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')
+plot(outP[,1],outP[,2]/init,xlab="time",ylab="% initial",type='l')
+plot(outP[,1],outP[,2]/init,xlab="time",ylab="% initial",type='l',xlim=c(0,200))
+plot(outP[,1],outP[,2]/init,xlab="time",ylab="% initial",type='l',xlim=c(0,50))
+plot(outP[,1],outP[,2]/init*100,xlab="time",ylab="% initial",type='l',xlim=c(0,50))
+persistCannibalism<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da		#g (L*day)^-1#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)		#g (L*day)^-1#
+		res=c(dBadt,dCdt)#
+		list(res)#
+	})#
+}#
+#
+# parameters#
+# Va= mass-specific maximum uptake rate [g (g*day)^-1]#
+# Ka= carbon half-saturation constant [g L^-1]#
+# Ea= growth efficiency#
+# da= mortality rate [day^-1]#
+# m= fraction of dead bacteria available for consumption#
+#
+# assumptions#
+# 20e-15 g (femtograms of C per cell)#
+# start with 1e12 cells per L (0.02 g C in Ba)#
+#
+# Apsergillus niger??? Ka=15 uM glucose, Va=1 umol (gram dry weight)^-1 second^-1 Jorgensen et al. 2007 Microbiology, 153: 1963-1973#
+					#  Ka=0.0011 g C L^-1; Va=12.4 g C (g bacterial C)^-1 day^-1#
+#
+#parms = c(Va = 10^-10, Ka = 10^-10, Ea = 0.75, da = 0.1, m=0.5) # these are from Jay's old script#
+parms = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, m=0.5)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02, C = 0)#
+#
+outPC=ode(y=init,times=times,func=persistCannibalism,parms=parms)#
+#
+dev.new()#
+par(mfrow=c(2,1))#
+plot(outPC[,1],log10(outPC[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPC[,1],outPC[,3],type='l',xlab='time',ylab='carbon (g)')
+persistCannibalismMut<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da#
+		dBmdt=Bm*(C*Vm)/(C+Km)*Em-Bm*dm#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)+Bm*dm*m-Bm*(C*Vm)/(C+Km)#
+		res=c(dBadt,dBmdt,dCdt)#
+		list(res)#
+	})#
+}#
+# simulate with lower death rate in mutant; no recycling#
+#
+# fraction of initial population that are mutant#
+fracMut=1e-5#
+#
+parmsMut = c(Va = 0, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=0, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.1, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+#Model from Hall et al. 2007 Ecology modified to use DOC inputs to change average light climate to estimate GPP and P quota#
+#Patrick Kelly 18 May 2015#
+#
+library(deSolve)#
+#
+#following taken from box.nd.edu from Zwart#
+I0<-c(0,0,0,0,0,0,6.2,188,456,618,1418,1566,1718,1303,1261,1156,766,263,158,81,21,0,0,0) #incident light from May 11 2014 Long Lake#
+date.time<-strptime(seq(0,23),format='%H')#
+dailyPAR<-data.frame(datetime=date.time,I0=I0,zmix=rep(1,24),z=rep(1,24),kD=rep(1,24))#
+#
+lightAtten<-function(z,I0,kD){#
+	Iz=I0*exp(-kD*z)#
+	return(Iz)#
+}#
+#
+lightProfileCalc<-function(I0,z,kD=NULL,DOC=NULL,chloro=NULL,zmix=NULL){#
+	Ibar=NULL#
+	if(is.null(kD)){#
+		# from GLEON 25 lakes (Solomon et al 2013) and UNDERC lakes (M2M database)#
+		kD=-0.217+0.0537*chloro+0.186*DOC#
+	}#
+	if(length(I0)==1){#
+		Iz=lightAtten(z=z,I0=I0,kD=kD)#
+		if(!is.null(zmix)){#
+			Ibar=integrate(lightAtten,0,zmix,I0=I0,kD=kD)$value/zmix#
+		}#
+	}else{#
+		Iz=matrix(NA,length(z),length(I0))#
+		Ibar=numeric(length(I0))#
+		for(i in 1:ncol(Iz)){#
+			Iz[,i]=lightAtten(z,I0[i],kD)#
+			Ibar[i]=integrate(lightAtten,0,zmix,I0=I0[i],kD=kD)$value/zmix#
+		}#
+	}#
+	return(list(Iz=Iz,Ibar=Ibar))#
+}#
+#
+require(LakeMetabolizer) #
+# time series wrapper for light profile calculation; JAZ 2015-01-16 #
+ts.lightProfileCalc<-function(ts.data){#
+  data<-ts.data#
+  if(has.vars(data,'I0')){#
+    I0=get.vars(data,'I0')#
+  }else{#
+    stop('Data must have I0 column\n')#
+  }#
+  if(has.vars(data,'z')){#
+    z=get.vars(data,'z')#
+  }else{#
+    stop('Data must have z column\n')#
+  }#
+  if(has.vars(data,'zmix')){#
+    zmix=get.vars(data,'zmix')#
+  }else{#
+    stop('Data must have zmix column\n')#
+  }#
+  if(has.vars(data,'kD')){#
+    kD=get.vars(data,'kD')#
+  }else if(has.vars(data,'DOC')){#
+    DOC=get.vars(data,'DOC')#
+    chloro=get.vars(data,'chloro')#
+  }else{#
+    stop('Data must have kD or DOC and chloro column\n')#
+  }#
+  if(has.vars(data,'kD')){#
+    lightProf<-unlist(Map(f=lightProfileCalc,I0=I0[,2],z=z[,2],kD=kD[,2],zmix=zmix[,2]))#
+    lightClimate<-as.numeric(lightProf[names(lightProf)=='Ibar'])#
+    light_z<-as.numeric(lightProf[names(lightProf)=='Iz'])#
+  }else if(has.vars(data,'DOC')){#
+    lightProf<-unlist(Map(f=lightProfileCalc,I0=I0[,2],z=z[,2],DOC=DOC[,2],chloro=chloro[,2],zmix=zmix[,2]))#
+    lightClimate<-as.numeric(lightProf[names(lightProf)=='Ibar'])#
+    light_z<-as.numeric(lightProf[names(lightProf)=='Iz'])#
+  }#
+  return(data.frame(datetime=data$datetime,lightClimate=lightClimate,light_z=light_z))#
+}#
+#
+#differential equation models from Hall et al. -> models algal biomass, P quota, and Phosporus concentration as a function of light and nutrients#
+hall<-function(t,y,params){#
+	A<-y[1]#
+	Q<-y[2]#
+	P<-y[3]#
+	DOC<-y[4]#
+	with(as.list(params),{#
+	chl<-A*50	#
+	kD=0.0213+0.0177*chl+0.0514*DOC	#
+	zmix<-10^(-0.518*log10(DOC)+1.006)	#
+	u<-umax*(1-(kQP/Q))#
+	dailyPAR$zmix<-rep(zmix,24)#
+	dailyPAR$kD<-rep(kD,24)#
+	lightClimate<-ts.lightProfileCalc(dailyPAR)#
+	Iz<-mean(lightClimate$lightClimate)#
+	B<-Iz/(b+Iz) #Iz=average light climate, b=half sat constant from Hall#
+	dA.dt<-A*(u*B-m-a-g)#
+	dQ.dt<-vj*(P/(hp+P))-u*B*Q#
+	dP.dt<-a*(Sp-P)+A*(-vj*(P/(hp+P))+m*Q)#
+	dDOC.dt<-a*(DOCin-DOC)-decay*DOC#
+return(list(c(dA.dt,dQ.dt,dP.dt,dDOC.dt)))#
+})#
+}#
+n<-c(A=0.8,Q=0.015,P=100,DOC=8)
+times<-seq(1,500,by=1)#
+DOCs<-seq(1,30,by=2)#
+TPs<-seq(1,300,by=10)#
+As<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+Qs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+Ps<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+docs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+GPPs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))
+i=1
+j=1
+parms<-c(Sp=TPs[j],a=0.2,b=36,hp=0.7,kQP=0.004,m=0.05,g=0.5,umax=1,vj=0.04,decay=0.005,DOCin=DOCs[i],V=10^6)
+run<-ode(y=n,times=times,func=hall,parms=parms)
+As[j,i]<-run[500,2]#
+	Qs[j,i]<-run[500,3]#
+	Ps[j,i]<-run[500,4]#
+	docs[j,i]<-run[500,5]
+kQP=parms[5]#
+	umax=parms[8]#
+	b=parms[3]
+chl<-As[j,i]*50	#
+	kD=0.0213+0.0177*chl+0.0514*docs[j,i]	#
+	zmix<-10^(-0.518*log10(docs[j,i])+1.006)	#
+	u<-umax*(1-(kQP/Qs[j,i]))
+dailyPAR$zmix<-rep(zmix,24)#
+	dailyPAR$kD<-rep(kD,24)#
+	lightClimate<-ts.lightProfileCalc(dailyPAR)#
+	Iz<-mean(lightClimate$lightClimate)
+B<-Iz/(b+Iz) #Iz=average light climate, b=half sat constant from Hall
+GPPs[j,i]<-As[j,i]*u*B
+GPPs[j,i]
+#run model for a sequence of DOCs and TPs#
+times<-seq(1,500,by=1)#
+DOCs<-seq(1,30,by=2)#
+TPs<-seq(1,300,by=10)#
+As<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+Qs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+Ps<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+docs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+GPPs<-matrix(NA,nrow=length(TPs),ncol=length(DOCs))#
+for(i in 1:length(DOCs)){#
+	for(j in 1:length(TPs)){#
+	parms<-c(Sp=TPs[j],a=0.2,b=36,hp=0.7,kQP=0.004,m=0.05,g=0.5,umax=1,vj=0.04,decay=0.005,DOCin=DOCs[i],V=10^6)#
+	run<-ode(y=n,times=times,func=hall,parms=parms)#
+	As[j,i]<-run[500,2]#
+	Qs[j,i]<-run[500,3]#
+	Ps[j,i]<-run[500,4]#
+	docs[j,i]<-run[500,5]#
+	kQP=parms[5]#
+	umax=parms[8]#
+	b=parms[3]#
+	chl<-As[j,i]*50	#
+	kD=0.0213+0.0177*chl+0.0514*docs[j,i]	#
+	zmix<-10^(-0.518*log10(docs[j,i])+1.006)	#
+	u<-umax*(1-(kQP/Qs[j,i]))#
+	dailyPAR$zmix<-rep(zmix,24)#
+	dailyPAR$kD<-rep(kD,24)#
+	lightClimate<-ts.lightProfileCalc(dailyPAR)#
+	Iz<-mean(lightClimate$lightClimate)#
+	B<-Iz/(b+Iz) #Iz=average light climate, b=half sat constant from Hall#
+#
+	GPPs[j,i]<-As[j,i]*u*B#
+}#
+}#
+colnames(As)<-DOCs#
+rownames(As)<-TPs
+filled.contour(t(As[1:10,]),x=DOCs,y=TPs[1:10],color.palette=colorRampPalette(c('purple','blue','green','yellow','orange','red')))
+dev.new()
+filled.contour(t(GPPs[1:10,]),x=DOCs,y=TPs[1:10],color.palette=colorRampPalette(c('purple','blue','green','yellow','orange','red')))
+filled.contour(t(As),x=DOCs,y=TPs)
+filled.contour(t(As),x=DOCs,y=TPs,color.palette=colorRampPalette(c('purple','blue','green','yellow','orange','red')))
+dev.new()
+filled.contour(t(As[1:10,]),x=DOCs,y=TPs[1:10],color.palette=colorRampPalette(c('purple','blue','green','yellow','orange','red')))
+dev.new()
+plot(DOCs,As[20,],type='o')
+V=LA*zbar	# lake volume [m3]#
+Lg=sqrt(A/pi)	# groundwater flowpath length [m]; assumes flowpath is radius of circular catchment with lake in the middle#
+Kh=1			# hydraulic conductivity [m d-1]#
+dHdL=0.1		# groundwater vertical gradient [m m-1]#
+phi=	0.5		# sediment porosity???#
+tauG=Lg*	phi/(Kh*dHdL)
+## parameters#
+A=1e6			# catchment area [m2]#
+LA=1e5			# lake area [m2]#
+zbar=4		# lake mean depth [m]#
+lambdaL=0.005	# first order decay in lake; if conservative tracer d=0#
+lambdaG=	0.001	# first order decay in groundwater#
+lambdaS=	0.005	# first order decay in stream#
+#
+V=LA*zbar	# lake volume [m3]#
+Lg=sqrt(A/pi)	# groundwater flowpath length [m]; assumes flowpath is radius of circular catchment with lake in the middle#
+Kh=1			# hydraulic conductivity [m d-1]#
+dHdL=0.1		# groundwater vertical gradient [m m-1]#
+phi=	0.5		# sediment porosity???#
+tauG=Lg*	phi/(Kh*dHdL)	# travel time of water in groundwater to lake [days]#
+Ls=1.4*A^0.568		# stream length scales with catchment area [Gray 1961; JGR 66: 1215-1223; Traboton et al. 198; WRR 24: 1317-1322 useful too]; this is total network length so not quite right...#
+U=1*60*60*24			# average stream velocity [m day-1]#
+tauS=Ls/U		# travel time of water in stream to lake [days]
+tauG
+tauS
+Ls
+U
+Ls=1.4*A^0.568		# stream length scales with catchment area [Gray 1961; JGR 66: 1215-1223; Traboton et al. 198; WRR 24: 1317-1322 useful too]; this is total network length so not quite right...#
+U=0.05*60*60*24			# average stream velocity [m day-1]#
+tauS=Ls/U		# travel time of water in stream to lake [days]
+tauS
+10/12
+rm(list=ls())#
+#
+# load package for numerical integration#
+library(deSolve)#
+#
+# function for simulating #
+dynamicDecayStep<-function(time,y,params){#
+	with(as.list(params),{#
+		# state variables#
+		V=y[1]#
+		C=y[2]#
+		Qout=Qs+Qg	#for now we have static volume#
+		# differential equations#
+		dV.dt=Qs+Qg-Qout#
+		dC.dt=Qs*Cs+Qg*Cg-Qout*C/V-lambdaL*C#
+		list(c(dV.dt,dC.dt))#
+	})#
+}
+A=1e6			# catchment area [m2]#
+LA=1e5			# lake area [m2]#
+zbar=4		# lake mean depth [m]#
+lambdaL=0.005	# first order decay in lake; if conservative tracer d=0#
+lambdaG=	0.001	# first order decay in groundwater#
+lambdaS=	0.005	# first order decay in stream#
+annP=1			# annual precipitation [m]; use with catchment area and for now no evapotranspiration to get Q's#
+SWvGW=0.5		# fraction of annual precip that enters lake via surface flow#
+#
+Cg0=1			# initial concentration of carbon in GW [mol C m-3]#
+Cs0=1			# initial concentration of carbon in SW [mol C m-3]
+V=LA*zbar	# lake volume [m3]#
+#
+# estimate groundwater travel time#
+Lg=sqrt(A/pi)	# groundwater flowpath length [m]; assumes flowpath is radius of circular catchment with lake in the middle#
+Kh=1			# hydraulic conductivity [m d-1]#
+dHdL=0.1		# groundwater vertical gradient [m m-1]#
+phi=	0.5		# sediment porosity???#
+tauG=Lg*	phi/(Kh*dHdL)	# travel time of water in groundwater to lake [days]#
+Qg=annP*A/365*(1-SWvGW)	# groundwater discharge into lake [m3 day-1]#
+Cg=Cg0*exp(-lambdaG*tauG)#
+#
+# estimate stream travel time#
+Ls=1.4*A^0.568		# stream length scales with catchment area [Gray 1961; JGR 66: 1215-1223; Traboton et al. 198; WRR 24: 1317-1322 useful too]; this is total network length so not quite right...#
+U=0.05*60*60*24			# average stream velocity [m day-1]#
+tauS=Ls/U		# travel time of water in stream to lake [days]#
+Qs=annP*A/365*SWvGW	# groundwater discharge into lake [m3 day-1]#
+Cs=Cs0*exp(-lambdaS*tauS)#
+#
+params=c(V=V,lambdaL=lambdaL,lambdaG=lambdaG,lambdaS=lambdaS,Qg=Qg,Cg=Cg,Qs=Qs,Cs=Cs)
+nTimeSteps=100#
+t.s=1:nTimeSteps#
+#
+## initialize and simulate  model#
+init=c(V=V,C=0)#
+out=ode(y=init,times=t.s,func=dynamicDecayStep,parms=params)
+head(out)
+dev.new()#
+par(mfrow=c(2,1))#
+plot(out[,1],out[,2],type='l',ylab="volume (m3)",xlab="time")#
+plot(out[,1],out[,3]/out[,2],type='l',ylab="carbon (mol C m-3)",xlab="time")
+nTimeSteps=250#
+t.s=1:nTimeSteps#
+#
+## initialize and simulate  model#
+init=c(V=V,C=0)#
+out=ode(y=init,times=t.s,func=dynamicDecayStep,parms=params)#
+#
+dev.new()#
+par(mfrow=c(2,1))#
+plot(out[,1],out[,2],type='l',ylab="volume (m3)",xlab="time")#
+plot(out[,1],out[,3]/out[,2],type='l',ylab="carbon (mol C m-3)",xlab="time")
+nTimeSteps=500#
+t.s=1:nTimeSteps#
+#
+## initialize and simulate  model#
+init=c(V=V,C=0)#
+out=ode(y=init,times=t.s,func=dynamicDecayStep,parms=params)#
+#
+dev.new()#
+par(mfrow=c(2,1))#
+plot(out[,1],out[,2],type='l',ylab="volume (m3)",xlab="time")#
+plot(out[,1],out[,3]/out[,2],type='l',ylab="carbon (mol C m-3)",xlab="time")
+SWvGW=0.9
+Lg=sqrt(A/pi)	# groundwater flowpath length [m]; assumes flowpath is radius of circular catchment with lake in the middle#
+Kh=1			# hydraulic conductivity [m d-1]#
+dHdL=0.1		# groundwater vertical gradient [m m-1]#
+phi=	0.5		# sediment porosity???#
+tauG=Lg*	phi/(Kh*dHdL)	# travel time of water in groundwater to lake [days]#
+Qg=annP*A/365*(1-SWvGW)	# groundwater discharge into lake [m3 day-1]#
+Cg=Cg0*exp(-lambdaG*tauG)#
+#
+# estimate stream travel time#
+Ls=1.4*A^0.568		# stream length scales with catchment area [Gray 1961; JGR 66: 1215-1223; Traboton et al. 198; WRR 24: 1317-1322 useful too]; this is total network length so not quite right...#
+U=0.05*60*60*24			# average stream velocity [m day-1]#
+tauS=Ls/U		# travel time of water in stream to lake [days]#
+Qs=annP*A/365*SWvGW	# groundwater discharge into lake [m3 day-1]#
+Cs=Cs0*exp(-lambdaS*tauS)#
+#
+params=c(V=V,lambdaL=lambdaL,lambdaG=lambdaG,lambdaS=lambdaS,Qg=Qg,Cg=Cg,Qs=Qs,Cs=Cs)#
+#
+# time steps in simulation#
+nTimeSteps=500#
+t.s=1:nTimeSteps#
+#
+## initialize and simulate  model#
+init=c(V=V,C=0)#
+out=ode(y=init,times=t.s,func=dynamicDecayStep,parms=params)#
+#
+dev.new()#
+par(mfrow=c(2,1))#
+plot(out[,1],out[,2],type='l',ylab="volume (m3)",xlab="time")#
+plot(out[,1],out[,3]/out[,2],type='l',ylab="carbon (mol C m-3)",xlab="time")
+rm(list=ls())#
+#
+# load package for numerical integration#
+library(deSolve)#
+#
+# function for simulating #
+dynamicDecayStep<-function(time,y,params){#
+	with(as.list(params),{#
+		# state variables#
+		V=y[1]#
+		C=y[2]#
+		alpha=y[3]#
+		Qout=Qs+Qg	#for now we have static volume#
+		kS=Qs/V		#stream hydrologic dilution rate#
+		kG=Qg/V		#groundwater hydrologic dilution rate#
+		# differential equations#
+		dV.dt=Qs+Qg-Qout#
+		dC.dt=Qs*Cs+Qg*Cg-Qout*C/V-lambdaL*C#
+		dalpha.dt=C-kS*(alphaS-alpha)-kG*(alphaG-alpha)-lambdaL*alpha#
+		list(c(dV.dt,dC.dt,dalpha.dt))#
+	})#
+}#
+#
+## parameters#
+A=1e6			# catchment area [m2]#
+LA=1e5			# lake area [m2]#
+zbar=4		# lake mean depth [m]#
+lambdaL=0.005	# first order decay in lake; if conservative tracer d=0#
+lambdaG=	0.001	# first order decay in groundwater#
+lambdaS=	0.005	# first order decay in stream#
+annP=1			# annual precipitation [m]; use with catchment area and for now no evapotranspiration to get Q's#
+SWvGW=0.5		# fraction of annual precip that enters lake via surface flow#
+#
+Cg0=1			# initial concentration of carbon in GW [mol C m-3]#
+Cs0=1			# initial concentration of carbon in SW [mol C m-3]#
+V=LA*zbar	# lake volume [m3]#
+#
+# estimate groundwater travel time#
+Lg=sqrt(A/pi)	# groundwater flowpath length [m]; assumes flowpath is radius of circular catchment with lake in the middle#
+Kh=1			# hydraulic conductivity [m d-1]#
+dHdL=0.1		# groundwater vertical gradient [m m-1]#
+phi=	0.5		# sediment porosity???#
+tauG=Lg*	phi/(Kh*dHdL)	# travel time of water in groundwater to lake [days]#
+Qg=annP*A/365*(1-SWvGW)	# groundwater discharge into lake [m3 day-1]#
+Cg=Cg0*exp(-lambdaG*tauG)#
+#
+# estimate stream travel time#
+Ls=1.4*A^0.568		# stream length scales with catchment area [Gray 1961; JGR 66: 1215-1223; Traboton et al. 198; WRR 24: 1317-1322 useful too]; this is total network length so not quite right...#
+U=0.05*60*60*24			# average stream velocity [m day-1]#
+tauS=Ls/U		# travel time of water in stream to lake [days]#
+Qs=annP*A/365*SWvGW	# groundwater discharge into lake [m3 day-1]#
+Cs=Cs0*exp(-lambdaS*tauS)#
+#
+alphaG=tauG*Cg#
+alphaS=tauS*Cs#
+#
+params=c(V=V,lambdaL=lambdaL,lambdaG=lambdaG,lambdaS=lambdaS,Qg=Qg,Cg=Cg,Qs=Qs,Cs=Cs,alphaG=alphaG,alphaS=alphaS)
+nTimeSteps=500#
+t.s=1:nTimeSteps#
+#
+## initialize and simulate  model#
+init=c(V=V,C=0,alpha=0)#
+out=ode(y=init,times=t.s,func=dynamicDecayStep,parms=params)
+dev.new()#
+par(mfrow=c(2,2))
+plot(out[,1],out[,2],type='l',ylab="volume (m3)",xlab="time")
+plot(out[,1],out[,3]/out[,2],type='l',ylab="carbon (mol C m-3)",xlab="time")
+plot(out[,1],out[,4]/out[,3],type='l',ylab="age (days)",xlab="time")
+# time steps in simulation#
+nTimeSteps=5000#
+t.s=1:nTimeSteps#
+#
+## initialize and simulate  model#
+init=c(V=V,C=0,alpha=0)#
+out=ode(y=init,times=t.s,func=dynamicDecayStep,parms=params)#
+#
+dev.new()#
+par(mfrow=c(2,2))#
+plot(out[,1],out[,2],type='l',ylab="volume (m3)",xlab="time")#
+plot(out[,1],out[,3]/out[,2],type='l',ylab="carbon (mol C m-3)",xlab="time")#
+plot(out[,1],out[,4]/out[,3],type='l',ylab="age (days)",xlab="time")
+rm(list=ls())#
+#
+# load package for numerical integration#
+library(deSolve)#
+#
+# function for simulating #
+dynamicDecayStep<-function(time,y,params){#
+	with(as.list(params),{#
+		# state variables#
+		V=y[1]#
+		C=y[2]#
+		Qout=Qs+Qg	#for now we have static volume#
+		# differential equations#
+		dV.dt=Qs+Qg-Qout#
+		dC.dt=Qs*Cs+Qg*Cg-Qout*C/V-lambdaL*C#
+		list(c(dV.dt,dC.dt))#
+	})#
+}#
+#
+## parameters#
+A=1e6			# catchment area [m2]#
+LA=1e5			# lake area [m2]#
+zbar=4		# lake mean depth [m]#
+lambdaL=0.005	# first order decay in lake; if conservative tracer d=0#
+lambdaG=	0.001	# first order decay in groundwater#
+lambdaS=	0.005	# first order decay in stream#
+annP=1			# annual precipitation [m]; use with catchment area and for now no evapotranspiration to get Q's#
+SWvGW=0.5		# fraction of annual precip that enters lake via surface flow#
+#
+Cg0=1			# initial concentration of carbon in GW [mol C m-3]#
+Cs0=1			# initial concentration of carbon in SW [mol C m-3]#
+V=LA*zbar	# lake volume [m3]#
+#
+# estimate groundwater travel time#
+Lg=sqrt(A/pi)	# groundwater flowpath length [m]; assumes flowpath is radius of circular catchment with lake in the middle#
+Kh=1			# hydraulic conductivity [m d-1]#
+dHdL=0.1		# groundwater vertical gradient [m m-1]#
+phi=	0.5		# sediment porosity???#
+tauG=Lg*	phi/(Kh*dHdL)	# travel time of water in groundwater to lake [days]#
+Qg=annP*A/365*(1-SWvGW)	# groundwater discharge into lake [m3 day-1]#
+Cg=Cg0*exp(-lambdaG*tauG)#
+#
+# estimate stream travel time#
+Ls=1.4*A^0.568		# stream length scales with catchment area [Gray 1961; JGR 66: 1215-1223; Traboton et al. 198; WRR 24: 1317-1322 useful too]; this is total network length so not quite right...#
+U=0.05*60*60*24			# average stream velocity [m day-1]#
+tauS=Ls/U		# travel time of water in stream to lake [days]#
+Qs=annP*A/365*SWvGW	# groundwater discharge into lake [m3 day-1]#
+Cs=Cs0*exp(-lambdaS*tauS)#
+#
+params=c(V=V,lambdaL=lambdaL,lambdaG=lambdaG,lambdaS=lambdaS,Qg=Qg,Cg=Cg,Qs=Qs,Cs=Cs)
+nTimeSteps=250#
+t.s=1:nTimeSteps#
+#
+## initialize and simulate  model#
+init=c(V=V,C=0)#
+out=ode(y=init,times=t.s,func=dynamicDecayStep,parms=params)#
+#
+dev.new()#
+par(mfrow=c(2,2))#
+plot(out[,1],out[,2],type='l',ylab="volume (m3)",xlab="time")#
+plot(out[,1],out[,3]/out[,2],type='l',ylab="carbon (mol C m-3)",xlab="time")
+# time steps in simulation#
+nTimeSteps=500#
+t.s=1:nTimeSteps#
+#
+## initialize and simulate  model#
+init=c(V=V,C=0)#
+out=ode(y=init,times=t.s,func=dynamicDecayStep,parms=params)#
+#
+dev.new()#
+par(mfrow=c(2,2))#
+plot(out[,1],out[,2],type='l',ylab="volume (m3)",xlab="time")#
+plot(out[,1],out[,3]/out[,2],type='l',ylab="carbon (mol C m-3)",xlab="time")
+80*3.8/1000
+200/.304
+660/60
