@@ -23,7 +23,7 @@ SAR.accum.dist <- function(com, geo.dist, iterations){
     areas <- c() # hold iterated area values 
     Ss <- c() # hold iterated S values
     
-    for(j in 2:iterations){
+    for(j in 1:iterations){
       pondID <- sample(51, size = 1)
       while(pondID == 29 | pondID == 31){ 
         pondID <- sample(51, size = 1) 
@@ -33,7 +33,7 @@ SAR.accum.dist <- function(com, geo.dist, iterations){
       cum.abs <- com[pondID, ]
       used <- c()
       
-      for (k in 2:i) { # Loop through ponds
+      for (k in 1:i) { # Loop through ponds
         sdata <- subset(coord.dist.ls, FALSE == is.element(NBX, used) & FALSE == is.element(NBY, used))
         sdata <- subset(sdata, NBX == pondID | NBY == pondID)
         sdata <- subset(sdata, NBX != 29 | NBY != 31)
