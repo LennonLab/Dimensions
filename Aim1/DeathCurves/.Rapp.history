@@ -1,51 +1,0 @@
-rm(list = ls())#
-getwd()#
-setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
-obs <- read.csv("longtermdormancy_20150806_nocomments.csv", header = TRUE, stringsAsFactors = FALSE)
-obs <- read.csv("/data/longtermdormancy_20150806_nocomments.csv", header = TRUE, stringsAsFactors = FALSE)
-obs <- read.csv("data/longtermdormancy_20150806_nocomments.csv", header = TRUE, stringsAsFactors = FALSE)
-obs$Abund <- as.numeric(obs$Colonies) * 10 ^ as.numeric(obs$Dilution) + 1
-strains=sort(unique(obs$Strain))#
-#only fit strains with more than 10 observations#
-strains=strains[table(obs$Strain)>10]#
-obs=obs[obs$Strain%in%strains,]
-summ=matrix(NA,length(strains)*max(obs$Rep),10)#
-counter=1
-for(i in 1:length(strains)){#
-	strainObs=obs[obs$Strain==strains[i],]#
-	reps=unique(strainObs$Rep)#
-	for(j in 1:length(reps)){#
-		repObs=strainObs[strainObs$Rep==reps[j],]#
-		if(nrow(repObs)>3){#
-			start=repObs[1,1]#
-			time=(as.numeric(strptime(repObs$Firstread_date,format="%d-%b-%y",tz="EST"))-as.numeric(strptime(start,format="%d-%b-%y",tz="EST")))/(3600*24)#
-			time2=time*time
-# Fit log linear and log quadratic models using glm()	#
-			logLinCur=glm(log10(repObs$Abund)~time)#
-			logQuadCur=glm(log10(repObs$Abund)~time+time2)#
-			# pull coefficients, etc. from glm fits#
-			summ[counter,1]=strains[i]#
-			summ[counter,2]=reps[j]#
-			summ[counter,3:4]=coef(logLinCur)[2:1]#
-			summ[counter,5]=summary(logLinCur)$aic#
-			summ[counter,6:8]=coef(logQuadCur)[3:1]#
-			summ[counter,9]=summary(logQuadCur)$aic
-summ[counter,10]=as.numeric(pchisq(2*(logLik(logQuadCur)-logLik(logLinCur)),df=1,lower.tail=FALSE))
-#### add indicator of non-linearity (****) to plot title if quadratic model is better#
-#			if(!is.na(summ[counter,10])){#
-#				if(as.numeric(summ[counter,10])<0.05){#
-#					title=paste(strains[i]," rep ",reps[j],"****")#
-#				}else{#
-#					title=paste(strains[i]," rep ",reps[j])#
-#				}#
-#			}else{#
-#				title=paste(strains[i]," rep ",reps[j])#
-#			}#
-#			plot(time,log10(repObs$Abund),main=title,ylim=c(0,9))#
-#			predTime=seq(0,max(time))#
-#			lines(predTime,logLinCur$par[2]-logLinCur$par[1]*predTime,lwd=2,lty=2)#
-#			lines(predTime,logQuadCur$par[3]-logQuadCur$par[1]*predTime^2-logQuadCur$par[2]*predTime,col='red',lwd=2,lty=2)#
-			counter=counter+1#
-		}#
-	}#
-}
