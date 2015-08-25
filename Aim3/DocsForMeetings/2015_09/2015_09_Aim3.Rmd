@@ -1,5 +1,6 @@
 ---
-title: "Spatial vs. temporal storage: The dual role of microbial seed banks in driving geographical patterns of microbial diversity"
+title: "Spatial vs. temporal storage: The dual role of microbial seed
+banks in driving geographical patterns of microbial diversity"
 
 geometry: margin=2.54cm
 date: "August 4, 2015"
@@ -8,23 +9,6 @@ header-includes: \usepackage{array}
 ---
 
 ## Overview
-Themes: Spatial vs. temporal storage and/or local vs. regional drivers
-
-General hypothesis: Seed banks contribute to homogenizing dispersal, which helps explain why microbial TARs often have shallow slopes. 
-But note: Zinger et al. 2012 reveal slopes similar to those of plants and animals.
-
-Initial DoB Prediction: Steeper slopes (i.e. higher z-values, greater scaling exponent) for the active community.
-Initial and repeated result: Our data don't support this hypothesis.
-Note: We see little homogeneity all-around, when looking only at presence/absence. This is driven by rare members, as weighted similarity measures greatly increase apparent compositional similarity between sites.
-
-Potential Explanation: 
-Our initial hypothesis focused on the spatial influence of dormancy. 
-It did not consider temporal storage effect. Activity and seed bank dynamics could be controlled by regional cues and age of the seed bank.
-
-Recent result that Ken is looking into:
-The dominant members differ greatly between 'active' and 'all'. This deserves more analyses and it would be great to know if there's something known about the dominant taxa.
-
-We asked whether "Active" and "All" differ in primary aspects of alpha-diversity, beta-diversity, and geographical patterns: the taxa-area relationship (TAR), the distance-decay relationship in taxonomic and phylogenetic community similarity.
 
 
 ## 1.) Set up the environmnent 
@@ -58,9 +42,11 @@ require(reshape)
 
 ### C. Import functions
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-# import code file that includes a function for reading in output files from community sequencing software `mothur` (http://www.mothur.org/).
+# import code file that includes a function for reading in output files 
+#from community sequencing software `mothur` (http://www.mothur.org/).
 source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
-# import code for constructing species-area relationships by aggregating sites at random, with or without respect to distance
+# import code for constructing species-area relationships by aggregating
+# sites at random, with or without respect to distance
 source("~/GitHub/Dimensions/Aim3/bin/SAR.R")
 # import code for calculating diversity metrics
 source("~/GitHub/Dimensions/Aim3/bin/metrics.R")
@@ -70,7 +56,8 @@ load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ### D. Import data and prepare data for analyses
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load Environmental and Geographical Data
-env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
+env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv",
+                  sep = ",", header = TRUE)
 lats <- as.numeric(env[, 3]) # latitudes (north and south)
 lons <- as.numeric(env[, 4]) # longitudes (east and west)
 
@@ -122,20 +109,21 @@ env$all.De <- as.vector(diversity(all.comm, index = "invsimpson")/env$all.S)
 
 ## 2.) Analysis
 
-### 1.) Dependence of the taxa-area relationship on the number (detection) of rare taxa
-The species-area relationshp describes the rate at which species are discovred with increasing area. The SAR one of ecology's oldest and most intensively studied patterns. Arrhenius (1921) first described the general form of the *species-area relationship (SAR)* as a power-law: $S = cA^{z}$ where S is species richnness and A is area. Arrhenius's formula predicts a rate of increase in richness that is approximately linear in log-log space. That is, $log(S) = c + zlog(A)$, where z is the scaling exponent.
+### 1.) Dependence of the TAR on the number (detection) of rare taxa
+The species-area relationshp describes the rate at which species are 
+discovred with increasing area. The SAR one of ecology's oldest and most 
+intensively studied patterns. Arrhenius (1921) first described the general 
+form of the *species-area relationship (SAR)* as a power-law: $S = cA^{z}$ 
+where S is species richnness and A is area. Arrhenius's formula predicts a 
+rate of increase in richness that is approximately linear in log-log space.
+That is, $log(S) = c + zlog(A)$, where z is the scaling exponent.
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=4}
-#Taxa-area relationship, accumulating ponds by nearest-neighbor
-iterations = 100
-
-plot.new()
-pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
-
-source("~/GitHub/Dimensions/Aim3/bin/SAR.R")
+```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=4}
 par(mfrow=c(1, 1))
-  
-cutoffs <- c(15, 30, 60, 125, 250, 500, 1000, 2000, 4000, 8000, 16000, 22098)
+#Taxa-area relationship
+iterations = 4
+pond.areas <- as.vector(pi * (env$Diameter/2)^2) # Find areas of all 51 ponds
+cutoffs <- c(15, 30, 60, 125, 250)#, 500, 1000, 2000, 4000, 8000, 16000, 22098)
 
 active.zs.dist <- c()
 all.zs.dist <- c()
@@ -148,12 +136,14 @@ for (cutoff in cutoffs){
   active.sub.comm <- active.comm[, 1:cutoff]
 
   # all, distance
-  sar <- as.data.frame(SAR.accum.dist(all.sub.comm, coord.dist.ls$geo.dist, iterations))
+  sar <- as.data.frame(SAR.accum.dist(all.sub.comm, 
+                                      coord.dist.ls$geo.dist, iterations))
   OLS <- lm(sar$V2 ~ sar$V1)
   all.zs.dist <- c(all.zs.dist, coefficients(OLS)[2])
   
   # active, distance
-  sar <- as.data.frame(SAR.accum.dist(active.sub.comm, coord.dist.ls$geo.dist, iterations))
+  sar <- as.data.frame(SAR.accum.dist(active.sub.comm, 
+                                      coord.dist.ls$geo.dist, iterations))
   OLS <- lm(sar$V2 ~ sar$V1)
   active.zs.dist <- c(active.zs.dist, coefficients(OLS)[2])
   
@@ -168,7 +158,8 @@ for (cutoff in cutoffs){
   active.zs.rand <- c(active.zs.rand, coefficients(OLS)[2])
   }
 
-z.lists <- as.data.frame(c(all.zs.dist, active.zs.dist, all.zs.rand, active.zs.rand))
+z.lists <- as.data.frame(c(all.zs.dist, active.zs.dist, 
+                           all.zs.rand, active.zs.rand))
   
 
 z.df <- data.frame(cutoff = cutoffs,
@@ -179,7 +170,7 @@ z.df <- data.frame(cutoff = cutoffs,
   
 z.df <- melt(z.df,  id.vars = 'cutoff', variable_name = 'series')
 
-# plot on same grid, each series colored differently -- good if the series have same scale
+# plot on same grid, each series colored differently
 ggplot(z.df, aes(cutoff, value)) + 
   geom_line(aes(colour = series)) +
   labs(x= "Number of OTU's", y="Slope of the TAR (z-value)") +
@@ -187,15 +178,14 @@ ggplot(z.df, aes(cutoff, value)) +
   theme(legend.position="top") +
   guides(fill=guide_legend(title=NULL)) +
   theme(legend.title=element_blank())
-
-# or plot on different plots
-# ggplot(z.df, aes(cutoff,value)) + geom_line() + facet_grid(series ~ .)
 ```
 
 
 ## 3.) Slight differences in distance-decay relationships
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=6}
+```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=4}
+par(mfrow=c(1, 1))
+
 # Geographic Distances (Kilometers) Among Ponds
 long.lat <- as.matrix(cbind(env$long, env$lat))
 coord.dist <- earth.dist(long.lat, dist = TRUE)
@@ -203,7 +193,7 @@ coord.dist <- log(coord.dist)
 coord.dist[which(!is.finite(coord.dist))] = NA
 coord.dist.ls <- liste(coord.dist, entry = "geo.dist")
 
-cutoffs <- c(15, 30, 60, 125, 250)#, 500, 1000, 2000, 4000, 8000, 16000, 22098)
+cutoffs <- c(15, 30, 60, 125, 250, 500, 1000, 2000, 4000, 8000, 16000, 22098)
 
 active.dd.BC <- c()
 all.dd.BC <- c()
@@ -217,14 +207,18 @@ for (cutoff in cutoffs){
   active.sub.comm <- active.comm[, 1:cutoff]
 
   # Taxonomic Distances Among Ponds (Bray-Curits)
-  active.bray.curtis.dist <- 1 - vegdist(active.comm, method="bray", binary=FALSE) 
+  active.bray.curtis.dist <- 1 - vegdist(active.sub.comm,
+                                         method="bray", binary=FALSE) 
   active.bray.curtis.dist <- log(active.bray.curtis.dist)
-  all.bray.curtis.dist <- 1 - vegdist(all.comm, method="bray", binary=FALSE)
+  all.bray.curtis.dist <- 1 - vegdist(all.sub.comm,
+                                      method="bray", binary=FALSE)
   all.bray.curtis.dist <- log(all.bray.curtis.dist)
 
-  active.sorensen.dist <- 1 - vegdist(active.comm, method="bray", binary=TRUE) 
+  active.sorensen.dist <- 1 - vegdist(active.sub.comm,
+                                      method="bray", binary=TRUE) 
   active.sorensen.dist <- log(active.sorensen.dist)
-  all.sorensen.dist <- 1 - vegdist(all.comm, method="bray", binary=TRUE)
+  all.sorensen.dist <- 1 - vegdist(all.sub.comm,
+                                   method="bray", binary=TRUE)
   all.sorensen.dist <- log(all.sorensen.dist)
 
   # Transform All Distances Into List Format:
@@ -277,7 +271,7 @@ dd.df <- data.frame(cutoff = cutoffs,
   
 dd.df <- melt(dd.df,  id.vars = 'cutoff', variable_name = 'series')
 
-# plot on same grid, each series colored differently -- good if the series have same scale
+# plot on same grid, each series colored differently
 ggplot(dd.df, aes(cutoff, value)) +
   geom_line(aes(colour = series)) +
   labs(x= "Number of OTU's", y="Slope of Distance-Decay") +
@@ -285,22 +279,29 @@ ggplot(dd.df, aes(cutoff, value)) +
   theme(legend.position="top") +
   guides(fill=guide_legend(title=NULL)) +
   theme(legend.title=element_blank())
-
-# or plot on different plots
-# ggplot(z.df, aes(cutoff,value)) + geom_line() + facet_grid(series ~ .)
 ```
 
 
-## 4.) Little difference in community distance matrices between Active and All when using presence-absence; generally low similarity. Substantial differences between Active and All based on Bray-Curtis.
+## 4.) 
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=6}
+Little difference in community distance matrices between Active and All 
+when using presence-absence, but generally high dissimilarity between all sites.
+Clearer differences between Active and All based on Bray-Curtis, but also 
+decreasing dissimilarity among sites. 
+
+Notably, for 'all', a group of Hoosier National Forest (HNF) sites and a group of 
+Brown County State Park (BC) sites share relatively high similarity. Also, the same 
+subgroup of HNF sites is highly dissimilar to all other sites in the dataset. Perhaps 
+these results are explained by environmental similarity.
+
+```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=4}
 #install.packages("gridExtra")
 require(gridExtra) # also loads grid
 require(lattice)
 
-# Calculate Jaccard 
-active.Jaccard <- vegdist(active.comm, method = "jaccard", binary = TRUE)
-all.Jaccard <- vegdist(all.comm, method = "jaccard", binary = TRUE)
+# Calculate Jaccard
+active.Jaccard <- vegdist(active.comm, method = "bray", binary = TRUE)
+all.Jaccard <- vegdist(all.comm, method = "bray", binary = TRUE)
 
 # Calculate Bray-Curtis 
 active.BrayCurtis <- vegdist(active.comm, method = "bray")
@@ -319,13 +320,13 @@ p1 <- levelplot(as.matrix(active.Jaccard)[, order], aspect = "iso",
           col.regions = jet.colors, 
           xlab = "Pond", ylab = "Pond", 
           scales = list(cex = 0.5), 
-          main = "Jaccard (active)")
+          main = "Sorensen (active)")
 
 p2 <- levelplot(as.matrix(all.Jaccard)[, order], aspect = "iso", 
           col.regions = jet.colors, 
           xlab = "Pond", ylab = "Pond", 
           scales = list(cex = 0.5), 
-          main = "Jaccard (all)")
+          main = "Sorensen (all)")
 
 # Plot Heatmaps of Bray-Curtis distance
 p3 <- levelplot(as.matrix(active.BrayCurtis)[, order], aspect = "iso",
@@ -344,89 +345,141 @@ grid.arrange(p1, p2, p3, p4, ncol=2, nrow=2)
 ```
 
 
-## 5.) Cluster analysis reveals greater clustering among Active. Note the tight cluster of primarily HNF sites on the left side of Active.
+## 5.) 
+Cluster analysis reveals greater clustering based on relative activity 
+than based on relative abundance.
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=4}
+```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=4}
 # Set Initial Plot Parameters
+plot.new()
 par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
 
 # Perform Cluster Analysis
 active.BC.ward <- hclust(active.BrayCurtis, method = "ward.D2")
 
 # Plot Cluster
-plot(active.BC.ward, main = "IN Ponds: Ward's Clustering", 
+plot(active.BC.ward, main = "IN Ponds (Active)\nWard's Clustering", 
      ylab = "Squared Bray-Curtis Distance")
 ```
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=8, fig.height=5}
+```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=4}
 # Set Initial Plot Parameters
+plot.new()
 par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
 
 # Perform Cluster Analysis
 all.BC.ward <- hclust(all.BrayCurtis, method = "ward.D2")
 
 # Plot Cluster
-plot(all.BC.ward, main = "IN Ponds: Ward's Clustering", 
+plot(all.BC.ward, main = "IN Ponds (All)\nWard's Clustering", 
      ylab = "Squared Bray-Curtis Distance")
 ```
 
 
-## 6.) Heat-mapping cluster analysis among dominant OTUs reveals that dominance in abundance does not reflect dominance in activity. Colormap represents log-transformed numbers of reads.
+## 6.) 
+Heat-mapping cluster analysis among dominant OTUs reveals that dominance 
+in abundance does not reflect dominance in activity. Colormap represents 
+log-transformed numbers of reads.
 
-
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=8}
-
+```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=8}
+require(gplots)
+plot.new()
 all.comm.dom <- log10(all.comm[, 1:10]+1)
 active.comm.dom <- log10(active.comm[, 1:10]+1)
 
 # Set Initial Plot Parameters
 par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
 
-require(gplots)
 heatmap.2(as.matrix(all.comm.dom), distfun = function(x) vegdist(x, method = "bray"),
           hclustfun = function(x) hclust(x, method = "ward.D2"), 
           col = jet.colors(100), trace = "none", density.info = "none",
           main='10 most dominant (All)')
 ```
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=8}
+```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=8}
 
 # Set Initial Plot Parameters
-par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
-heatmap.2(as.matrix(active.comm.dom), distfun = function(x) vegdist(x, method = "bray"),
+plot.new()
+par(mfrow=c(1, 1))
+heatmap.2(as.matrix(active.comm.dom), 
+          distfun = function(x) vegdist(x, method = "bray"),
           hclustfun = function(x) hclust(x, method = "ward.D2"), 
-          col = jet.colors(100), trace = "none", density.info = "none",
+          col = jet.colors(100), trace = "none", 
+          density.info = "none",
           main='10 most dominant (Active)')
 ```
 
 
 ## 7.) Variance partitioning: 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=8}
+```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=4}
 
-all.comm.dom <- log10(all.comm[, 1:10]+1)
-active.comm.dom <- log10(active.comm[, 1:10]+1)
-comm.dat <- active.comm.dom
+cutoffs <- c(15, 30, 60, 125, 250, 500, 1000, 2000, 4000, 8000, 16000, 22098)
+
+active.env <- c()
+active.geo <- c()
+active.env.geo <- c()
+
+all.env <- c()
+all.geo <- c()
+all.env.geo <- c()
 
 # Geographic variables
-geo.dat <- as.matrix(subset(env, select = lat:long))
-#rda.geo <- rda(comm.dat ~ geo.dat)
+geo.dat <- as.matrix(subset(env, select = lat:Elevation))
+# Pond environmental variables
+env.dat <- as.matrix(subset(env, select = Diameter:DON))
 
-phys.dat <- as.matrix(subset(env, select = Diameter:Cal_Volume))
+for (cutoff in cutoffs){
+  print(cutoff)
+  all.sub.comm <- all.comm[, 1:cutoff]
+  active.sub.comm <- active.comm[, 1:cutoff]
+  
+  ## ALL
+  #rda.geo <- rda(all.sub.comm ~ geo.dat)
+  #rda.env <- rda(all.sub.comm ~ env.dat)
+  
+  # Two explanatory matrices -- Hellinger-transform Y
+  mod <- varpart(Y=all.sub.comm, X=geo.dat, env.dat, transfo="hellinger")
+  
+  all.env <- c(all.env, mod[[1]][[3]][[3]][3])
+  all.geo <- c(all.geo, mod[[1]][[3]][[3]][1])
+  all.env.geo <- c(all.env.geo, mod[[1]][[3]][[3]][2])
+  
+  # Test fraction [a] using RDA:
+  #geo.anova <- anova(rda.geo, step=200, perm.max=200)
+  #geo.anova
+  
+  ## ACTIVE
+  #rda.geo <- rda(active.sub.comm ~ geo.dat)
+  #rda.env <- rda(active.sub.comm ~ env.dat)
+  
+  # Two explanatory matrices -- Hellinger-transform Y
+  mod <- varpart(Y=active.sub.comm, X=geo.dat, env.dat, transfo="hellinger")
+  
+  active.env <- c(active.env, mod[[1]][[3]][[3]][3])
+  active.geo <- c(active.geo, mod[[1]][[3]][[3]][1])
+  active.env.geo <- c(active.env.geo, mod[[1]][[3]][[3]][2])
+  }
 
-# Physicochemical variables
-chem.dat <- as.matrix(subset(env, select = ORP:DON))
-#rda.phys <- rda(comm.dat ~ phychem.dat)
+# Set Initial Plot Parameters
+plot.new()
+par(mfrow=c(2, 2))
 
-# Two explanatory matrices -- Hellinger-transform Y
-mod <- varpart(Y=comm.dat, X=geo.dat, chem.dat, transfo="hellinger")
-mod
-plot(mod)
+varpar.df <- data.frame(cutoff = cutoffs,
+                 All_Env = all.env, 
+                 All_Geography = all.geo,
+                 #All_GeoEnv = all.env.geo,
+                 Active_Env = active.env, 
+                 Active_Geography = active.geo)
+                 #Active_GeoEnv = active.env.geo)
+  
+varpar.df <- melt(varpar.df,  id.vars = 'cutoff', variable_name = 'series')
 
-# Test fraction [a] using RDA:
-#geo.anova <- anova(rda.geo, step=200, perm.max=200)
-#geo.anova
-#phychem.anova <- anova(rda.phys, step=200, perm.max=200)
-#phychem.anova
-# Show values for all partitions by putting 'cutoff' low enough:
-#plot(mod, cutoff = -Inf, cex = 0.7)
+# plot on same grid, each series colored differently
+ggplot(varpar.df, aes(cutoff, value)) +
+  geom_line(aes(colour = series)) +
+  labs(x= "Number of OTU's", y="Explained variance") +
+  labs(title="Dependence of variance partitioning on rare taxa") +
+  theme(legend.position="top") +
+  guides(fill=guide_legend(title=NULL)) +
+  theme(legend.title=element_blank())
 ```
