@@ -1,0 +1,1178 @@
+?gaussian
+?glm
+?gaussian
+88633*1.609
+87975/91089.32
+87975*1.035
+(91089.32-87975)/87975
+250*12
+87975*0.035
+91000*1.03
+91000*1.03^3
+91000*1.03^4
+require("deSolve")
+persistCannibalism<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da		#g (L*day)^-1#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)		#g (L*day)^-1#
+		res=c(dBadt,dCdt)#
+		list(res)#
+	})#
+}
+parms = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, m=0.5)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02, C = 0)#
+#
+outPC=ode(y=init,times=times,func=persistCannibalism,parms=parms)#
+#
+dev.new()#
+par(mfrow=c(2,1))#
+plot(outPC[,1],log10(outPC[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPC[,1],outPC[,3],type='l',xlab='time',ylab='carbon (g)')
+persist<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=-Ba*da		#g (L*day)^-1#
+		res(c(dBadt))#
+		list(res)#
+	})#
+}
+parms = c(da = 0.1)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02)
+persist<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=-Ba*da		#g (L*day)^-1#
+		res(c(dBadt))#
+		list(res)#
+	})#
+}#
+#
+#parameters#
+# da= mortality rate [day^-1]#
+#
+# assumptions#
+# 20e-15 g (femtograms of C per cell)#
+# start with 1e12 cells per L (0.02 g C in Ba)#
+#
+parms = c(da = 0.1)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02)#
+#
+outP=ode(y=init,times=times,func=persist,parms=parms)
+persist<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=-Ba*da		#g (L*day)^-1#
+		res=c(dBadt)#
+		list(res)#
+	})#
+}
+parms = c(da = 0.1)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02)#
+#
+outP=ode(y=init,times=times,func=persist,parms=parms)
+dev.new()#
+plot(outP[,1],log10(outP[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')
+# population decay without evolution, but C recycling#
+persistCannibalism<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da		#g (L*day)^-1#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)		#g (L*day)^-1#
+		res=c(dBadt,dCdt)#
+		list(res)#
+	})#
+}#
+#
+# parameters#
+# Va= mass-specific maximum uptake rate [g (g*day)^-1]#
+# Ka= carbon half-saturation constant [g L^-1]#
+# Ea= growth efficiency#
+# da= mortality rate [day^-1]#
+# m= fraction of dead bacteria available for consumption#
+#
+# assumptions#
+# 20e-15 g (femtograms of C per cell)#
+# start with 1e12 cells per L (0.02 g C in Ba)#
+#
+# Apsergillus niger??? Ka=15 uM glucose, Va=1 umol (gram dry weight)^-1 second^-1 Jorgensen et al. 2007 Microbiology, 153: 1963-1973#
+					#  Ka=0.0011 g C L^-1; Va=12.4 g C (g bacterial C)^-1 day^-1#
+#
+#parms = c(Va = 10^-10, Ka = 10^-10, Ea = 0.75, da = 0.1, m=0.5) # these are from Jay's old script#
+parms = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, m=0.5)#
+times = seq(0,1000,0.1)#
+init = c(Ba = 0.02, C = 0)#
+#
+outPC=ode(y=init,times=times,func=persistCannibalism,parms=parms)#
+#
+dev.new()#
+par(mfrow=c(2,1))#
+plot(outPC[,1],log10(outPC[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPC[,1],outPC[,3],type='l',xlab='time',ylab='carbon (g)')
+persistCannibalismMut<-function(t,x,parms){#
+	with(as.list(c(parms,x)),{#
+		dBadt=Ba*(C*Va)/(C+Ka)*Ea-Ba*da#
+		dBmdt=Bm*(C*Vm)/(C+Km)*Em-Bm*dm#
+		dCdt=Ba*da*m-Ba*(C*Va)/(C+Ka)+Bm*dm*m-Bm*(C*Vm)/(C+Km)#
+		res=c(dBadt,dBmdt,dCdt)#
+		list(res)#
+	})#
+}#
+# simulate with lower death rate in mutant#
+#
+# fraction of initial population that are mutant#
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics
+dev.new()#
+par(mfrow=c(2,2))#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 cells",type='l')
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],rowSums(outPCmut[,2:3]),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)',type="l")
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)',type="l")
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 0, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=0, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.75, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.8, dm=0.1, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.1, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.1, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+fracMut=1e-5#
+#
+parmsMut = c(Va = 12, Ka = 0.0011, Ea = 0.5, da = 0.1, Vm=12, Km=0.0011, Em=0.9, dm=0.05, m=0.5)#
+initMut = c(Ba = 0.02-0.02*fracMut, Bm=0.02*fracMut, C = 0)#
+#
+outPCmut=ode(y=initMut,times=times,func=persistCannibalismMut,parms=parmsMut)#
+#
+# summary plots of model with mutant dynamics#
+dev.new()#
+par(mfrow=c(2,3))#
+plot(outPCmut[,1],log10(rowSums(outPCmut[,2:3])/(20e-15)),xlab="time",ylab="log10 cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,2]/(20e-15)),xlab="time",ylab="log10 ancestral cells",type='l')#
+plot(outPCmut[,1],log10(outPCmut[,3]/(20e-15)),xlab="time",ylab="log10 mutant cells",type='l')#
+plot(outPCmut[,1],outPCmut[,3]/rowSums(outPCmut[,2:3]),xlab="time",ylab="prop. cells",type='l')#
+plot(outPCmut[,1],outPCmut[,4],type='l',xlab='time',ylab='carbon (g)')
+804*8
+Cin=8#
+d=0.1#
+Q=100#
+V=1000#
+#
+tsteps=1000#
+C=numeric(tsteps+1)#
+C[1]=0#
+#
+for(i in 1:tsteps){#
+	C[(i+1)]=C[i]+Q(Cin-C[i])-C[i]*d#
+}
+Cin=8#
+d=0.1#
+Q=100#
+V=1000#
+#
+tsteps=1000#
+C=numeric(tsteps+1)#
+C[1]=0#
+#
+for(i in 1:tsteps){#
+	C[(i+1)]=C[i]+Q*(Cin-C[i])-C[i]*d#
+}
+plot(C,type='l',ylim=c(5,10))#
+print(C[1000])
+Cin=8#
+d=0.1#
+Q=100#
+V=1000#
+#
+tsteps=1000#
+C=numeric(tsteps+1)#
+C[1]=0#
+#
+for(i in 1:tsteps){#
+	C[(i+1)]=C[i]+Q/V*(Cin-C[i])-C[i]*d#
+}#
+plot(C,type='l',ylim=c(5,10))#
+print(C[1000])
+Cin=8#
+d=0.1#
+Q=100#
+V=1000#
+#
+tsteps=1000#
+C=numeric(tsteps+1)#
+C[1]=0#
+#
+for(i in 1:tsteps){#
+	C[(i+1)]=C[i]+Q/V*(Cin-C[i])-C[i]*d#
+}#
+plot(C,type='l')#
+print(C[1000])
+Lneeded=totalInC*1000*1000/streamInConc
+totalInC= 544	# kg DOC to go from 11 to 16 mg L-1#
+#
+streamInConc=60		# mg C L in stream#
+#
+Lneeded=totalInC*1000*1000/streamInConc
+Lneeded
+Gneeded=Lneeded/3.8
+Gneeded
+)#
+dailyGneededShort=Gneeded/shortDays
+shortDays=42#
+longDays=63#
+#
+##### short pumping period (42 days)#
+dailyGneededShort=Gneeded/shortDays
+dailyGneededShort
+30*60*24
+maxFlowM=50	#gpm#
+maxFlowD=50*60*24	#gpday
+maxFlowD
+dailyGneededShort/maxFlowD
+24*.22
+0.001*1000
+0.001*1000*60
+0.001*1000*60/3.8
+dailyGneededLong=Gneeded/longDays
+dailyGneededLong
+dailyGneededLong/maxFlowD
+TSmaxFlowM=250	#gpm#
+TSmaxFlowD=TSmaxFlowM*60*24	#gpday
+TSmaxFlowD
+Gneeded/TSmaxFlowD
+200*1000/3.8
+52631.6/TSmaxFlowD
+52631.6/TSmaxFlowD*24
+Gneeded/52631.6
+200*1000/3.8
+dailyV=200*1000/3.8
+dailyV
+dailyV/TSmaxFlowD*24
+# 4 gallons of gas per day (1 gallon per hour)#
+4*45*3
+0.25/12
+plot(seq(0,40),sin(seq(0,40)))
+plot(seq(0,40),sin(seq(0,40)),type='l')
+plot(seq(0,40,0.01),sin(seq(0,40,0.01)),type='l')
+x=seq(0,10,0.01)
+y=sin(x)
+y[y<0]=0
+plot(x,y)
+plot(x,y,type='l')
+x=seq(0,20,0.01)
+y=sin(x)
+y[y<0]=0
+plot(x,y,type='l')
+lines(c(0,20),c(0.25,0.25),col='red')
+plot(x,y,type='l',lwd=3)
+lines(c(0,20),c(0.25,0.25),col='red',lwd=3)
+x=c(1,"hello")
+str(x)
+1000*3.148/100*35
+1000+200+75+250+500+500
+2525*2
+2525*2/100*35
+sum(c(75,200,500,1000,250,500))*2/100*35
+sum(c(75,200,500,1000,250,500))
+totalInC= 544	# kg DOC to go from 11 to 16 mg L-1#
+#
+streamInConc=60		# mg C L in stream#
+#
+Lneeded=totalInC*1000*1000/streamInConc#
+Gneeded=Lneeded/3.8#
+#
+shortDays=42#
+longDays=63#
+#
+##### short pumping period (42 days)#
+dailyGneededShort=Gneeded/shortDays
+dailyGneededShort
+dailyGneededShort/150*60*24
+dailyGneededShort/150/60/24
+dailyGneededShort/150/60
+9600/60
+2.4*60*220
+dailyGneededShort/300
+dailyGneededShort/300/60
+dailyGneededShort/(264+150)/60
+dailyGneededShort/(150)/60
+dailyGneededShort/(150*2)/60
+dailyGneededShort/(200*2)/60
+75/3.14
+1000/3.14
+.66/50*3
+.86/50
+50/.86*.0159
+0.5^3
+0.5^3.5
+6*6*3.5
+60*3.8/1000*18*60
+246.24/(42*200)
+60*3.8/1000*8*60
+234563+305547+183502+105433+94401
+0.66/16*24*48
+0.66*24
+0.66*0.2*24
+0.41*0.2*24
+1.4/12*48
+2.6/12*48
+1.4/12*48
+50/70
+9/3
+3.4/.06
+.45*0.4
+0.45*0.23
+20/12/1291*31*1000
+hitFiles=list.files()
+hitFiles
+hitFiles=list.files(pattern="hits")
+hitFiles
+i=1
+cur=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)
+dim(cur)
+head(cur)
+cur[1,1]
+cur[1,2]
+cur[1,3]
+cur[1,4]
+cur[1,5]
+cur[1,6]
+cur[1,7]
+cur[1,8]
+cur[1,9]
+cur[1,10]
+cur[1,11]
+cur[1,12]
+cur[1,13]
+hist(cur[,11])
+range(cur[,11])
+sum(cur[,11]<1e-10)
+hist(log10(cur[,11]))
+cur=cur[cur[,11]<1e-10,]
+dim(cur)
+length(cur[,1])
+length(unique(cur[,1]))
+list.files()
+putativeRPFgenes=sort(unique(cur[,1]))
+putativeRPFgenes
+# load current BLAST results file#
+hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+# remove hits with an evalue>1e-10#
+hits=hits[hits[,11]<1e-10,]
+putativeRPFgenes=sort(unique(hits[,1]))
+putativeRPFgenes
+j=
+1
+cur=hits[hits[,1]==putativeRPFgenes[j],]
+dim(cur)
+cur
+cur[,1]
+cur[,2]
+cur[,11]
+# vector of unique genome hits#
+putativeRPFgenes=sort(unique(hits[,1]))#
+#
+# generate dataframe to store the best match for each putativeRPF gene#
+bestHits=hits[1,]#
+for(j in 1:length(putativeRPFgenes)){#
+	cur=hits[hits[,1]==putativeRPFgenes[j],]#
+	if(sum(cur[,11]==min(cur[,11]))==1){#
+		bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+	}else if(sum(cur[,11]==min(cur[,11]))>1){#
+		cur=cur[order(cur[,11]),]#
+		bestHits=rbind(bestHits,cur[1,])#
+	}#
+}
+bestHits
+bestHits[,1]
+bestHits=bestHits[-1,]
+bestHits[,1]
+bestHits[,2]
+rpfHits=bestHits[grep("rpf",bestHits[,2]),]
+rpfHits
+dim(rpfHits)
+# generate vector of BLAST output files#
+# used rpf and lysozyme sequences in "lennon2blastdb.fasta" as database#
+# blasted translated gene sequences from prokka annotated soil genomes#
+hitFiles=list.files(pattern="hits")#
+#
+# create vector to append rpf hits to#
+allRPFhits="A"#
+#
+# loop through genomes and filter BLAST results#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-10,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}
+allRPFhits
+allRPFhits=allRPFhits[-1]
+allRPFhits
+z=substr(allRPFhits,1,7)
+z
+table(z)
+table(substr(allRPFhits,1,7))
+table(substr(allRPFhits,1,7))
+# generate vector of BLAST output files#
+# used rpf and lysozyme sequences in "lennon2blastdb.fasta" as database#
+# blasted translated gene sequences from prokka annotated soil genomes#
+hitFiles=list.files(pattern="hits")#
+#
+# create vector to append rpf hits to#
+allRPFhits="A"#
+#
+# loop through genomes and filter BLAST results#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-20,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+allRPFhits
+# generate vector of BLAST output files#
+# used rpf and lysozyme sequences in "lennon2blastdb.fasta" as database#
+# blasted translated gene sequences from prokka annotated soil genomes#
+hitFiles=list.files(pattern="hits")#
+#
+# create vector to append rpf hits to#
+allRPFhits="A"#
+#
+# loop through genomes and filter BLAST results#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-30,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+# generate vector of BLAST output files#
+# used rpf and lysozyme sequences in "lennon2blastdb.fasta" as database#
+# blasted translated gene sequences from prokka annotated soil genomes#
+hitFiles=list.files(pattern="hits")#
+#
+# create vector to append rpf hits to#
+allRPFhits="A"#
+#
+# loop through genomes and filter BLAST results#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-40,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+# generate vector of BLAST output files#
+# used rpf and lysozyme sequences in "lennon2blastdb.fasta" as database#
+# blasted translated gene sequences from prokka annotated soil genomes#
+hitFiles=list.files(pattern="hits")#
+#
+# create vector to append rpf hits to#
+allRPFhits="A"#
+#
+# loop through genomes and filter BLAST results#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-50,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+# generate vector of BLAST output files#
+# used rpf and lysozyme sequences in "lennon2blastdb.fasta" as database#
+# blasted translated gene sequences from prokka annotated soil genomes#
+hitFiles=list.files(pattern="hits")#
+#
+# create vector to append rpf hits to#
+allRPFhits="A"#
+#
+# loop through genomes and filter BLAST results#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-80,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+# generate vector of BLAST output files#
+# used rpf and lysozyme sequences in "lennon2blastdb.fasta" as database#
+# blasted translated gene sequences from prokka annotated soil genomes#
+hitFiles=list.files(pattern="hits")#
+#
+# create vector to append rpf hits to#
+allRPFhits="A"#
+#
+# loop through genomes and filter BLAST results#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-120,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+# generate vector of BLAST output files#
+# used rpf and lysozyme sequences in "lennon2blastdb.fasta" as database#
+# blasted translated gene sequences from prokka annotated soil genomes#
+hitFiles=list.files(pattern="hits")#
+#
+# create vector to append rpf hits to#
+allRPFhits="A"#
+#
+# loop through genomes and filter BLAST results#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-200,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+###### finding best few hits#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-200,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+allRPFhits
+hitFiles=list.files(pattern="hits")#
+#
+# create vector to append rpf hits to#
+allRPFhits="A"
+hitFiles
+i=2
+hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-10,]
+dim(hits)
+putativeRPFgenes=sort(unique(hits[,1]))
+putativeRPFgenes
+bestHits=hits[1,]
+bestHits
+j=1
+cur=hits[hits[,1]==putativeRPFgenes[j],]
+dim(cur)
+sum(cur[,11]==min(cur[,11]))==1
+sum(cur[,11]==min(cur[,11]))>1
+cur=cur[order(cur[,11]),]
+cur
+bestHits=rbind(bestHits,cur[1,])
+bestHits
+bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]
+bestHits
+rpfHits=bestHits[grep("rpf",bestHits[,2]),]
+rpfHits
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-200,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))#
+#
+	# generate dataframe to store the best match for each putativeRPF gene#
+	bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]#
+#
+	rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+	allRPFhits=c(allRPFhits,rpfHits[,1])#
+}#
+#
+allRPFhits=allRPFhits[-1]
+warnings()
+i=1
+hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-200,]#
+#
+	# vector of unique genome hits#
+	putativeRPFgenes=sort(unique(hits[,1]))
+bestHits=hits[1,]#
+	for(j in 1:length(putativeRPFgenes)){#
+		cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}#
+	}#
+	bestHits=bestHits[-1,]
+j=1
+bestHits=hits[1,]
+cur=hits[hits[,1]==putativeRPFgenes[j],]#
+		if(sum(cur[,11]==min(cur[,11]))==1){#
+			bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+		}else if(sum(cur[,11]==min(cur[,11]))>1){#
+			cur=cur[order(cur[,11]),]#
+			bestHits=rbind(bestHits,cur[1,])#
+		}
+cur
+putativeRPFgenes[j]
+j
+putativeRPFgenes
+hits
+length(hits)
+dim(hits)
+nrow(hits)
+###### finding best few hits#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-200,]#
+	if(nrow(hits)>0){#
+		# vector of unique genome hits#
+		putativeRPFgenes=sort(unique(hits[,1]))#
+#
+		# generate dataframe to store the best match for each putativeRPF gene#
+		bestHits=hits[1,]#
+		for(j in 1:length(putativeRPFgenes)){#
+			cur=hits[hits[,1]==putativeRPFgenes[j],]#
+			if(sum(cur[,11]==min(cur[,11]))==1){#
+				bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+			}else if(sum(cur[,11]==min(cur[,11]))>1){#
+				cur=cur[order(cur[,11]),]#
+				bestHits=rbind(bestHits,cur[1,])#
+			}#
+		}#
+		bestHits=bestHits[-1,]#
+#
+		rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+		allRPFhits=c(allRPFhits,rpfHits[,1])#
+	}#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+allRPFhits
+sum(duplicated(allRPFhits))
+allRPFhits="A"#
+#
+for(i in 1:length(hitFiles)){#
+# columns:#
+# 1 - query id#
+# 2 - subject id#
+# 3 - % identity#
+# 4 - alignment length#
+# 5 - mismatches#
+# 6 - gap opens#
+# 7 - query start#
+# 8 - query end#
+# 9 - subject start#
+# 10 - subject end#
+# 11 - evalue#
+# 12 - bit score#
+# 13 - sequence#
+#
+	# load current BLAST results file#
+	hits=read.table(hitFiles[i],header=FALSE,stringsAsFactors=FALSE)#
+	# remove hits with an evalue>1e-10#
+	hits=hits[hits[,11]<1e-200,]#
+	if(nrow(hits)>0){#
+		# vector of unique genome hits#
+		putativeRPFgenes=sort(unique(hits[,1]))#
+#
+		# generate dataframe to store the best match for each putativeRPF gene#
+		bestHits=hits[1,]#
+		for(j in 1:length(putativeRPFgenes)){#
+			cur=hits[hits[,1]==putativeRPFgenes[j],]#
+			if(sum(cur[,11]==min(cur[,11]))==1){#
+				bestHits=rbind(bestHits,cur[cur[,11]==min(cur[,11]),])#
+			}else if(sum(cur[,11]==min(cur[,11]))>1){#
+				cur=cur[order(cur[,11]),]#
+				bestHits=rbind(bestHits,cur[1,])#
+			}#
+		}#
+		bestHits=bestHits[-1,]#
+#
+		rpfHits=bestHits[grep("rpf",bestHits[,2]),]#
+		allRPFhits=c(allRPFhits,rpfHits[,1])#
+	}#
+}#
+#
+allRPFhits=allRPFhits[-1]#
+#
+# tabulate hits per genome#
+table(substr(allRPFhits,1,7))
+allRPFhits
+#### pulling these hits from open reading frames from prokka annotated genomes#
+print(allRPFhits)
+write.table(allRPFhits,"verybestRPFhits.txt",row.names=FALSE,col.names=FALSE,sep="\t")
+write.table(allRPFhits,"verybestRPFhits.txt",row.names=FALSE,col.names=FALSE,sep="\t",quote=FALSE)
