@@ -5,7 +5,7 @@ date: "January 25R, 2015"
 output: pdf_document
 ---
 
-A tutorial to perform basic operations with spatial data in R, such as importing and exporting data (both vectorial and raster), plotting, analysing and making maps. 
+A tutorial to perform GIS operations in R, such as importing and exporting data (both vectorial and raster), plotting, analysing and making maps. 
 
 This tutorial is a revised and edited RStudio version of the Markdown file [GitHub](https://github.com/Pakillo/R-GIS-tutorial/blob/master/R-GIS_tutorial.md) by Francisco Rodriguez-Sanchez (FRS).
 
@@ -151,7 +151,7 @@ To learn what can be accomplished with googleVis:
 require("googleVis")
 
 # Run `demo(googleVis)` to see all the possibilities
-demo("googleVis")
+#demo("googleVis")
 ```
 
 ### Example: plot country-level data
@@ -279,7 +279,6 @@ summary(locs) # Summary of geographic information
 ## Mapping vectorial data (points, polygons, polylines) using `gmap` from `dismo`
 
 ```{r}
-
 # get data frame with spatial coordinates (points)
 gbmap <- gmap(locs.gb, type = "satellite", longlat=FALSE)
 locs.merc <- Mercator(locs.gb)  # Google Maps are in Mercator projection. 
