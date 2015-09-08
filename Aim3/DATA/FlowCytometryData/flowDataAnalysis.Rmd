@@ -1,0 +1,62 @@
+---
+title: "Flow cytometry analysis of active, dormant, and dead microbial populations in Indiana Ponds (South Central Indiana)"
+author: "M.L. Larsen"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+   - \usepackage{array}
+output: pdf_document
+fontsize: 11pt
+geometry: margin = 0.75in
+---
+
+# Project Overview
+
+The microbes within communities have wide ranging metabolic activities that are influenced by resource availability.
+We can classify their metabolic activity with DNA and RNA content. Here, we seek to enumerate the fractions of the active (greater RNA than DNA), dormant (less RNA to DNA), and dead populations of microbes within freshwater ecosystems.
+
+##Data Collection
+
+Data for this project were collected as part of a long term sampling regime on University Lake in Bloominton, Indiana and wildlife refuge ponds scattered through south central Indiana. All data were collected in the Indiana University Flow Cytometry Core Facility operated by Christiane Hassel and processed by M.L. Larsen.
+
+##Document workflow
+1. Setup work environment
+
+___
+
+## WORK ENVIRONMENT
+```{r work-environment, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+# Setup working environment
+rm(list = ls())
+setwd("C:/Users/Megan/Github/Dimensions/Aim3")
+
+# Load packages
+
+# Load data
+env.dat <- read.csv("", header = TRUE)
+flow.dat <- read.csv("", header = TRUE)
+
+# Output directories
+data.output <- "./DATA/FlowCytometryData/"
+```
+
+## Indiana Ponds Geographic Abundances
+
+### Population relative abundances
+```{r INPonds, include=FALSE, eval=FALSE}
+
+
+```
+
+\clearpage
+
+## R Environment and package information
+
+All analyses were completed with `r sessionInfo()$R.version$version.string` and the following packages: 
+
+```{r session-info}
+sessioninfo()
+```
+
+\clearpage
+
+## References
