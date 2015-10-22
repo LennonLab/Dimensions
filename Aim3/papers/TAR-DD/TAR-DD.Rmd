@@ -14,19 +14,14 @@ setwd("~/GitHub/Dimensions/Aim3/papers/TAR-DD")
 ```
 
 
-# Rarity and detection drive microbial taxa-area relationships 
-
-## From Sept DoB meeting:
-*Why do we have low z-values in microbial communities? Honer-Devine have some thoughts, which are now entrenched in the literature. Lennon and Jones (2011) posit it could be due to dormancy.* 
-
-*However, Ken's results suggest this is a sampling issue. More N, more z. Could this be a small paper? Could this just be done with the pond data?*
-
 ## Introduction 
 
 ### Paragraph 1
-1. The study of microbial biogeography has quickly advanced from a century old hypothesis that "Everything is everywhere, but the environment selects." to supporting basic tenets of general biogeography, i.e., the geographic distribution of species is driven by environmental factors and dispersal.
-2. The possibility that microbes are immune to physical and environmental dispersal barriers has greatly waned in the face of a more sophisticated idea: that even unhindered dispersal can create biogeographic patterns.
-3. 
+**1.** The study of microbial biogeography has quickly advanced from a century old hypothesis that "Everything is everywhere, but the environment selects." to supporting basic tenets of biogeography.
+**2.** That is, the geographic distribution of species is driven by environmental factors and dispersal dynamics.
+**3.** The possibility that microbes are immune to physical and environmental dispersal barriers has waned in the face of the fact that even unhindered dispersal will produce biogeographic patterns.
+**4.** While microbial taxa may be more likely than species of macroscopic plants and animals to become widely distributed, the last several years of ultra high-throughput has seen an increase in a biogeographic signal pointing to dispersal limitation.
+**5.** 
 
 ### Paragraph 2
 The species-area relationship (SAR) describes the rate at which species are discovered with increasing area (Rosenzweig 1995, Lomolino 2000). The SAR one of ecology's oldest and most intensively studied patterns (e.g., Arrhenius 1921) and is usually expressed in the form of a power-law: $S = cA^{z}$ where *z* is the scaling exponent, *S* is species richnness and *A* is area. This formulation predicts a rate of increase
