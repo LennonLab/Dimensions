@@ -15,6 +15,9 @@ getwd()
 setwd("~/GitHub/Dimensions/Aim3")
 ```
 
+
+
+
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load packages
 require("sp")          # Classes and methods for handling spatial data
@@ -36,6 +39,9 @@ require(reshape)
 ```
 
 
+
+
+
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Import functions
 # import code file that includes a function for reading in output files 
@@ -48,6 +54,9 @@ source("~/GitHub/Dimensions/Aim3/bin/SAR.R")
 source("~/GitHub/Dimensions/Aim3/bin/metrics.R")
 load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ```
+
+
+
 
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
@@ -383,7 +392,7 @@ all.comm.dom <- log10(all.comm[, 1:10]+1)
 active.comm.dom <- log10(active.comm[, 1:10]+1)
 
 # Set Initial Plot Parameters
-par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
+par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0, 0, 0, 0))
 
 heatmap.2(as.matrix(all.comm.dom), distfun = function(x) vegdist(x, method = "bray"),
           hclustfun = function(x) hclust(x, method = "ward.D2"), 
@@ -498,10 +507,10 @@ Finally, we will test the influence of each environmental variable on the constr
 
 ```{r, results = "hide"}
 # Get Dominant members
-plot.new()
 cutoffs <- c(15, 30, 60, 125, 250)#, 500, 1000, 2000, 4000, 8000, 16000, 22098)
-cutoff <- 50
+cutoff <- 30
 
+all.sub.comm <- all.comm[, 1:cutoff]
 active.sub.comm <- active.comm[, 1:cutoff]
 
 
@@ -540,12 +549,13 @@ box(lwd = 2)
 # Add Points & Labels
 points(scores(active.cca, display = "wa"),
        pch = 19, cex = 3, bg = "gray", col = "gray")
-#text(scores(active.cca, display = "wa"), 
-#     labels = row.names(scores(active.cca, display = "wa")))
+text(scores(active.cca, display = "wa"), 
+     labels = row.names(scores(active.cca, display = "wa")))
 
 # Add Environmental Vectors
 vectors <- scores(active.cca, display = "bp")
 row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp", "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
+
 arrows(0, 0, vectors[,1] * 2, vectors[, 2] * 2, 
        lwd = 2, lty = 1, length = 0.2, col = "red")
 text(vectors[,1] * 2, vectors[, 2] * 2, pos = 3, 
@@ -555,68 +565,6 @@ axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
 axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
      at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
 ```
-
-
-
-```{r, results = "hide"}
-# Get Dominant members
-plot.new()
-cutoffs <- c(15, 30, 60, 125, 250)#, 500, 1000, 2000, 4000, 8000, 16000, 22098)
-cutoff <- 50
-
-all.sub.comm <- all.comm[, 1:cutoff]
-
-# Define Environmental Matrix
-env.chem <- env.dat
-
-# Conduct CCA 
-all.cca <- vegan::cca(all.sub.comm ~ env.chem)
-
-# Permutation Tests
-anova(all.cca, by = "axis")
-cca.fit <- envfit(all.cca, env.chem, perm = 999)
-cca.fit
-
-# Calculate Explained Variation
-cca.explainvar1 <- round(all.cca$CCA$eig[1] / 
-                         sum(c(all.cca$CCA$eig, all.cca$CA$eig)), 3) * 100
-cca.explainvar2 <- round(all.cca$CCA$eig[2] / 
-                         sum(c(all.cca$CCA$eig, all.cca$CA$eig)), 3) * 100
-
-# Define Plot Parameters
-par(mar = c(5, 5, 4, 4) + 0.1)
-
-# Initiate Plot
-plot(scores(all.cca, display = "wa"), xlim = c(-3.5, 2), ylim = c(-3.2, 3.2),
-     xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
-     ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
-     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
-
-# Add Axes
-axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-abline(h = 0, v = 0, lty = 3)
-box(lwd = 2)
-
-# Add Points & Labels
-points(scores(all.cca, display = "wa"),
-       pch = 19, cex = 3, bg = "gray", col = "gray")
-#text(scores(all.cca, display = "wa"), 
-#     labels = row.names(scores(all.cca, display = "wa")))
-
-# Add Environmental Vectors
-vectors <- scores(all.cca, display = "bp")
-row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp", "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
-arrows(0, 0, vectors[,1] * 2, vectors[, 2] * 2, 
-       lwd = 2, lty = 1, length = 0.2, col = "red")
-text(vectors[,1] * 2, vectors[, 2] * 2, pos = 3, 
-     labels = row.names(vectors))
-axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[, 1])))
-axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
-```
-
 
 ***Question 12***: Based on the CCA, what are the environmental variables that seem to be contributing to stream water quality for fish assemblages?
 

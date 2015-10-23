@@ -1,7 +1,5 @@
 ---
-title: "Spatial vs. temporal storage: The dual role of microbial seed
-banks in driving geographical patterns of microbial diversity"
-
+title: "Dormancy drives microbial biogeographical through temporal and spatial storage effects"
 geometry: margin=2.54cm
 date: "August 4, 2015"
 output: pdf_document
@@ -12,8 +10,9 @@ header-includes: \usepackage{array}
 # Retrieve and set the working directory
 rm(list=ls())
 getwd()
-setwd("~/GitHub/Dimensions/Aim3")
+setwd("~/GitHub/Dimensions/Aim3/papers/TAR-DD")
 ```
+
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load packages
@@ -105,13 +104,13 @@ env$all.De <- as.vector(diversity(all.comm, index = "invsimpson")/env$all.S)
 
 
 ## 1.) Dependence of the TAR on the number (detection) of rare taxa
-The species-area relationshp describes the rate at which species are 
-discovred with increasing area. The SAR one of ecology's oldest and most 
-intensively studied patterns. Arrhenius (1921) first described the general 
-form of the *species-area relationship (SAR)* as a power-law: $S = cA^{z}$ 
-where S is species richnness and A is area. Arrhenius's formula predicts a 
-rate of increase in richness that is approximately linear in log-log space.
-That is, $log(S) = c + zlog(A)$, where z is the scaling exponent.
+The species-area relationship (SAR) describes the rate at which species are 
+discovered with increasing area. The SAR one of ecology's oldest and most 
+intensively studied patterns (Arrhenius1921) and is usually expressed in the
+form of a power-law: $S = cA^{z}$ where *z* is the scaling exponent, *S* is 
+species richnness and *A* is area. This formulation predicts a rate of increase
+in *S* that is approximately linear in log-log space. 
+That is, $log(S) = c + zlog(A)$, .
 
 ```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=4}
 par(mfrow=c(1, 1))
@@ -383,7 +382,7 @@ all.comm.dom <- log10(all.comm[, 1:10]+1)
 active.comm.dom <- log10(active.comm[, 1:10]+1)
 
 # Set Initial Plot Parameters
-par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0,0,0,0))
+par(mfrow=c(1, 1))#, mar = c(5, 4, 4, 2) + 0.1, oma =c(0, 0, 0, 0))
 
 heatmap.2(as.matrix(all.comm.dom), distfun = function(x) vegdist(x, method = "bray"),
           hclustfun = function(x) hclust(x, method = "ward.D2"), 
@@ -478,147 +477,4 @@ ggplot(varpar.df, aes(cutoff, value)) +
   guides(fill=guide_legend(title=NULL)) +
   theme(legend.title=element_blank())
 ```
-
-
-
-### ii.  Constrained Ordination
-Another way we can test hypotheses with continuous data is to use **constrained ordination**, which is sometimes referred to as canonical ordination.
-Constrained ordination explores the relationships between two matrices: an **explanatory matrix** and a **response matrix**. 
-Canonical correspondence analysis (CCA) and redundancy analysis (RDA) are two types of constrained ordination.
-These techniques are based on the linear model framework and thus can be used to formally test hypotheses.
-Constrained ordination works by first conducting multivariate multiple linear regression followed either by correspondence analysis (CA) with CCA or Principal Components Analysis (PCA) with RDA, while using the matrix of fitted values to obtain a constrained ordination.
-A permutation test can then be used to test for overall significance. 
-
-Here, we will use environmental data to conduct a CCA on the fish assemblages of the Doubs River. 
-We will start by creating an explanatory matrix that contains water chemistry data.
-We will then use the `cca()` function from the `vegan` package.
-Note, we have to specify that we want the `cca` function in the `vegan` package because there are `cca` functions in both `vegan` and `ade4`!
-We will then use permutation tests to evaluate the significance of our model. 
-Finally, we will test the influence of each environmental variable on the constrained axes.
-
-```{r, results = "hide"}
-# Get Dominant members
-plot.new()
-cutoffs <- c(15, 30, 60, 125, 250)#, 500, 1000, 2000, 4000, 8000, 16000, 22098)
-cutoff <- 50
-
-active.sub.comm <- active.comm[, 1:cutoff]
-
-
-# Define Environmental Matrix
-env.chem <- env.dat
-
-# Conduct CCA 
-active.cca <- vegan::cca(active.sub.comm ~ env.chem)
-
-# Permutation Tests
-anova(active.cca, by = "axis")
-cca.fit <- envfit(active.cca, env.chem, perm = 999)
-cca.fit
-
-# Calculate Explained Variation
-cca.explainvar1 <- round(active.cca$CCA$eig[1] / 
-                         sum(c(active.cca$CCA$eig, active.cca$CA$eig)), 3) * 100
-cca.explainvar2 <- round(active.cca$CCA$eig[2] / 
-                         sum(c(active.cca$CCA$eig, active.cca$CA$eig)), 3) * 100
-
-# Define Plot Parameters
-par(mar = c(5, 5, 4, 4) + 0.1)
-
-# Initiate Plot
-plot(scores(active.cca, display = "wa"), xlim = c(-3.5, 2), ylim = c(-3.2, 3.2),
-     xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
-     ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
-     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
-
-# Add Axes
-axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-abline(h = 0, v = 0, lty = 3)
-box(lwd = 2)
-
-# Add Points & Labels
-points(scores(active.cca, display = "wa"),
-       pch = 19, cex = 3, bg = "gray", col = "gray")
-#text(scores(active.cca, display = "wa"), 
-#     labels = row.names(scores(active.cca, display = "wa")))
-
-# Add Environmental Vectors
-vectors <- scores(active.cca, display = "bp")
-row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp", "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
-arrows(0, 0, vectors[,1] * 2, vectors[, 2] * 2, 
-       lwd = 2, lty = 1, length = 0.2, col = "red")
-text(vectors[,1] * 2, vectors[, 2] * 2, pos = 3, 
-     labels = row.names(vectors))
-axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[, 1])))
-axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
-```
-
-
-
-```{r, results = "hide"}
-# Get Dominant members
-plot.new()
-cutoffs <- c(15, 30, 60, 125, 250)#, 500, 1000, 2000, 4000, 8000, 16000, 22098)
-cutoff <- 50
-
-all.sub.comm <- all.comm[, 1:cutoff]
-
-# Define Environmental Matrix
-env.chem <- env.dat
-
-# Conduct CCA 
-all.cca <- vegan::cca(all.sub.comm ~ env.chem)
-
-# Permutation Tests
-anova(all.cca, by = "axis")
-cca.fit <- envfit(all.cca, env.chem, perm = 999)
-cca.fit
-
-# Calculate Explained Variation
-cca.explainvar1 <- round(all.cca$CCA$eig[1] / 
-                         sum(c(all.cca$CCA$eig, all.cca$CA$eig)), 3) * 100
-cca.explainvar2 <- round(all.cca$CCA$eig[2] / 
-                         sum(c(all.cca$CCA$eig, all.cca$CA$eig)), 3) * 100
-
-# Define Plot Parameters
-par(mar = c(5, 5, 4, 4) + 0.1)
-
-# Initiate Plot
-plot(scores(all.cca, display = "wa"), xlim = c(-3.5, 2), ylim = c(-3.2, 3.2),
-     xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
-     ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
-     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
-
-# Add Axes
-axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-abline(h = 0, v = 0, lty = 3)
-box(lwd = 2)
-
-# Add Points & Labels
-points(scores(all.cca, display = "wa"),
-       pch = 19, cex = 3, bg = "gray", col = "gray")
-#text(scores(all.cca, display = "wa"), 
-#     labels = row.names(scores(all.cca, display = "wa")))
-
-# Add Environmental Vectors
-vectors <- scores(all.cca, display = "bp")
-row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp", "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
-arrows(0, 0, vectors[,1] * 2, vectors[, 2] * 2, 
-       lwd = 2, lty = 1, length = 0.2, col = "red")
-text(vectors[,1] * 2, vectors[, 2] * 2, pos = 3, 
-     labels = row.names(vectors))
-axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[, 1])))
-axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
-```
-
-
-***Question 12***: Based on the CCA, what are the environmental variables that seem to be contributing to stream water quality for fish assemblages?
-
-> ***Answer 12***:
 
