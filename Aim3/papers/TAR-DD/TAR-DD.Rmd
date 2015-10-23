@@ -17,7 +17,7 @@ setwd("~/GitHub/Dimensions/Aim3/papers/TAR-DD")
 ## Introduction 
 
 ### Paragraph 1
-**1.** The study of microbial biogeography has quickly advanced from a century old hypothesis that "Everything is everywhere, but the environment selects." to supporting basic tenets of biogeography.
+**1.** The study of microbial biogeography has quickly advanced from a century old hypothesis that all microbes could be found in nearly all environments, to supporting basic tenets of biogeography.
 **2.** That is, the geographic distribution of species is driven by environmental factors and dispersal dynamics.
 **3.** The possibility that microbes are immune to physical and environmental dispersal barriers has waned in the face of the fact that even unhindered dispersal will produce biogeographic patterns.
 **4.** While microbial taxa may be more likely than species of macroscopic plants and animals to become widely distributed, the last several years of ultra high-throughput has seen an increase in a biogeographic signal pointing to dispersal limitation.
