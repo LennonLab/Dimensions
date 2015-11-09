@@ -29,7 +29,6 @@ require("vegan") # biodiversity estimators and related functions
 require("fossil")
 require("simba")
 require("reshape")
-
 require(ggplot2)
 require(reshape)
 
@@ -44,19 +43,27 @@ load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 env.org <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv",
                       sep = ",", header = TRUE)
 
+env.org <- subset(env.org, chla < 2000)
+env.org <- subset(env.org, pH > 1)
+env.org <- subset(env.org, Salinity > 0.0)
+env.org <- subset(env.org, TDS < 5.0)
+
 env.names <- subset(env.org, select=c(Depth:DON))
+#env.names <- subset(env.org, select=c(TDS))
 env.names <- names(env.names)
 
 for(name in env.names){
 
-  env.org <- subset(env.org, chla < 2000)
+  metric <- "jaccard"
+  #x.lab <- paste("log(difference in ",name,")", sep="")
+  x.lab <- paste("Difference in ",name)
+  
   env <- subset(env.org, select=c(name))
-
   # calculate the distance (Euclidean) between the plots regarding environmental variables
   env.dist <- vegdist(env, "euclidean")
-  env.dist <- log(env.dist)
-  env.dist[!is.finite(env.dist)] <- 0
-  env.dist[is.na(env.dist)] <- 0
+  #env.dist[env.dist == 0] <- 0.001
+  #env.dist <- log10(env.dist)
+  
   env.dist.ls <- liste(env.dist, entry="env.dist")
 
   # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
@@ -78,24 +85,18 @@ for(name in env.names){
   active.comm <- active.comm[ , colSums(active.comm) > 0]
   all.comm <- all.comm[ , colSums(all.comm) > 0]
 
-
-  # Set Initial Plot Parameters
-
-  metric <- "jaccard"
-  
-  x.lab <- paste("log(difference in ",name,")", sep="")
   file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", metric,"_ComDist-",name,".png", sep="")
   
   # Taxonomic Distances Among Ponds (Bray-Curits)
   active.weighted.dist <- 1 - vegdist(active.comm, method=metric, binary=FALSE) 
-  active.weighted.dist <- log(active.weighted.dist)
+  active.weighted.dist <- log10(active.weighted.dist)
   all.weighted.dist <- 1 - vegdist(all.comm, method=metric, binary=FALSE)
-  all.weighted.dist <- log(all.weighted.dist)
+  all.weighted.dist <- log10(all.weighted.dist)
 
   active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
-  active.presabs.dist <- log(active.presabs.dist)
+  active.presabs.dist <- log10(active.presabs.dist)
   all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
-  all.presabs.dist <- log(all.presabs.dist)
+  all.presabs.dist <- log10(all.presabs.dist)
 
   # Transform All Distances Into List Format:
   active.weighted.dist.ls <- liste(active.weighted.dist, entry = metric)
