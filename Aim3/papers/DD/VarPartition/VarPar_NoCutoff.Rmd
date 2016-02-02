@@ -1,0 +1,114 @@
+---
+title: "Spatial vs. temporal storage: The dual role of microbial seed
+banks in driving geographical patterns of microbial diversity"
+
+geometry: margin=2.54cm
+date: "August 4, 2015"
+output: pdf_document
+header-includes: \usepackage{array}
+---
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Retrieve and set the working directory
+rm(list=ls())
+getwd()
+setwd("~/GitHub/Dimensions/Aim3")
+
+# Load packages
+require("sp")          # Classes and methods for handling spatial data
+require("geoR")        # Methods for geostatistical analyses
+require("rgdal")       # Geospatial Data Abstraction Library
+require("raster")      # Methods to create a RasterLayer object
+require("maptools")    # Tools for manipulating and reading geospatial data
+
+require("picante")
+require("ape")
+require("seqinr")
+require("vegan") # biodiversity estimators and related functions
+require("fossil")
+require("simba")
+require("reshape")
+
+require(ggplot2)
+require(reshape)
+
+# Import functions
+# import code file that includes a function for reading in output files 
+#from community sequencing software `mothur` (http://www.mothur.org/).
+source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
+load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
+```
+
+
+
+```{r, results='hide', echo=F, message=F, warning=F, fig.width=7, fig.height=4}
+
+# Load Environmental and Geographical Data
+env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
+
+env <- subset(env, chla < 2000)
+env <- subset(env, pH > 1)
+env <- subset(env, Salinity > 0.0)
+env <- subset(env, TDS < 5.0)
+
+lats <- as.numeric(env[, 3]) # latitudes (north and south)
+lons <- as.numeric(env[, 4]) # longitudes (east and west)
+
+# Geographic Distances (Kilometers) Among Ponds
+long.lat <- as.matrix(cbind(env$long, env$lat))
+coord.dist <- earth.dist(long.lat, dist = TRUE)
+coord.dist <- log(coord.dist)
+coord.dist[which(!is.finite(coord.dist))] = NA
+coord.dist.ls <- liste(coord.dist, entry = "geo.dist")
+
+# Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
+# The active portion, based on cDNA 
+active.comm <- Pond97[grep("*-cDNA", rownames(Pond97)), ]
+rownames(active.comm) <- gsub("\\-cDNA", "", rownames(active.comm))
+rownames(active.comm) <- gsub("\\_", "", rownames(active.comm))
+
+# The community without respect to active or not, 16S rRNA gene sequences
+all.comm <- Pond97[grep("*-DNA", rownames(Pond97)), ]
+rownames(all.comm) <- gsub("\\-DNA", "", rownames(all.comm))
+rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
+
+# Remove Sites Not in the Environmental Data Set
+active.comm <- active.comm[rownames(active.comm)  %in% env$Sample_ID, ]
+all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
+
+# Remove Zero-Occurrence Taxa 
+active.comm <- active.comm[ , colSums(active.comm) > 0]
+all.comm <- all.comm[ , colSums(all.comm) > 0]
+
+
+## 1.) Variance partitioning: 
+plot.new()
+active.env <- c()
+active.geo <- c()
+active.env.geo <- c()
+
+all.env <- c()
+all.geo <- c()
+all.env.geo <- c()
+
+# Geographic variables
+geo.dat <- as.matrix(subset(env, select = lat:Elevation))
+# Pond environmental variables
+env.dat <- as.matrix(subset(env, select = c(DOC, Salinity, TDS, SpC, chla)))
+
+cutoff <- 20
+all.sub.comm <- all.comm #all.comm[, 1:cutoff]
+active.sub.comm <- active.comm #active.comm[, 1:cutoff]
+
+#rda.geo <- rda(all.sub.comm ~ geo.dat)
+#rda.env <- rda(all.sub.comm ~ env.dat)
+#rda.geo <- rda(active.sub.comm ~ geo.dat)
+#rda.env <- rda(active.sub.comm ~ env.dat)
+
+# Two explanatory matrices
+#mod <- varpart(Y=all.sub.comm, X=geo.dat, env.dat, transfo="hellinger")
+#plot(mod)
+mod <- varpart(Y=active.sub.comm, X=geo.dat, env.dat, transfo="hellinger")
+plot(mod)
+```
+

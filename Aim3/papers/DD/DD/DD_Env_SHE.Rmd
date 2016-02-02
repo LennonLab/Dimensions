@@ -1,0 +1,252 @@
+---
+title: "Supplemental Figures: Paired compositional similarity vs. Environment"
+geometry: margin=2.54cm
+date: "November 7, 2015"
+output: pdf_document
+header-includes: \usepackage{array}
+---
+
+Run distance-decay on richness (S), diversity (H), and evenness (E) versus
+environmental distance, for both 'active' and 'all'
+
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Retrieve and set the working directory
+rm(list=ls())
+getwd()
+setwd("~/GitHub/Dimensions/Aim3/papers/DD")
+```
+
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Load packages
+require("sp")          # Classes and methods for handling spatial data
+require("geoR")        # Methods for geostatistical analyses
+require("rgdal")       # Geospatial Data Abstraction Library
+require("raster")      # Methods to create a RasterLayer object
+require("maptools")    # Tools for manipulating and reading geospatial data
+
+require("picante")
+require("ape")
+require("seqinr")
+require("vegan") # biodiversity estimators and related functions
+require("fossil")
+require("simba")
+require("reshape")
+require(ggplot2)
+require(reshape)
+require(IDPmisc)
+source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
+source("~/GitHub/Dimensions/Aim3/bin/metrics.R")
+load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
+```
+
+
+```{r}
+S.obs <- function(x = ""){
+  length(x[x > 0])
+  }
+
+S.chao1 <- function(x = ""){
+  S.obs(x) + (sum(x == 1)^2) / (2 * sum(x == 2))
+  }
+
+RAC <- function(x = ""){
+  x = as.vector(x)
+  x.ab = x[x > 0]
+  x.ab.ranked = x.ab[order(x.ab, decreasing = TRUE)]
+  return(x.ab.ranked)
+  }
+
+SimpE <- function(x = ""){
+  x = as.data.frame(x)
+  D <- diversity(x, "inv")
+  S <- S.obs(x) 
+  E <- (D)/S 
+  return(E)
+  }
+
+
+Evar <- function(x){
+  x <- as.vector(x[x > 0])
+  1 - (2/pi)*atan(var(log(x)))
+  }
+
+div.diff <- function(x1, x2){
+  abs(x1 - x2)/mean(c(x1,x2))
+}
+```
+
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=6}
+# Load Environmental and Geographical Data
+env.org <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv",
+                      sep = ",", header = TRUE)
+
+env.org <- subset(env.org, chla < 2000)
+env.org <- subset(env.org, pH > 1)
+env.org <- subset(env.org, Salinity > 0.0)
+env.org <- subset(env.org, TDS < 5.0)
+
+env.names <- subset(env.org, select=c(Depth:DON))
+env.names <- names(env.names)
+#env.names <- c("TDS", "pH", "SpC", "Salinity")
+#env.names <- c("TDS")
+
+for(name in env.names){
+
+  metric <- "jaccard"
+  #x.lab <- paste("log(difference in ",name,")", sep="")
+  x.lab <- paste("Difference in ",name)
+  
+  env <- subset(env.org, select=c(name))
+  env.dist <- vegdist(env, "euclidean")
+  #env.dist <- log10(env.dist)
+  env.dist.ls <- liste(env.dist, entry="env.dist")[,3]
+  
+  # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
+  # The active portion, based on cDNA 
+  active.comm <- Pond97[grep("*-cDNA", rownames(Pond97)), ]
+  rownames(active.comm) <- gsub("\\-cDNA", "", rownames(active.comm))
+  rownames(active.comm) <- gsub("\\_", "", rownames(active.comm))
+
+  # The community without respect to active or not, 16S rRNA gene sequences
+  all.comm <- Pond97[grep("*-DNA", rownames(Pond97)), ]
+  rownames(all.comm) <- gsub("\\-DNA", "", rownames(all.comm))
+  rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
+
+  # Remove Sites Not in the Environmental Data Set
+  active.comm <- active.comm[rownames(active.comm)  %in% env.org$Sample_ID, ]
+  all.comm <- all.comm[rownames(all.comm)  %in% env.org$Sample_ID, ]
+  # Remove Zero-Occurrence Taxa 
+  active.comm <- active.comm[ , colSums(active.comm) > 0]
+  all.comm <- all.comm[ , colSums(all.comm) > 0]
+
+  numr <- nrow(env)
+  S.active <- c()
+  S.all <- c()
+  E.active <- c()
+  E.all <- c()
+  H.active <- c()
+  H.all <- c()
+  
+  i <- 1
+  while(i <= numr){
+    x.active <- active.comm[i,]
+    x.all <- all.comm[i,]
+    
+    #S.active <- c(S.active, log10(S.obs(x.active)))
+    #S.all <- c(S.all, log10(S.obs(x.all)))
+    
+    S.active <- c(S.active, log10(max(x.active)/sum(x.active)))
+    S.all <- c(S.all, log10(max(x.all)/sum(x.all)))
+    
+    E.active <- c(E.active, SimpE(x.active))
+    E.all <- c(E.all, SimpE(x.all))
+    
+    H.active <- c(H.active, diversity(x.active, index="shannon"))
+    H.all <- c(H.all, diversity(x.all, index="shannon"))
+    i <- i+1
+  }
+  
+  S.active.dist <- 1 - vegdist(S.active, method="euclidean", binary=FALSE)
+  S.all.dist <- 1 - vegdist(S.all, method="euclidean", binary=FALSE)
+  E.active.dist <- 1 - vegdist(E.active, method="euclidean", binary=FALSE)
+  E.all.dist <- 1 - vegdist(E.all, method="euclidean", binary=FALSE)
+  H.active.dist <- 1 - vegdist(H.active, method="euclidean", binary=FALSE)
+  H.all.dist <- 1 - vegdist(H.all, method="euclidean", binary=FALSE)
+  
+  # Transform All Distances Into List Format:
+  S.active.dist.ls <- liste(S.active.dist, entry = "S.active")[,3]
+  S.all.dist.ls <- liste(S.all.dist, entry = "S.all")[,3]
+  E.active.dist.ls <- liste(E.active.dist, entry = "E.active")[,3]
+  E.all.dist.ls <- liste(E.all.dist, entry = "E.all")[,3]
+  H.active.dist.ls <- liste(H.active.dist, entry = "H.active")[,3]
+  H.all.dist.ls <- liste(H.all.dist, entry = "H.all")[,3]
+  
+  # Create a Data Frame from the Lists of Distances
+  
+  df <- matrix(c(env.dist.ls, 
+                   S.active.dist.ls, S.all.dist.ls, 
+                   E.active.dist.ls, E.all.dist.ls, 
+                   H.active.dist.ls, H.all.dist.ls), ncol=7)
+  
+  df <- as.data.frame(df)
+  df <- NaRV.omit(df)
+  
+  file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", metric,"_SHE-Dist-",name,".png", sep="")
+  
+  names(df)[1:7] <- c("env.dist",
+                      "S.active.dist","S.all.dist",
+                      "E.active.dist","E.all.dist",
+                      "H.active.dist","H.all.dist")
+  attach(df)
+
+  png(filename=file)  
+  plot.new()
+  par(mfrow=c(2, 2), mar = c(5, 4, 3, 2) + 0.1, oma =c(0,1,3,0))
+
+  # Regression for S active 
+  DD.S.active <- lm(S.active.dist ~ env.dist, df)
+  summary(DD.S.active, correlation = TRUE)
+
+  # Regression for S all 
+  DD.S.all <- lm(S.all.dist ~ env.dist, df)
+  summary(DD.S.all, correlation = TRUE)
+
+  # Regression for E active 
+  DD.E.active <- lm(E.active.dist ~ env.dist, df)
+  summary(DD.E.active, correlation = TRUE)
+
+  # Regression for E all 
+  DD.E.all <- lm(E.all.dist ~ env.dist, df)
+  summary(DD.E.all, correlation = TRUE)
+  
+  
+  # Make Plot for S all
+  slope <- round(coefficients(DD.S.all)[2], 3)
+  p <- round(summary(DD.S.all)$coefficients[8], 3)
+  plot(env.dist, S.all.dist, xaxt = "s", las = 1, 
+     ylab="log(similarity in S)", xlab=x.lab, col = "azure3", cex.lab=1.5)
+  abline(DD.S.all , col = "red")
+  legend("bottomleft", paste("S All\nslope=",slope," p = ",p), bty="n", cex=1.2)
+
+  # Make Plot for S active
+  slope <- round(coefficients(DD.S.active)[2], 3)
+  p <- round(summary(DD.S.active)$coefficients[8], 3)
+  plot(env.dist, S.active.dist, xaxt = "s", las = 1, 
+     ylab="log(similarity in S)", xlab=x.lab, col = "azure3", cex.lab=1.5)
+  abline(DD.S.active, col = "red")
+  legend("bottomleft", paste("S Active\nslope=",slope," p = ",p), bty="n", cex=1.2)
+
+  # Make Plot for E all
+  slope <- round(coefficients(DD.E.all)[2], 3)
+  p <- round(summary(DD.E.all)$coefficients[8], 3)
+  plot(env.dist, E.all.dist, xaxt = "s", las = 1, 
+     ylab="log(similarity in E)", xlab=x.lab, col = "azure3", cex.lab=1.5)
+  abline(DD.E.all , col = "red")
+  legend("bottomleft", paste("E All\nslope=",slope," p = ",p), bty="n", cex=1.2)
+
+  # Make Plot for E active
+  slope <- round(coefficients(DD.E.active)[2], 3)
+  p <- round(summary(DD.E.active)$coefficients[8], 3)
+  plot(env.dist, E.active.dist, xaxt = "s", las = 1, 
+     ylab="log(similarity in E)", xlab=x.lab, col = "azure3", cex.lab=1.5)
+  abline(DD.E.active, col = "red")
+  legend("bottomleft", paste("E Active\nslope=",slope," p = ",p), bty="n", cex=1.2)
+
+  
+  d1 <- diffslope(df$env.dist, df$S.active.dist, df$env.dist, df$S.all.dist)
+  d2 <- diffslope(df$env.dist, df$H.active.dist, df$env.dist, df$H.all.dist)
+
+  metric <- "Jaccard"
+  
+  Mtitle <- paste(metric,"\n",'Richness (S): Difference in slope =', 
+                  round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
+                  'Evenness (E): Difference in slope =', 
+                  round(as.numeric(d2[2]),3), '; p =', d2[3])
+
+  title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
+  dev.off()
+}
+```

@@ -1,4 +1,4 @@
-#Micro-Biogeo
+#Micro-Biogeo: Distance-Decay
 
 ### Finkel et al. 2012
 **Title** Distance-Decay Relationships Partially Determine Diversity Patterns of Phyllosphere Bacteria on Tamrix Trees across the Sonoran Desert
@@ -20,5 +20,20 @@ Examined the bacterial community composition along two transects, one from the i
 Diversity and biogeographic patterns differed between active and total bacterial communities. Composition of total and active was correlated with environmental factors and with geographic distance. The active bacterial community displayed higher environmental sensitivity than total. The 16S rRNA vs. rDNA relationships indicated that the active bacteria were low in relative abundance in the SCS. They speculate that high competition could cause some dispersal limitation of the active bacterial community resulting in a distinct distance-decay relationship. But their results indicate that geographic distribution of bacteria in the SCS results from environment and dispersal.
 
 **Comments** Confidence in network analysis? Rarefaction indicates they missed many taxa.
+
+###Monroy et al. 2012
+Title: Community patterns of soil bacteria and nematodes in relation to geographic distance
+**Negative DD, but no functional relationship**
+
+###Anderson et al. 2015
+Title: Biogeography and ecology of the rare and abundantmicrobial lineages in deep-sea hydrothermal vents
+**Negative DD, but no functional relationship**
+
+###Palmer 2005
+Title: Distance decay in an old-growth neotropical forest
+**Negative DD, but no functional relationship**
+
+
+
 
 
