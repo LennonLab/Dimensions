@@ -1,0 +1,262 @@
+---
+title: "Supplemental Figures: Paired compositional similarity vs. Environment"
+geometry: margin=2.54cm
+date: "November 7, 2015"
+output: pdf_document
+header-includes: \usepackage{array}
+---
+
+
+## Species spatial abundance distribution (SSAD)
+
+The SSAD represents the distribution of a species' abundance among sites. In 
+contrast, the species abundance distribution (SAD) is the distribution of a 
+site's abundance among species. Here, we compare each OTU's two SSADs (one from 'all' and one from 'active').
+
+\pagebreak
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Retrieve and set the working directory
+rm(list=ls())
+getwd()
+setwd("~/GitHub/Dimensions/Aim3/papers/Paired")
+```
+
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Load packages
+require("picante")
+require("ape")
+require("vegan") # biodiversity estimators and related functions
+require("fossil")
+require("simba")
+require("reshape")
+require(reshape)
+require(IDPmisc)
+source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
+source("~/GitHub/Dimensions/Aim3/bin/metrics.R")
+load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
+```
+
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Load Environmental and Geographical Data
+env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv",
+                  sep = ",", header = TRUE)
+
+env <- subset(env, chla < 2000)
+env <- subset(env, pH > 1)
+env <- subset(env, Salinity > 0.0)
+env <- subset(env, TDS < 5.0)
+
+env.dat <- as.matrix(subset(env, select = Diameter:DON))
+
+# Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
+# The active portion, based on cDNA 
+active.comm <- Pond97[grep("*-cDNA", rownames(Pond97)), ]
+rownames(active.comm) <- gsub("\\-cDNA", "", rownames(active.comm))
+rownames(active.comm) <- gsub("\\_", "", rownames(active.comm))
+
+# The community without respect to active or not, 16S rRNA gene sequences
+all.comm <- Pond97[grep("*-DNA", rownames(Pond97)), ]
+rownames(all.comm) <- gsub("\\-DNA", "", rownames(all.comm))
+rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
+
+# Remove Sites Not in the Environmental Data Set
+active.comm <- active.comm[rownames(active.comm)  %in% env$Sample_ID, ]
+all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
+
+# Remove Zero-Occurrence Taxa 
+#active.comm <- active.comm[ , colSums(active.comm) > 0]
+#all.comm <- all.comm[ , colSums(all.comm) > 0]
+```
+
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+# Get Dominant members
+cutoff <- 100
+
+all.sub.comm <- all.comm[, 1:cutoff]
+active.sub.comm <- active.comm[, 1:cutoff]
+#all.sub.comm <- all.comm
+#active.sub.comm <- active.comm
+```
+
+
+Paired-SSADs of the 4 most dominant OTUs are pretty similar. Does this change as
+OTUs become more rare?
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+par(mfrow=c(2, 2))
+
+ct <- 1         # a counter variable
+while (ct <= 4){ # the while statement
+  ad.all <- all.comm[,ct] # choose an OTU
+  ad.all <- ad.all[ad.all > 0]
+  kdens.all <- density(log(ad.all))
+  max.all <- max(kdens.all$y)
+  
+  ad.active <- active.comm[,ct]
+  ad.active <- ad.active[ad.active > 0]
+  kdens.active <- density(log(ad.active))
+  max.active <- max(kdens.active$y)
+  
+  max.y <- max(c(max.all, max.active))
+  c <- 'red' #sample(colours(), 1)
+  
+  plot(kdens.all, col = c, xlab='log(site abundance)', ylim=c(0, max.y),
+  ylab='Probability density', main=paste('SSAD for otu ',ct))
+  lines(kdens.active, col = c, lty=2)
+  ct <- ct + 1
+  }
+```
+
+\pagebreak
+Often, the rare-biosphere begins to rear its little head by the 10th OTU or so. But, 
+here we see that paired-SSADs of the 11 to 14th most dominant OTUs are pretty similar. 
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+par(mfrow=c(2, 2))
+
+ct <- 11       # a counter variable
+while (ct <= 14){ # the while statement
+  ad.all <- all.comm[,ct] # choose an OTU
+  ad.all <- ad.all[ad.all > 0]
+  kdens.all <- density(log(ad.all))
+  max.all <- max(kdens.all$y)
+  
+  ad.active <- active.comm[,ct]
+  ad.active <- ad.active[ad.active > 0]
+  kdens.active <- density(log(ad.active))
+  max.active <- max(kdens.active$y)
+  
+  max.y <- max(c(max.all, max.active))
+  c <- 'blue' #sample(colours(), 1)
+  
+  plot(kdens.all, col = c, xlab='log(site abundance)', ylim=c(0, max.y),
+  ylab='Probability density', main=paste('SSAD for otu ',ct))
+  lines(kdens.active, col = c, lty=2)
+  ct <- ct + 1
+  }
+```
+
+\pagebreak
+Likewise, paired-SSADs of the 101 to 104th most dominant OTUs are pretty similar. 
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+par(mfrow=c(2, 2))
+
+ct <- 101       # a counter variable
+while (ct <= 104){ # the while statement
+  ad.all <- all.comm[,ct] # choose an OTU
+  ad.all <- ad.all[ad.all > 0]
+  kdens.all <- density(log(ad.all))
+  max.all <- max(kdens.all$y)
+  
+  ad.active <- active.comm[,ct]
+  ad.active <- ad.active[ad.active > 0]
+  kdens.active <- density(log(ad.active))
+  max.active <- max(kdens.active$y)
+  
+  max.y <- max(c(max.all, max.active))
+  c <- 'magenta' #sample(colours(), 1)
+  
+  plot(kdens.all, col = c, xlab='log(site abundance)', ylim=c(0, max.y),
+  ylab='Probability density', main=paste('SSAD for otu ',ct))
+  lines(kdens.active, col = c, lty=2)
+  ct <- ct + 1
+  }
+```
+
+\pagebreak
+And so are paired-SSADs of the 1001 to 1004th most dominant OTUs! 
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
+par(mfrow=c(2, 2))
+
+ct <- 1001       # a counter variable
+while (ct <= 1004){ # the while statement
+  ad.all <- all.comm[,ct] # choose an OTU
+  ad.all <- ad.all[ad.all > 0]
+  kdens.all <- density(log(ad.all))
+  max.all <- max(kdens.all$y)
+  
+  ad.active <- active.comm[,ct]
+  ad.active <- ad.active[ad.active > 0]
+  kdens.active <- density(log(ad.active))
+  max.active <- max(kdens.active$y)
+  
+  max.y <- max(c(max.all, max.active))
+  c <- 'darkgreen' #sample(colours(), 1)
+  
+  plot(kdens.all, col = c, xlab='log(site abundance)', ylim=c(0, max.y),
+  ylab='Probability density', main=paste('SSAD for otu ',ct))
+  lines(kdens.active, col = c, lty=2)
+  ct <- ct + 1
+  }
+```
+
+\pagebreak
+Let's examine whether percent differences in the paired-SSADs change as a 
+function of rank in the site-by-species matrix.
+
+```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=6}
+par(mfrow=c(2, 2))
+
+ranks <- c()
+ks.vals <- c()
+medians <- c()
+means <- c()
+modes <- c()
+skews <- c()
+vars <- c()
+
+ct <- 1       # a counter variable
+while (ct <= 180){ # the while statement
+  ad.all <- all.comm[,ct] # choose an OTU
+  ad.all <- ad.all[ad.all > 0]
+  
+  ad.active <- active.comm[,ct]
+  ad.active <- ad.active[ad.active > 0]
+  
+  diff <- abs(var(ad.all) - var(ad.active))
+  #diff <- var(ad.all) - var(ad.active)
+  avg <- mean(c(var(ad.all), var(ad.active)))
+  vars <- c(vars, (diff/avg)*100)
+  
+  diff <- abs(median(ad.all) - median(ad.active))
+  #diff <- median(ad.all) - median(ad.active)
+  avg <- mean(c(median(ad.all), median(ad.active)))
+  medians <- c(medians, (diff/avg)*100)
+  
+  diff <- abs(mean(ad.all) - mean(ad.active))
+  #diff <- mean(ad.all) - mean(ad.active)
+  avg <- mean(c(mean(ad.all), mean(ad.active)))
+  means <- c(means, (diff/avg)*100)
+  
+  d.all = density(ad.all)
+  d.active = density(ad.active)
+  i.all = which.max(d.all$y)
+  i.active = which.max(d.active$y)
+  diff <- abs(i.all - i.active)
+  #diff <- i.all - i.active
+  avg <- mean(c(i.all, i.active))
+  modes <- c(modes, (diff/avg)*100)
+  
+  ranks <- c(ranks, ct)
+  ct <- ct + 1
+  }
+
+plot(ranks, medians, col = 'red', xlab='Rank in Site-by-Species Matrix',
+     ylab='% Difference', main='Median site abundance')
+
+plot(ranks, means, col = 'blue', xlab='Rank in Site-by-Species Matrix',
+     ylab='% Difference', main='Mean site abundance')
+
+plot(ranks, modes, col = 'magenta', xlab='Rank in Site-by-Species Matrix',
+     ylab='% Difference', main='Modal site abundance')
+
+plot(ranks, vars, col = 'green', xlab='Rank in Site-by-Species Matrix', 
+     ylab='% Difference', main='Variance in site abundance')
+
+```

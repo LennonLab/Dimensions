@@ -1,204 +1,222 @@
 ---
-title: "Figure 1. Decay in compositional similarity with geographic and environmental distance"
-geometry: margin=2.54cm
-date: "November 7, 2015"
+title: "Geographical Ecology"
+author: "Z620: Quantitative Biodiversity, Indiana University"
+date: "February 13, 2015"
+header-includes:
+   - \usepackage{array}
 output: pdf_document
-header-includes: \usepackage{array}
+geometry: margin=2.54cm
 ---
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-# Retrieve and set the working directory
+## OVERVIEW
+In this exercise, we will add a geographical context to alpha ($\alpha$) and beta ($\beta$) diversity.
+We will introduce Geographical Information Systems (GIS) to map and spatially examine environmental and biodiversity data.
+This will allow us to explore core concepts like spatial autocorrelation, aggregation, and scale dependence.
+
+After completing this exercise you will be able to:  
+1.  Identify primary concepts and patterns of geographical ecology  
+2.  Examine effects of geographic distance on environmental and ecological similarity.  
+3.  Characterize aggregation of abundance across space.  
+4.  Examine the extent to which patterns of diversity depend on spatial scale.    
+5.  Use geospatial data and packages to conduct GIS operations in R.  
+6.  Use control structures such as `loops` to control how R operates on variables.
+
+## 1.) SETUP
+### A. Retrieve and Set Your Working Directory
+
+```{r, results = 'hide'}
 rm(list=ls())
 getwd()
-setwd("~/GitHub/Dimensions/Aim3/papers/DD")
+setwd("~/GitHub/QuantitativeBiodiversity/Assignments/GeographicalEcology")
 ```
 
+### B. Load Packages 
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-# Load packages
+We will use the `vegan` package for biodiversity estimators and related functions.
+
+```{r, results = 'hide', message = FALSE, warning = FALSE} 
+require("vegan")
+```
+
+We will also use a suite of six packages developed in R for geographical information systems (GIS).
+Be sure to run **install.packages(PackageName)**, if not previously installed, where PackageName is the name of the package you want installed.
+Or, run **install.packages(PackageName, type="source", dependencies=TRUE)**, if the previous command doesn't work.
+
+```{r, results = 'hide', message = FALSE, warning = FALSE} 
 require("sp")          # Classes and methods for handling spatial data
 require("geoR")        # Methods for geostatistical analyses
 require("rgdal")       # Geospatial Data Abstraction Library
-#require("raster")      # Methods to create a RasterLayer object
+require("raster")      # Methods to create a RasterLayer object
+require("RgoogleMaps") # For querying the Google server for static maps. 
 require("maptools")    # Tools for manipulating and reading geospatial data
-
-#require("picante")
-#require("ape")
-#require("seqinr")
-require("vegan") # biodiversity estimators and related functions
-#require("fossil")
-require("simba")
-require("reshape")
-
-require(reshape)
-
-source("~/GitHub/Dimensions/Aim3/bin/MothurTools.R")
-source("~/GitHub/Dimensions/Aim3/bin/metrics.R")
-load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ```
 
+### C. Load and Compile a Large Dataset
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
-# Load Environmental and Geographical Data
-env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
-lats <- as.numeric(env[, 3]) # latitudes (north and south)
-lons <- as.numeric(env[, 4]) # longitudes (east and west)
+We will analyze environmental and bacterial community data from a survey of shallow ponds found east of Bloomington, IN.
+These ponds are scattered throughout Brown County State Park, Yellowood State Forest, and Hoosier National Forest.
+In the 1940s, Maury Reeves of the Indiana Department of Natural Resources began constructing refuge ponds for wildlife.
+In the summer of 2013, we visited approximately 50 of these ponds and recorded their geographic locations using a GPS unit; 'GPS' is the acronym for Global Positioning System.
+We sampled aspects of water chemistry, physical properties, and bacterial community composition.
+Let's load the environmental and site-by-species data for the refuge ponds.
 
-# Geographic Distances (Kilometers) Among Ponds
-long.lat <- as.matrix(cbind(env$long, env$lat))
-coord.dist <- earth.dist(long.lat, dist = TRUE)
-#coord.dist <- log(coord.dist)
-coord.dist[which(!is.finite(coord.dist))] = NA
-coord.dist.ls <- liste(coord.dist, entry = "geo.dist")
-
-# Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
-# The active portion, based on cDNA 
-active.comm <- Pond97[grep("*-cDNA", rownames(Pond97)), ]
-rownames(active.comm) <- gsub("\\-cDNA", "", rownames(active.comm))
-rownames(active.comm) <- gsub("\\_", "", rownames(active.comm))
-
-# The community without respect to active or not, 16S rRNA gene sequences
-all.comm <- Pond97[grep("*-DNA", rownames(Pond97)), ]
-rownames(all.comm) <- gsub("\\-DNA", "", rownames(all.comm))
-rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
-
-# Remove Sites Not in the Environmental Data Set
-active.comm <- active.comm[rownames(active.comm)  %in% env$Sample_ID, ]
-all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
-
-# Remove Zero-Occurrence Taxa 
-active.comm <- active.comm[ , colSums(active.comm) > 0]
-all.comm <- all.comm[ , colSums(all.comm) > 0]
-
-# N equals numbers of reads
-# S equals the number of non-zero abundances
-env$active.N <- as.vector(rowSums(active.comm)) 
-env$active.S <- S.obs(active.comm)
-env$active.H <- as.vector(diversity(active.comm, index="shannon"))
-env$active.D <- as.vector(diversity(active.comm, index = "invsimpson")/env$active.S)
-
-env$all.N <- as.vector(rowSums(all.comm)) 
-env$all.S <- S.obs(all.comm)
-env$all.H <- as.vector(diversity(all.comm, index="shannon"))
-env$all.D <- as.vector(diversity(all.comm, index = "invsimpson")/env$all.S)
+```{r, results = 'hide', message = FALSE, warning = FALSE} 
+Ponds <- read.table(file="BrownCoData/20130801_PondDataMod.csv", head=TRUE, sep=",")
+lats <- as.numeric(Ponds[, 3]) # latitudes (north and south)
+lons <- as.numeric(Ponds[, 4]) # longitudes (east and west)
+OTUs <- read.csv(file="BrownCoData/SiteBySpecies.csv", head=TRUE, sep=",")
 ```
 
+Take a look at the `Environment` tab in the upper right console of RStudio. 
+You should see there are 16,384 operational taxonomic units (OTUs) distributed across 51 sites, for which, we have 19 environmental and geographic variables recorded. 
+These variables include elevation (m), geographical coordinates (lat-long), temperature (C), Diameter(m), Depth(m), redox potential (ORP), specific conductivity or SpC (uS/cm), dissolved Oxygen (mg/L), total dissolved solids (g/L), salinity (p.s.u.=ppm), color - measured at absorbance = 660; an estimate of carbon in the water sample, chlorophyll a (ug/ml), dissolved organic carbon (mg/L), dissolved organic nitrogen (mg/L), and total phosphorus (ug/L).
+
+In addition to this wealth of environmental data, let's add four diversity-related columns of data to `Ponds` data set.
+These will provide basic diversity-related variables to explore with respect to geograpy and environmental conditions.
+There will be a column for richness (S), total abundance (N), Shannon's Diversity (H), and Simpson's evenness (De).
+
+```{r}
+S.obs <- function(x = ""){ rowSums(x > 0) * 1}
+
+otu.names <- names(OTUs) # Get the names of the OTUs
+OTUs <- as.data.frame(OTUs[-1]) # remove first column (site names)
+
+Ponds$N <- as.vector(rowSums(OTUs)) # numbers of reads
+Ponds$S <- S.obs(OTUs)
+# For each site: S equals the number of non-zero abundances
+
+Ponds$H <- as.vector(diversity(OTUs, index = "shannon"))
+Ponds$De <- as.vector(diversity(OTUs, index = "invsimpson")/Ponds$S)
+# To get De at each site, we divide Simpson's Diversity by OTU site richness
+```
+
+**Now we have a large compilation of geographical, environmental, and biodiversity data. Let's do some Geographical Ecology!**
+
+## 2.) MAP SAMPLES AND DATA
+Let's visualize the spatial distribution of our samples with a basic map in RStudio.
+Let's generate a map of the refuge ponds using the `GetMap` function in the package `RgoogleMaps`.
+This map will be centered on Brown County, Indiana (39.1 latitude, -86.3 longitude).
+
+```{r}
+newmap <- GetMap(center = c(39.1,-86.3), zoom = 10, destfile = "PondsMap.png",
+                 maptype="terrain")
+PlotOnStaticMap(newmap, zoom = 10, cex = 2, col='blue') # Plot map in RStudio
+PlotOnStaticMap(newmap, lats, lons, cex=1, pch=20, col='red', add = TRUE)
+```
+
+This map displays a lot of useful information that we otherwise, would not have been aware of. 
+For example, all points are on State or National Forest land. 
+Likewise, the sample ponds appear to be aggregated in four or five small groups and distributed across a topographically complex area.
+
+Despite being a fast way to contextualize our sample ponds within the broader landscape, the Google map misses a lot of information that would otherwise help us to understand the environmental and geographical factors that may coincide with our observations on diversity.
+Likewise, because the Google map is only an image, it doesn't contain any extractable environmental or geographic data.
+
+For spatially explicit data on environmental and geographic features, i.e. geospatial data, we can turn to one of the many freely accessible online GIS databases and warehouses.
+Here, we will use the high quality geospatial data on Indiana water bodies and percent landcover.
+We obtained these data 'layers' from the **IndianaMap** geographical layer gallery: http://maps.indiana.edu/layerGallery.html.
+
+```{r}
+Land.Cover <- raster("LandCover/LandCover.tif")
+plot(Land.Cover, xlab='Longitude', ylab='Latitude', 
+  main='Map of geospatial data for % land cover,\nwater bodies, and sample sites')
+
+Water.Bodies <- readShapeSpatial("water/water.shp")
+plot(Water.Bodies, border='cyan', axes=TRUE, add = TRUE)
+
+Refuge.Ponds <- SpatialPoints(cbind(lons, lats))
+plot(Refuge.Ponds, line='r', col='red', pch = 20, cex=1.5, add=TRUE)
+```
+
+Note, that the percent land cover, water bodies, and points for refuge ponds are in spatial agreement, i.e., there is no obvious mis-alignment.
+That is because we have previously modified each layer to have the same *datum*, *projection*, and nearly the same *extent*.
+**See the glossary .Rmd file for basic definitions of these and other GIS terms.**
+
+Working with geospatial data can be challenging because there is so much information involved with correctly identifying where on Earth something occurs and because there are many ways to represent points on a globe with 2-dimensional surface, i.e., a map.
+But, whether it's data on temperature, elevation, soils, geology, human demographics, ecoregions, etc., diverse data can be found among the many GIS warehouses.
+Here are a few:
+1.) USGS: http://viewer.nationalmap.gov/viewer/
+2.) State organizations: http://www.indianamap.org/resources.php
+3.) USDA: http://datagateway.nrcs.usda.gov/
+
+## 3. PRIMARY CONCEPTS AND PATTERNS
+Having imported our primary community and environmental data from the refuge ponds, as well as having obtained a wealth of geospatial data from online sources, we are now ready to make a data intensive exploration into primary concepts and patterns of geographical ecology.
+
+## A. Spatial Autocorrelation
+**Tobler's first law of geography** states that "Everything is related to everything else, but near things are more related than distant things" (Tobler 1970).
+This law is a formulation of the concept of spatial autocorrelation.
+In short, spatial autocorrelation is the degree to which spatial variables are either clustered in space (positive autocorrelation) or over-dispersed (negative autocorrelation).
+
+When examing spatial data, it is important to check for autocorrelation not just among variables but across distance.
+We want to know more than whether variables are generally auto-correlated, but how greatly that autocorrelation changes (increases or decreases) with distance.
+Variables that are highly autocorrelated at the meter scale may or may not be less autocorrelated at the kilometer scale.
+If we want to use these variables in our analyses, we should not use the scales over which they are autocorrelated.
+
+Here, we reveal a way of detecting autocorrelation with respect to scale, that is, by using a **variogram**.
+Variograms are frequently used in spatial analyses and reveal the degree of spatial autocorrelation in sample data and how the autocorrelation (measured as the **semivariance**) changes over distance.
+
+The semivariance is a measure of the dispersion of all observations that fall below the mean. 
+In fact, if you were to find the differences between all possible points spaced a constant distance apart and then find the variance among the differences, and then divide that variance in half, you would have the semivariance.
+While the semivariance is similar to the variance, it only considers observations below the mean.
+In this case, higher semivariance means implies greater dispersion (lower autocorrelation) of values at a given spatial scale.
+
+Let's plot the variogram for one of our environmental variables.
+
+```{r, results = 'hide', message = FALSE, warning = FALSE} 
+xy <- data.frame(pond.name = Ponds$Sample_ID, lats = Ponds$lat, lons = Ponds$long)
+coordinates(xy) <- c("lats", "lons")
+
+proj4string(xy) <- CRS("+proj=longlat +datum=NAD83") 
+# Identifying the current projection and datum
+UTM <- spTransform(xy, CRS("+proj=utm +zone=51 ellps=WGS84"))
+# Transforming the projection and data, so we can get meaningful distances
+
+UTM<-as.data.frame(UTM)
+coords<-UTM[,1:2]
+
+var.trend.geoR <- variog(coords=coords, data=Ponds$DOC, option="bin") # try TDS and pH!!
+plot(var.trend.geoR, type = "b", main = "Variogram for pH", xlab='Distance (m)',
+     col='blue')
+```
+
+***Question 1***: How does the **semivariance** change with distance? Is there a distance (i.e. "spatial lag") where semivariance is very high or low?
+
+> ***Answer 1***:
+
+
+For a more visually informative picture, we can visualize autocorrelation across the landscape, by calculating **Moran's I**, a correlational statistic that measures autocorrelation based on feature locations and feature values. 
+Moran's I evaluates whether the pattern expressed is clustered, dispersed, or random.
+The function we will use also assigns a global Moran index value, a z-score and p-value. 
+
+Take for example, our land cover data represented in a raster file. 
+Raster files are one of two types of digital graphic files, the other being vector files.
+Images in vector files are made of many lines and curves (or paths) that create the image. 
+In contrast, raster images are composed of pixels and for our purposes, encode the values of the environment at a precise point.
+Using R's `raster` package, we can calculate **global** (across the landscape) and **local** (in comparison to neighbors) measures of **Moran's I**.
+
+```{r, results = 'hide'} 
+Moran(Land.Cover)
+LC.Moran <- MoranLocal(Land.Cover)
+plot(LC.Moran, xlab="Longitude", ylab="Latitude", 
+     main="Spatial autocorrelation in % landcover\nacross our sampled landscape",
+     col=rainbow(11, alpha=1))
+```
+
+***Question 2***: Moran's global I can range from 0 to 1. What was Moran's global I?
+
+> ***Answer 2***: 
+
+***Question ***: Looking at the 'landscape' of Moran's *local* I for percent landcover, make some observation about spatial autocorrelation. For example, where is it high or low?
 
 ## Pattern 1: Distance-decay relationship
 
-```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=6}
-# Set Initial Plot Parameters
+The distance-decay relationship is the primary pattern of spatial autocorrelation, and captures the rate of decreasing similarity with increasing distance. 
+This pattern addresses whether communities close to one another are more similar than communities that are farther away.
+The distance-decay pattern can also be used to address whether near environments have greater similarity than far ones.
 
-metric <- "jaccard"
-
-# Taxonomic Distances Among Ponds (Bray-Curits)
-active.weighted.dist <- 1 - vegdist(active.comm, method=metric, binary=FALSE) 
-active.weighted.dist <- log(active.weighted.dist)
-all.weighted.dist <- 1 - vegdist(all.comm, method=metric, binary=FALSE)
-all.weighted.dist <- log(all.weighted.dist)
-
-# Transform All Distances Into List Format:
-active.weighted.dist.ls <- liste(active.weighted.dist, entry = metric)
-all.weighted.dist.ls <- liste(all.weighted.dist, entry = metric)
-
-# Create a Data Frame from the Lists of Distances
-df <- data.frame(coord.dist.ls, active.weighted.dist.ls[, 3], all.weighted.dist.ls[, 3], active.presabs.dist.ls[, 3], all.presabs.dist.ls[, 3])
-
-names(df)[4:7] <- c("active.weighted", "all.weighted", "active.env", "all.env")
-attach(df)
-
-#file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", metric,"_microbes.png", sep="")
-#png(filename=file)
-  
-#plot.new()
-par(mfrow=c(2, 2), mar = c(5, 4, 3, 2) + 0.1, oma =c(0,1,3,0))
-
-# Regression for active weighted
-DD.active.weighted <- lm(active.weighted.dist ~ geo.dist)
-summary(DD.active.weighted, correlation = TRUE)
-
-# Regression for all weighted
-DD.all.weighted <- lm(all.weighted.dist ~ geo.dist)
-coeff <- summary(DD.all.weighted, correlation = TRUE)
-
-# Regression for active env
-DD.active.env <- lm(active.env.dist ~ geo.dist)
-summary(DD.active.env, correlation = TRUE)
-
-# Regression for all env
-DD.all.presabs <- lm(all.presabs.dist ~ geo.dist)
-summary(DD.all.presabs, correlation = TRUE)
-  
-  
-# Make Plot for all weighted 
-slope <- round(coefficients(DD.all.weighted)[2], 3)
-p <- round(summary(DD.all.weighted)$coefficients[8], 3)
-plot(coord.dist, all.weighted.dist, xaxt = "s", las = 1, 
-   ylab="log(similarity)", xlab="Distance, km", col = "azure3", cex.lab=1.5)
-abline(DD.all.weighted , col = "red")
-legend("bottomleft", paste("All (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
-
-# Make Plot for active weighted
-slope <- round(coefficients(DD.active.weighted)[2], 3)
-p <- round(summary(DD.active.weighted)$coefficients[8],3)
-plot(coord.dist, active.weighted.dist, xaxt = "s", las = 1, 
-   ylab="log(similarity)", xlab="Distance, km",col = "azure3",cex.lab=1.5)
-abline(DD.active.weighted , col = "red")
-legend("bottomleft", paste("Active (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
-
-# Make Plot for all env
-slope <- round(coefficients(DD.all.presabs)[2], 3)
-p <- round(summary(DD.all.presabs)$coefficients[8],3)
-plot(coord.dist, all.presabs.dist, xaxt = "s", las = 1, 
-   ylab="log(similarity)", xlab="Distance, km", col = "azure3",cex.lab=1.5)
-abline(DD.all.presabs , col = "red")
-legend("bottomleft", paste("All (unweighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
-
-# Make Plot for active env
-slope <- round(coefficients(DD.active.presabs)[2], 3)
-p <- round(summary(DD.active.presabs)$coefficients[8],3)
-plot(coord.dist, active.presabs.dist, xaxt = "s", las = 1, 
-   ylab="log(similarity)", xlab="Distance, km", col = "azure3",cex.lab=1.5)
-abline(DD.active.presabs , col = "red")
-legend("bottomleft", paste("Active (unweighted)\nslope = ",slope," p = ",p), bty="n", cex=1.2)
-
-# Add X-Axis Label to Plot
-mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
-  
-d1 <- diffslope(geo.dist, active.weighted, geo.dist, all.weighted)
-d2 <- diffslope(geo.dist, active.presabs, geo.dist, all.presabs)
-
-  
-if(metric == "morisita"){
-  metric <- "Morisita"
-  }else if(metric == "mountford"){
-    metric <- "Mountford"
-  }else if(metric == "jaccard"){
-    metric <- "Jaccard"
-  }else if(metric == "chao"){
-    metric <- "Chao"
-  }else if(metric == "canberra"){
-    metric <- "Canberra"
-  }else if(metric == "bray"){
-    metric <- "Bray"
-  }else if(metric == "kulczynski"){
-    metric <- "Kulczynski"
-  }else if(metric == "horn"){
-    metric <- "Horn"
-  }
-  
-  Mtitle <- paste(metric,"\n",'Weighted: Difference in slope =', 
-                  round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
-                  'Unweighted: Difference in slope =', 
-                  round(as.numeric(d2[2]),3), '; p =', d2[3])
-
-  title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
-  
-  #dev.off()
-}
-```
+Let's load the `simba` package and generate distance decay relationships for bacterial communities of our refuge ponds and for some of the environmental variables we measured. Note, this analysis will span the next few code blocks.
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE}
+require("simba")
 
 struc.dist <- 1 - vegdist(OTUs) # Bray-Curtis similarity between the plots
 coord.dist <- dist(as.matrix(lats, lons)) # geographical distance between plots
