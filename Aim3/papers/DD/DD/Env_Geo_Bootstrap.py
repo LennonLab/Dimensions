@@ -42,21 +42,23 @@ for i, column in enumerate(dat2):
         #print dat2.ix[:,i]
         dat2.ix[:,i] = (dat2.ix[:,i] - np.mean(dat2.ix[:,i]))/np.std(dat2.ix[:,i])
 
-
-metrics = ['Euclidean', 'Hamming']
-
-#SampleSize = [4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45]
-SampleSize = [4, 8, 12, 20, 40, 47]
+#sys.exit()
+SampleSize = [4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45]
+#SampleSize = [4, 8, 12, 20, 40]
 
 ManRS = []
 HamRS = []
-CorRS =[]
-EucRS =[]
+CorRS = []
+CosRS = []
+EucRS = []
+SquRS = []
 
 ManPVALS = []
 HamPVALS = []
 CorPVALS = []
+CosPVALS = []
 EucPVALS = []
+SquPVALS = []
 
 
 for size in SampleSize:
@@ -64,12 +66,16 @@ for size in SampleSize:
     man_rs = []
     ham_rs = []
     cor_rs = []
+    cos_rs = []
     euc_rs = []
+    squ_rs = []
 
     man_pvals = []
     ham_pvals = []
     cor_pvals = []
+    cos_pvals = []
     euc_pvals = []
+    squ_pvals = []
 
     ct = 0
     while ct < 100:
@@ -78,6 +84,8 @@ for size in SampleSize:
         HamDists = []
         EuDists = []
         CorDists = []
+        CosDists = []
+        SquDists = []
 
         env = dat2.sample(n=size)
         rows = len(env.axes[0])
@@ -86,14 +94,14 @@ for size in SampleSize:
           row1 = env.iloc[[i]]
           lat1 = float(row1['lat']) # latitudes (north and south)
           long1 = float(row1['long']) # longitudes (east and west)
-          env1 = row1.ix[:, 5:19]
+          env1 = row1.ix[:, 7:19]
 
           for j in range(rows):
             if j <= i: continue
             row2 = env.iloc[[j]]
             lat2 = float(row2['lat']) # latitudes (north and south)
             long2 = float(row2['long']) # longitudes (east and west)
-            env2 = row2.ix[:, 5:19]
+            env2 = row2.ix[:, 7:19]
 
             # geographic distance
             geo_dist = vincenty((lat1, long1), (lat2, long2)).km
@@ -103,29 +111,45 @@ for size in SampleSize:
             eu_dist = spd.euclidean(env1, env2) # Euclidean distance
             EuDists.append(eu_dist)
 
-            man_dist = spd.sqeuclidean(env1, env2) # Manhattan distance
+            man_dist = spd.cityblock(env1, env2) # Manhattan distance
             ManDists.append(man_dist)
 
-            ham_dist = spd.hamming(env1, env2) # hamming distance
+            ham_dist = spd.hamming(env1, env2) # Square Euclidean distance
             HamDists.append(ham_dist)
+
+            squ_dist = spd.sqeuclidean(env1, env2) # Square Euclidean distance
+            SquDists.append(squ_dist)
+
+            cos_dist = spd.cosine(env1, env2) # cosine distance
+            CosDists.append(cos_dist)
 
             cor_dist = spd.correlation(env1, env2) # correlation distance
             CorDists.append(cor_dist)
 
         # get correlation coefficient and p-value
-        r1, p1 = sc.stats.pearsonr(GDists, EuDists)
-        r2, p2 = sc.stats.pearsonr(GDists, ManDists)
-        r3, p3 = sc.stats.pearsonr(GDists, CorDists)
-        r4, p4 = sc.stats.pearsonr(GDists, HamDists)
+        r, p = sc.stats.pearsonr(GDists, EuDists)
+        euc_rs.append(r)
+        euc_pvals.append(p)
 
-        man_rs.append(r1)
-        man_pvals.append(p1)
-        cor_rs.append(r2)
-        cor_pvals.append(p2)
-        euc_rs.append(r3)
-        euc_pvals.append(p3)
-        ham_rs.append(r4)
-        ham_pvals.append(p4)
+        r, p = sc.stats.pearsonr(GDists, SquDists)
+        squ_rs.append(r)
+        squ_pvals.append(p)
+
+        r, p = sc.stats.pearsonr(GDists, ManDists)
+        man_rs.append(r)
+        man_pvals.append(p)
+
+        r, p = sc.stats.pearsonr(GDists, CorDists)
+        cor_rs.append(r)
+        cor_pvals.append(p)
+
+        r, p = sc.stats.pearsonr(GDists, HamDists)
+        ham_rs.append(r)
+        ham_pvals.append(p)
+
+        r, p = sc.stats.pearsonr(GDists, CosDists)
+        cos_rs.append(r)
+        cos_pvals.append(p)
 
         ct += 1
 
@@ -142,6 +166,12 @@ for size in SampleSize:
     EucRS.append(np.mean(euc_rs))
     EucPVALS.append(np.mean(euc_pvals))
 
+    SquRS.append(np.mean(squ_rs))
+    SquPVALS.append(np.mean(squ_pvals))
+
+    CosRS.append(np.mean(cos_rs))
+    CosPVALS.append(np.mean(cos_pvals))
+
 
 print "generating figure"
 fig = plt.figure()
@@ -150,22 +180,27 @@ fig.add_subplot(2, 2, 1)
 SampleSize = np.array(SampleSize)
 SampleSize = np.log10((SampleSize*(SampleSize - 1))/2)
 
-size = 60
+plt.plot(SampleSize, SquPVALS, color = '0.2', alpha= 0.6 , linewidth = 2, label='Square Euc.')
+plt.plot(SampleSize, ManPVALS, color = 'SteelBlue', alpha= 0.6 , linewidth=2, label='Manhattan')
+plt.plot(SampleSize, EucPVALS, color = 'm', alpha= 0.6 , linewidth=2, label='Euclidean')
+plt.plot(SampleSize, HamPVALS, color = '0.7', alpha= 0.6 , linewidth=2, label='Hamming')
+plt.plot(SampleSize, CorPVALS, color = 'Limegreen', alpha= 0.6 , linewidth=2, label='Correlation')
+plt.plot(SampleSize, CosPVALS, color = 'red', alpha= 0.6 , linewidth=2, label='Cosine')
 
-plt.scatter(SampleSize, ManPVALS, color = '0.4', alpha= 0.6 , s = size, linewidths=2, edgecolor='0.2', label='Manhattan')
-plt.scatter(SampleSize, CorPVALS, color = 'cyan', alpha= 0.6 , s = size, linewidths=2, edgecolor='Steelblue', label='Correlation')
-plt.scatter(SampleSize, EucPVALS, color = 'm', alpha= 0.6 , s = size, linewidths=2, edgecolor='m', label='Euclidean')
-plt.scatter(SampleSize, HamPVALS, color = '0.7', alpha= 0.6 , s = size, linewidths=2, edgecolor='0.5', label='Hamming')
-plt.legend(bbox_to_anchor=(-0.03, 1.07, 2.46, .3), loc=10, ncol=2, mode="expand",prop={'size':12})
+plt.plot([min(SampleSize), max(SampleSize)], [0.05, 0.05], c='0.2', ls='--')
+plt.legend(bbox_to_anchor=(-0.03, 1.07, 2.46, .3), loc=10, ncol=3, mode="expand",prop={'size':12})
 
+plt.ylim(0, 0.2)
 plt.ylabel('$p$'+'-value', fontsize=14)
 plt.xlabel('sample size', fontsize=14)
 
 fig.add_subplot(2, 2, 2)
-plt.scatter(SampleSize, ManRS, color = '0.4', alpha= 0.6 , s = size, linewidths=2, edgecolor='0.2', label='Manhattan')
-plt.scatter(SampleSize, CorRS, color = 'cyan', alpha= 0.6 , s = size, linewidths=2, edgecolor='Steelblue', label='Mahalanobis')
-plt.scatter(SampleSize, EucRS, color = 'm', alpha= 0.6 , s = size, linewidths=2, edgecolor='m', label='Euclidean')
-plt.scatter(SampleSize, HamRS, color = '0.7', alpha= 0.6 , s = size, linewidths=2, edgecolor='0.5', label='Hamming')
+plt.plot(SampleSize, SquRS, color = '0.2', alpha= 0.6 , linewidth = 2)
+plt.plot(SampleSize, ManRS, color = 'SteelBlue', alpha= 0.6 ,  linewidth=2)
+plt.plot(SampleSize, EucRS, color = 'm', alpha= 0.6 , linewidth=2)
+plt.plot(SampleSize, HamRS, color = '0.7', alpha= 0.6 , linewidth=2)
+plt.plot(SampleSize, CorRS, color = 'Limegreen', alpha= 0.6 , linewidth=2)
+plt.plot(SampleSize, CosRS, color = 'red', alpha= 0.6 , linewidth=2)
 
 plt.ylabel('Correlation coefficient', fontsize=12)
 plt.xlabel('sample size', fontsize=12)
