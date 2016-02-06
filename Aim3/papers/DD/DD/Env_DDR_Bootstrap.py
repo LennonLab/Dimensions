@@ -23,6 +23,8 @@ mydir = os.path.expanduser("~/GitHub/Dimensions/Aim3/papers/DD")
 mydir2 = os.path.expanduser("~/")
 
 dat = pd.read_csv("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = False)
+dat = pd.read_csv("~/GitHub/Dimensions/Aim3/DATA/ForPython/ActiveComm.csv", sep = ",", header = True)
+dat = pd.read_csv("~/GitHub/Dimensions/Aim3/DATA/ForPython/AllComm.csv", sep = ",", header = True)
 
 dat2 = dat[dat['chla'] < 2000.0]
 dat2 = dat2[dat2['pH'] > 1.0]
