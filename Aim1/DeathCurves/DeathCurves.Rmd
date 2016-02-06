@@ -19,7 +19,7 @@ getwd()
 setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
 
 ## Load Data
-obs <- read.csv("data/longtermdormancy_20150806_nocomments.csv", 
+obs <- read.csv("data/longtermdormancy_20151112_nocomments.csv", 
                 header = TRUE, stringsAsFactors = FALSE)
 ```
 
