@@ -4,6 +4,11 @@ import  matplotlib.pyplot as plt
 import geopy
 from geopy.distance import vincenty
 
+import skbio
+import skbio.diversity
+import skbio.diversity.beta
+from skbio.diversity import beta_diversity
+
 import pandas as pd
 import linecache
 import numpy as np
@@ -22,9 +27,13 @@ from statsmodels.stats.outliers_influence import summary_table
 mydir = os.path.expanduser("~/GitHub/Dimensions/Aim3/papers/DD")
 mydir2 = os.path.expanduser("~/")
 
-dat = pd.read_csv("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = False)
+EnvDat = pd.read_csv("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = False)
+Active = pd.read_csv("~/GitHub/Dimensions/Aim3/DATA/ForPython/ActiveComm.csv", sep = ",", header = False)
+All = pd.read_csv("~/GitHub/Dimensions/Aim3/DATA/ForPython/AllComm.csv", sep = ",", header = False)
+#ColNames = list(Active.columns.values)
+#print ColNames
 
-dat2 = dat[dat['chla'] < 2000.0]
+dat2 = EnvDat[EnvDat['chla'] < 2000.0]
 dat2 = dat2[dat2['pH'] > 1.0]
 dat2 = dat2[dat2['Salinity'] > 0.0]
 dat2 = dat2[dat2['TDS'] < 5.0]
@@ -33,6 +42,9 @@ dat2 = dat2[dat2['TDS'] < 5.0]
 results = pd.DataFrame()
 trows = len(dat2.axes[0])
 tcols = len(dat2.axes[1])
+allrows = len(All.axes[0])
+actrows = len(Active.axes[0])
+if trows != allrows or trows != actrows: sys.exit()
 
 ColNames = list(dat2.columns.values)
 
@@ -46,49 +58,29 @@ for i, column in enumerate(dat2):
 SampleSize = [4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45]
 #SampleSize = [4, 8, 12, 20, 40]
 
-ManRS = []
-HamRS = []
-CorRS = []
-CosRS = []
-EucRS = []
-SquRS = []
+BrayRS = []
+JaccRS = []
 
-ManPVALS = []
-HamPVALS = []
-CorPVALS = []
-CosPVALS = []
-EucPVALS = []
-SquPVALS = []
-
+BracPVALS = []
+JaccPVALS = []
 
 for size in SampleSize:
     print 'sample size:', size
-    man_rs = []
-    ham_rs = []
-    cor_rs = []
-    cos_rs = []
-    euc_rs = []
-    squ_rs = []
 
-    man_pvals = []
-    ham_pvals = []
-    cor_pvals = []
-    cos_pvals = []
-    euc_pvals = []
-    squ_pvals = []
+    bray_rs = []
+    jacc_rs = []
+
+    bray_pvals = []
+    jacc_pvals = []
 
     ct = 0
     while ct < 100:
-        GDists = []
-        ManDists = []
-        HamDists = []
-        EuDists = []
-        CorDists = []
-        CosDists = []
-        SquDists = []
+        #inds = np.random.choice(range(1, trows+1), size, replace=False)
 
-        env = dat2.sample(n=size)
-        rows = len(env.axes[0])
+        GDists = []
+        EnvDists = []
+        BrayDists = []
+        JaccDists = []
 
         for i in range(rows):
           row1 = env.iloc[[i]]
@@ -175,7 +167,7 @@ for size in SampleSize:
 
 print "generating figure"
 fig = plt.figure()
-fig.add_subplot(2, 2, 1)
+fig.add_subplot(2, 2, 2)
 
 SampleSize = np.array(SampleSize)
 SampleSize = np.log10((SampleSize*(SampleSize - 1))/2)
