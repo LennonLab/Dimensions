@@ -78,15 +78,15 @@ for(name in env.names){
   rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
 
   # Remove Sites Not in the Environmental Data Set
-  active.comm <- active.comm[rownames(active.comm)  %in% env.org$Sample_ID, ]
-  all.comm <- all.comm[rownames(all.comm)  %in% env.org$Sample_ID, ]
+  active.comm1 <- active.comm[rownames(active.comm)  %in% env.org$Sample_ID, ]
+  all.comm1 <- all.comm[rownames(all.comm)  %in% env.org$Sample_ID, ]
 
-  write.table(active.comm, 
+  write.table(active.comm1, 
               file = "~/GitHub/Dimensions/Aim3/DATA/ForPython/ActiveComm", 
               sep = ",", eol = "\n", na = "NA", dec = ".", 
               row.names = TRUE, col.names = TRUE)
   
-  write.table(all.comm, 
+  write.table(all.comm1, 
               file = "~/GitHub/Dimensions/Aim3/DATA/ForPython/AllComm", 
               sep = ",", eol = "\n", na = "NA", dec = ".", 
               row.names = TRUE, col.names = TRUE)
