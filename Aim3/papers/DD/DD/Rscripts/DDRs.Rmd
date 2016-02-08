@@ -88,7 +88,7 @@ env$all.S <- S.obs(all.comm)
 metrics <- c("jaccard", "mountford", "chao", "canberra", 
              "bray", "kulczynski", "morisita", "horn")
 
-#metrics <- c("jaccard")
+metrics <- c("jaccard")
 
 for(metric in metrics){ 
   
