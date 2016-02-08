@@ -47,10 +47,12 @@ lons <- as.numeric(env[, 4]) # longitudes (east and west)
 
 # Geographic Distances (Kilometers) Among Ponds
 long.lat <- as.matrix(cbind(env$long, env$lat))
-coord.dist <- earth.dist(long.lat, dist = TRUE)
-#coord.dist <- log(coord.dist)
-coord.dist[which(!is.finite(coord.dist))] = NA
-coord.dist.ls <- liste(coord.dist, entry = "geo.dist")
+geo.dist <- earth.dist(long.lat, dist = TRUE)
+#geo.dist <- log(geo.dist)
+geo.dist[which(!is.finite(geo.dist))] = NA
+geo.dist.ls <- liste(geo.dist, entry = "geo.dist")
+
+
 
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
 # The active portion, based on cDNA 
@@ -85,123 +87,67 @@ env$all.S <- S.obs(all.comm)
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=6}
 # Set Initial Plot Parameters
 
-metrics <- c("jaccard", "mountford", "chao", "canberra", 
-             "bray", "kulczynski", "morisita", "horn")
+#metrics <- c("jaccard", "mountford", "chao", "canberra", 
+#             "bray", "kulczynski", "morisita", "horn")
 
 metrics <- c("jaccard")
+metric <- "Jaccard"
 
-for(metric in metrics){ 
+# Taxonomic Distances Among Ponds (Bray-Curits)
+active.weighted.dist <- log10(1 - vegdist(active.comm, method=metric, binary=FALSE))
+all.weighted.dist <- log10(1 - vegdist(all.comm, method=metric, binary=FALSE))
+
+# Transform All Distances Into List Format:
+active.weighted.dist.ls <- liste(active.weighted.dist, entry = metric)
+all.weighted.dist.ls <- liste(all.weighted.dist, entry = metric)
   
-  # Taxonomic Distances Among Ponds (Bray-Curits)
-  active.weighted.dist <- 1 - vegdist(active.comm, method=metric, binary=FALSE) 
-  active.weighted.dist <- log(active.weighted.dist)
-  all.weighted.dist <- 1 - vegdist(all.comm, method=metric, binary=FALSE)
-  all.weighted.dist <- log(all.weighted.dist)
+# Create a Data Frame from the Lists of Distances
+df <- data.frame(geo.dist.ls, active.weighted.dist.ls[, 3], all.weighted.dist.ls[, 3], active.presabs.dist.ls[, 3], all.presabs.dist.ls[, 3])
 
-  active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
-  active.presabs.dist <- log(active.presabs.dist)
-  all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
-  all.presabs.dist <- log(all.presabs.dist)
+names(df)[4:7] <- c("active.weighted", "all.weighted", "active.presabs", "all.presabs")
+attach(df)
 
-  # Transform All Distances Into List Format:
-  active.weighted.dist.ls <- liste(active.weighted.dist, entry = metric)
-  all.weighted.dist.ls <- liste(all.weighted.dist, entry = metric)
-  active.presabs.dist.ls <- liste(active.presabs.dist, entry = metric)
-  all.presabs.dist.ls <- liste(all.presabs.dist, entry = metric)
-
-  # Create a Data Frame from the Lists of Distances
-  df <- data.frame(coord.dist.ls, active.weighted.dist.ls[, 3], all.weighted.dist.ls[, 3], active.presabs.dist.ls[, 3], all.presabs.dist.ls[, 3])
-
-  names(df)[4:7] <- c("active.weighted", "all.weighted", "active.presabs", "all.presabs")
-  attach(df)
-
-  #file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", metric,"_microbes.png", sep="")
-  #png(filename=file)
+#file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", metric,"_microbes.png", sep="")
+#png(filename=file)
   
-  #plot.new()
-  par(mfrow=c(2, 2), mar = c(5, 4, 3, 2) + 0.1, oma =c(0,1,3,0))
+#plot.new()
+par(mfrow=c(2, 2), mar = c(5, 4, 3, 2) + 0.1, oma =c(0,1,3,0))
 
-  # Regression for active weighted
-  DD.active.weighted <- lm(active.weighted.dist ~ geo.dist)
-  summary(DD.active.weighted, correlation = TRUE)
+# Regression for active weighted
+DD.active.weighted <- lm(active.weighted.dist ~ geo.dist)
+summary(DD.active.weighted, correlation = TRUE)
 
-  # Regression for all weighted
-  DD.all.weighted <- lm(all.weighted.dist ~ geo.dist)
-  coeff <- summary(DD.all.weighted, correlation = TRUE)
-
-  # Regression for active presence/absence
-  DD.active.presabs <- lm(active.presabs.dist ~ geo.dist)
-  summary(DD.active.presabs, correlation = TRUE)
-
-  # Regression for all presence/absence 
-  DD.all.presabs <- lm(all.presabs.dist ~ geo.dist)
-  summary(DD.all.presabs, correlation = TRUE)
+# Regression for all weighted
+DD.all.weighted <- lm(all.weighted.dist ~ geo.dist)
+coeff <- summary(DD.all.weighted, correlation = TRUE)  
   
+# Make Plot for all weighted 
+slope <- round(coefficients(DD.all.weighted)[2], 3)
+p <- round(summary(DD.all.weighted)$coefficients[8], 3)
+plot(geo.dist, all.weighted.dist, xaxt = "s", las = 1, 
+   ylab="log(similarity)", xlab="Distance, km", col = "azure3", cex.lab=1.5)
+abline(DD.all.weighted , col = "red")
+legend("bottomleft", paste("All (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
+
+# Make Plot for active weighted
+slope <- round(coefficients(DD.active.weighted)[2], 3)
+p <- round(summary(DD.active.weighted)$coefficients[8],3)
+plot(geo.dist, active.weighted.dist, xaxt = "s", las = 1, 
+   ylab="log(similarity)", xlab="Distance, km",col = "azure3",cex.lab=1.5)
+abline(DD.active.weighted , col = "red")
+legend("bottomleft", paste("Active (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
   
-  # Make Plot for all weighted 
-  slope <- round(coefficients(DD.all.weighted)[2], 3)
-  p <- round(summary(DD.all.weighted)$coefficients[8], 3)
-  plot(coord.dist, all.weighted.dist, xaxt = "s", las = 1, 
-     ylab="log(similarity)", xlab="Distance, km", col = "azure3", cex.lab=1.5)
-  abline(DD.all.weighted , col = "red")
-  legend("bottomleft", paste("All (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
-
-  # Make Plot for active weighted
-  slope <- round(coefficients(DD.active.weighted)[2], 3)
-  p <- round(summary(DD.active.weighted)$coefficients[8],3)
-  plot(coord.dist, active.weighted.dist, xaxt = "s", las = 1, 
-     ylab="log(similarity)", xlab="Distance, km",col = "azure3",cex.lab=1.5)
-  abline(DD.active.weighted , col = "red")
-  legend("bottomleft", paste("Active (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
-
-  # Make Plot for all presence/absence
-  slope <- round(coefficients(DD.all.presabs)[2], 3)
-  p <- round(summary(DD.all.presabs)$coefficients[8],3)
-  plot(coord.dist, all.presabs.dist, xaxt = "s", las = 1, 
-     ylab="log(similarity)", xlab="Distance, km", col = "azure3",cex.lab=1.5)
-  abline(DD.all.presabs , col = "red")
-  legend("bottomleft", paste("All (unweighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
-
-  # Make Plot for active presence/absence
-  slope <- round(coefficients(DD.active.presabs)[2], 3)
-  p <- round(summary(DD.active.presabs)$coefficients[8],3)
-  plot(coord.dist, active.presabs.dist, xaxt = "s", las = 1, 
-     ylab="log(similarity)", xlab="Distance, km", col = "azure3",cex.lab=1.5)
-  abline(DD.active.presabs , col = "red")
-  legend("bottomleft", paste("Active (unweighted)\nslope = ",slope," p = ",p), bty="n", cex=1.2)
-
-  # Add X-Axis Label to Plot
-  mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
+# Add X-Axis Label to Plot
+mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
-  d1 <- diffslope(geo.dist, active.weighted, geo.dist, all.weighted)
-  d2 <- diffslope(geo.dist, active.presabs, geo.dist, all.presabs)
+d1 <- diffslope(geo.dist, active.weighted, geo.dist, all.weighted)
+d2 <- diffslope(geo.dist, active.presabs, geo.dist, all.presabs)
+  
+Mtitle <- paste(metric,"\n",'Weighted: Difference in slope =', 
+                round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
+                'Unweighted: Difference in slope =', 
+                round(as.numeric(d2[2]),3), '; p =', d2[3])
 
-  
-  if(metric == "morisita"){
-    metric <- "Morisita"
-  }else if(metric == "mountford"){
-    metric <- "Mountford"
-  }else if(metric == "jaccard"){
-    metric <- "Jaccard"
-  }else if(metric == "chao"){
-    metric <- "Chao"
-  }else if(metric == "canberra"){
-    metric <- "Canberra"
-  }else if(metric == "bray"){
-    metric <- "Bray"
-  }else if(metric == "kulczynski"){
-    metric <- "Kulczynski"
-  }else if(metric == "horn"){
-    metric <- "Horn"
-  }
-  
-  Mtitle <- paste(metric,"\n",'Weighted: Difference in slope =', 
-                  round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
-                  'Unweighted: Difference in slope =', 
-                  round(as.numeric(d2[2]),3), '; p =', d2[3])
-
-  title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
-  
-  #dev.off()
+title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
 }
 ```
