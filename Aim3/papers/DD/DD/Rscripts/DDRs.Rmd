@@ -83,65 +83,110 @@ env$all.S <- S.obs(all.comm)
 ```
 
 
+```{r}
+# Conduct CCA and get axis 1
+# Define Environmental Matrix
+env.chem <- env.dat
+# Conduct CCA 
+active.cca <- vegan::cca(active.sub.comm ~ env.chem)
+all.cca <- vegan::cca(all.sub.comm ~ env.chem)
+
+# Permutation Tests
+anova(active.cca, by = "axis")
+active.cca.fit <- envfit(active.cca, env.chem, perm = 999)
+active.cca.scores <- scores(active.cca)
+active.cca.sites <- as.data.frame(scores(active.cca.scores$sites))
+active.cca1.scores <- as.matrix(subset(active.cca.sites, select = CCA1))
+active.cca1.dist <- vegdist(active.cca1.scores, "euclidean")
+
+anova(all.cca, by = "axis")
+all.cca.fit <- envfit(all.cca, env.chem, perm = 999)
+all.cca.scores <- scores(all.cca)
+all.cca.sites <- as.data.frame(scores(all.cca.scores$sites))
+all.cca1.scores <- as.matrix(subset(all.cca.sites, select = CCA1))
+all.cca1.dist <- vegdist(all.cca1.scores, "euclidean")
+
+```
+
+
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=6}
-# Set Initial Plot Parameters
-
-#metrics <- c("jaccard", "mountford", "chao", "canberra", 
-#             "bray", "kulczynski", "morisita", "horn")
-
 metrics <- c("jaccard")
 metric <- "Jaccard"
 
 # Taxonomic Distances Among Ponds (Bray-Curits)
-active.weighted.dist <- log10(1 - vegdist(active.comm, method=metric, binary=FALSE))
-all.weighted.dist <- log10(1 - vegdist(all.comm, method=metric, binary=FALSE))
+active.dist <- log10(1 - vegdist(active.comm, method=metric, binary=FALSE))
+all.dist <- log10(1 - vegdist(all.comm, method=metric, binary=FALSE))
 
-# Transform All Distances Into List Format:
-active.weighted.dist.ls <- liste(active.weighted.dist, entry = metric)
-all.weighted.dist.ls <- liste(all.weighted.dist, entry = metric)
-  
-# Create a Data Frame from the Lists of Distances
-df <- data.frame(geo.dist.ls, active.weighted.dist.ls[, 3], all.weighted.dist.ls[, 3], active.presabs.dist.ls[, 3], all.presabs.dist.ls[, 3])
+# Regression for active geo
+DD.active.geo <- lm(active.dist ~ geo.dist)
+summary(DD.active.geo, correlation = TRUE)
 
-names(df)[4:7] <- c("active.weighted", "all.weighted", "active.presabs", "all.presabs")
-attach(df)
+# Regression for all geo
+DD.all.geo <- lm(all.dist ~ geo.dist)
+coeff <- summary(DD.all.geo, correlation = TRUE)  
 
+# Regression for active env
+DD.active.env <- lm(active.dist ~ active.cca1.dist)
+summary(DD.active.env, correlation = TRUE)
+
+# Regression for all env
+DD.all.env <- lm(all.dist ~ all.cca1.dist)
+coeff <- summary(DD.all.env, correlation = TRUE)
+```
+
+
+
+```{r}
 #file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", metric,"_microbes.png", sep="")
 #png(filename=file)
   
 #plot.new()
 par(mfrow=c(2, 2), mar = c(5, 4, 3, 2) + 0.1, oma =c(0,1,3,0))
 
-# Regression for active weighted
-DD.active.weighted <- lm(active.weighted.dist ~ geo.dist)
-summary(DD.active.weighted, correlation = TRUE)
 
-# Regression for all weighted
-DD.all.weighted <- lm(all.weighted.dist ~ geo.dist)
-coeff <- summary(DD.all.weighted, correlation = TRUE)  
-  
-# Make Plot for all weighted 
-slope <- round(coefficients(DD.all.weighted)[2], 3)
-p <- round(summary(DD.all.weighted)$coefficients[8], 3)
-plot(geo.dist, all.weighted.dist, xaxt = "s", las = 1, 
+# Make Plot for all geo
+slope <- round(coefficients(DD.all.geo)[2], 3)
+p <- round(summary(DD.all.geo)$coefficients[8], 3)
+plot(geo.dist, all.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab="Distance, km", col = "azure3", cex.lab=1.5)
-abline(DD.all.weighted , col = "red")
+abline(DD.all.geo, col = "red")
 legend("bottomleft", paste("All (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
 
-# Make Plot for active weighted
-slope <- round(coefficients(DD.active.weighted)[2], 3)
-p <- round(summary(DD.active.weighted)$coefficients[8],3)
-plot(geo.dist, active.weighted.dist, xaxt = "s", las = 1, 
+
+# Make Plot for active geo
+slope <- round(coefficients(DD.active.geo)[2], 3)
+p <- round(summary(DD.active.geo)$coefficients[8],3)
+plot(geo.dist, active.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab="Distance, km",col = "azure3",cex.lab=1.5)
-abline(DD.active.weighted , col = "red")
+abline(DD.active.geo, col = "red")
 legend("bottomleft", paste("Active (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
-  
+
+
+# Make Plot for all cca1
+slope <- round(coefficients(DD.all.cca1)[2], 3)
+p <- round(summary(DD.all.cca1)$coefficients[8], 3)
+plot(all.cca1.dist, all.dist, xaxt = "s", las = 1, 
+   ylab="log(similarity)", xlab="CCA1", col = "azure3", cex.lab=1.5)
+abline(DD.all.cca1, col = "red")
+legend("bottomleft", paste("All (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
+
+
+# Make Plot for active cca1
+slope <- round(coefficients(DD.active.cca1)[2], 3)
+p <- round(summary(DD.active.cca1)$coefficients[8],3)
+plot(active.cca1.dist, active.dist, xaxt = "s", las = 1, 
+   ylab="log(similarity)", xlab="Distance, km",col = "azure3",cex.lab=1.5)
+abline(DD.active.cca1, col = "red")
+legend("bottomleft", paste("Active (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
+
+
+
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
-d1 <- diffslope(geo.dist, active.weighted, geo.dist, all.weighted)
-d2 <- diffslope(geo.dist, active.presabs, geo.dist, all.presabs)
+d1 <- diffslope(geo.dist, active.dist, geo.dist, all.dist)
+d2 <- diffslope(active.cca1.dist, active.dist, all.cca1.dist, all.dist)
   
 Mtitle <- paste(metric,"\n",'Weighted: Difference in slope =', 
                 round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
