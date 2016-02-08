@@ -51,12 +51,12 @@ geo.dist.ls <- liste(geo.dist, entry = "geo.dist")
 
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
 # The active portion, based on cDNA 
-active.comm <- Pond97[grep("*-cDNA", rownames(PondREL)), ]
+active.comm <- Pond97[grep("*-cDNA", rownames(Pond97)), ]
 rownames(active.comm) <- gsub("\\-cDNA", "", rownames(active.comm))
 rownames(active.comm) <- gsub("\\_", "", rownames(active.comm))
 
 # The community without respect to active or not, 16S rRNA gene sequences
-all.comm <- Pond97[grep("*-DNA", rownames(PondREL)), ]
+all.comm <- Pond97[grep("*-DNA", rownames(Pond97)), ]
 rownames(all.comm) <- gsub("\\-DNA", "", rownames(all.comm))
 rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
 
@@ -68,9 +68,9 @@ all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
 active.comm <- active.comm[ , colSums(active.comm) > 0]
 all.comm <- all.comm[ , colSums(all.comm) > 0]
 
-cutoff <- 1000
-all.comm <- all.comm[, 1:cutoff]
-active.comm <- active.comm[, 1:cutoff]
+#cutoff <- 10000
+#all.comm <- all.comm[, 1:cutoff]
+#active.comm <- active.comm[, 1:cutoff]
 ```
 
 
@@ -78,7 +78,7 @@ active.comm <- active.comm[, 1:cutoff]
 # Conduct CCA and get axis 1
 # Define Environmental Matrix
 # Pond environmental variables
-env.dat <- as.matrix(subset(env, select = ORP:DON))
+env.dat <- as.matrix(subset(env, select = Diameter:DON))
 env.chem <- env.dat
 # Conduct CCA 
 active.cca <- vegan::cca(active.comm ~ env.chem)
@@ -101,24 +101,23 @@ all.cca1.dist <- vegdist(all.cca1.scores, dist)
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=6}
 metric <- "bray"
 
-# Taxonomic Distances Among Ponds (Bray-Curits)
-active.dist <- log10(1 - vegdist(active.comm, method=metric, binary=F))
-all.dist <- log10(1 - vegdist(all.comm, method=metric, binary=F))
+# Taxonomic Distances Among Ponds
+#active.dist <- log(1 - vegdist(active.comm, method=metric, binary=T))
+#all.dist <- log(1 - vegdist(all.comm, method=metric, binary=T))
 
-# Regression for active geo
+active.dist <- 1 - vegdist(active.comm, method=metric, binary=T)
+all.dist <- 1 - vegdist(all.comm, method=metric, binary=T)
+
 DD.active.geo <- lm(active.dist ~ geo.dist)
-# Regression for all geo
 DD.all.geo <- lm(all.dist ~ geo.dist)
-# Regression for active env
 DD.active.env <- lm(active.dist ~ active.cca1.dist)
-# Regression for all env
 DD.all.env <- lm(all.dist ~ all.cca1.dist)
 ```
 
 
 
 ```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/DDRs_Fig2.png", sep="")
+  file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/DDRs_Fig2.png", sep="")
 png(filename=file)
   
 plot.new()
@@ -129,7 +128,7 @@ slope <- round(coefficients(DD.all.geo)[2], 3)
 p <- round(summary(DD.all.geo)$coefficients[8], 3)
 plot(geo.dist, all.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab="Distance, km", col = "azure3", 
-   cex.lab=1.5)
+   cex.lab=1.5, ylim=c(0.1, 0.42))
 abline(DD.all.geo, col = "red")
 legend("bottomleft", paste("All: m =",slope), bty="n", cex=1.2)
 
@@ -139,7 +138,7 @@ slope <- round(coefficients(DD.active.geo)[2], 3)
 p <- round(summary(DD.active.geo)$coefficients[8],3)
 plot(geo.dist, active.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab="Distance, km",col = "azure3",
-   cex.lab=1.5)
+   cex.lab=1.5, ylim=c(0.1, 0.42))
 abline(DD.active.geo, col = "red")
 legend("bottomleft", paste("Active: m = ",slope), bty="n", cex=1.2)
 
@@ -149,7 +148,7 @@ slope <- round(coefficients(DD.all.env)[2], 3)
 p <- round(summary(DD.all.env)$coefficients[8], 4)
 plot(all.cca1.dist, all.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab="CCA1", col = "azure3",
-   cex.lab=1.5)
+   cex.lab=1.5, ylim=c(0.1, 0.42))
 abline(DD.all.env, col = "red")
 legend("topright", paste("All: slope = ",slope), bty="n", cex=1.2)
 
@@ -158,7 +157,7 @@ slope <- round(coefficients(DD.active.env)[2], 3)
 p <- round(summary(DD.active.env)$coefficients[8],3)
 plot(active.cca1.dist, active.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab="CCA1",col = "azure3",
-   cex.lab=1.5)
+   cex.lab=1.5, ylim=c(0.1, 0.42))
 abline(DD.active.env, col = "red")
 legend("topright", paste("Active: slope = ",slope), bty="n", cex=1.2)
 
