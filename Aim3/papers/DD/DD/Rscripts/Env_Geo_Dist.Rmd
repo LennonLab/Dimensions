@@ -16,12 +16,6 @@ setwd("~/GitHub/Dimensions/Aim3/papers/DD")
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load packages
-require("sp")          # Classes and methods for handling spatial data
-require("geoR")        # Methods for geostatistical analyses
-require("rgdal")       # Geospatial Data Abstraction Library
-require("raster")      # Methods to create a RasterLayer object
-require("maptools")    # Tools for manipulating and reading geospatial data
-
 require("picante")
 require("ape")
 require("seqinr")
@@ -39,6 +33,12 @@ load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load Environmental and Geographical Data
 env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
+
+env <- subset(env, chla < 2000)
+env <- subset(env, pH > 1)
+env <- subset(env, Salinity > 0.0)
+env <- subset(env, TDS < 5.0)
+
 lats <- as.numeric(env[, 3]) # latitudes (north and south)
 lons <- as.numeric(env[, 4]) # longitudes (east and west)
 
@@ -106,8 +106,8 @@ DD.all <- lm(all.cca1.dist ~ geo.dist)
 
 
 ```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/Env_Geo_Dist.png", sep="")
-png(filename=file)
+#file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/Env_Geo_Dist.png", sep="")
+#png(filename=file)
   
 plot.new()
 par(mfrow=c(2, 2), mar = c(5, 4, 3, 2) + 0.1, oma =c(0,1,3,0))
@@ -143,5 +143,5 @@ mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
 #                round(as.numeric(d2[2]),3), '; p =', d2[3])
 
 #title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
-dev.off()
+#dev.off()
 ```
