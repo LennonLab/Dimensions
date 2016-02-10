@@ -18,11 +18,11 @@ setwd("~/GitHub/Dimensions/Aim3")
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load packages
-require("sp")          # Classes and methods for handling spatial data
-require("geoR")        # Methods for geostatistical analyses
-require("rgdal")       # Geospatial Data Abstraction Library
-require("raster")      # Methods to create a RasterLayer object
-require("maptools")    # Tools for manipulating and reading geospatial data
+#require("sp")          # Classes and methods for handling spatial data
+#require("geoR")        # Methods for geostatistical analyses
+#require("rgdal")       # Geospatial Data Abstraction Library
+#require("raster")      # Methods to create a RasterLayer object
+#require("maptools")    # Tools for manipulating and reading geospatial data
 
 require("picante")
 require("ape")
@@ -31,9 +31,6 @@ require("vegan") # biodiversity estimators and related functions
 require("fossil")
 require("simba")
 require("reshape")
-
-require(ggplot2)
-require(reshape)
 ```
 
 
@@ -47,11 +44,16 @@ load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 ```
 
 
-
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load Environmental and Geographical Data
 env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv",
                   sep = ",", header = TRUE)
+
+env <- subset(env, chla < 2000)
+env <- subset(env, pH > 1)
+env <- subset(env, Salinity > 0.0)
+env <- subset(env, TDS < 5.0)
+
 
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
 # The active portion, based on cDNA 
@@ -90,38 +92,95 @@ Note, we have to specify that we want the `cca` function in the `vegan` package 
 We will then use permutation tests to evaluate the significance of our model. 
 Finally, we will test the influence of each environmental variable on the constrained axes.
 
-```{r, results = "hide"}
-# Get Dominant members
-cutoff <- 1000
 
-all.sub.comm <- all.comm[, 1:cutoff]
-active.sub.comm <- active.comm[, 1:cutoff]
+```{r}
+levels.short <- c('BCSP', 'HNF', 'YSF')
+colors.short <- c('firebrick1', 'darkorchid1', 'cornflowerblue')
+  
+colors <- c('firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
+            'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
+            'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
+            'firebrick1',
+            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
+            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
+            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
+            'darkorchid1',
+            'cornflowerblue','cornflowerblue','cornflowerblue','cornflowerblue',
+            'cornflowerblue', 'cornflowerblue','cornflowerblue','cornflowerblue',
+            'cornflowerblue','cornflowerblue', 'cornflowerblue','cornflowerblue',
+            'cornflowerblue','cornflowerblue','cornflowerblue')
 
-#all.sub.comm <- all.comm
-#active.sub.comm <- active.comm
+```
 
-# Define Environmental Matrix
-env.chem <- env.dat
+```{r}
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA-active.png", sep="")
+png(filename=file)
 
-# Conduct CCA 
-active.cca <- vegan::cca(active.sub.comm ~ env.chem)
+# Define Plot Parameters
+par(mfrow=c(1, 1), mar = c(5, 5, 4, 4) + 0.1, pty="s")
+
+# Initiate Plot
+plot(scores(active.cca, display = "wa"), xlim = c(-2, 2), ylim = c(-1, 1.5),
+     xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
+     ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
+     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2,
+     axes = FALSE)
+
+# Add Axes
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+# Add Points & Labels
+points(scores(active.cca, display = "wa"),
+       pch = 1, cex = 2, bg = colors, col = colors)
+legend("bottomleft", legend = levels.short, bty = "n", col = colors.short, 
+       pch = 1)
+
+# Add Environmental Vectors
+vectors <- scores(active.cca, display = "bp")
+row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp",
+      "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
+
+arrows(0, 0, vectors[,1] * 2, vectors[, 2] * 2, 
+       lwd = 1, lty = 1, length = 0.2, col = "black")
+
+text(vectors[,1] * 2.5, vectors[, 2] * 2, pos = 3, 
+     labels = row.names(vectors))
+
+axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
+     at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[, 1])))
+axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
+     at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
+
+dev.off()
+```
+
+
+
+
+
+```{r}
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA-all.png", sep="")
+png(filename=file)
 
 # Permutation Tests
-anova(active.cca, by = "axis")
-cca.fit <- envfit(active.cca, env.chem, perm = 999)
-cca.fit
+#anova(active.cca, by = "axis")
+#cca.fit <- envfit(active.cca, env.chem, perm = 999)
+#cca.fit
 
 # Calculate Explained Variation
-cca.explainvar1 <- round(active.cca$CCA$eig[1] / 
-                         sum(c(active.cca$CCA$eig, active.cca$CA$eig)), 3) * 100
-cca.explainvar2 <- round(active.cca$CCA$eig[2] / 
-                         sum(c(active.cca$CCA$eig, active.cca$CA$eig)), 3) * 100
+cca.explainvar1 <- round(all.cca$CCA$eig[1] / 
+                         sum(c(all.cca$CCA$eig, all.cca$CA$eig)), 3) * 100
+cca.explainvar2 <- round(all.cca$CCA$eig[2] / 
+                         sum(c(all.cca$CCA$eig, all.cca$CA$eig)), 3) * 100
 
 # Define Plot Parameters
 par(mar = c(5, 5, 4, 4) + 0.1)
 
 # Initiate Plot
-plot(scores(active.cca, display = "wa"), xlim = c(-3.5, 2), ylim = c(-3.2, 3.2),
+plot(scores(all.cca, display = "wa"), xlim = c(-2, 4), ylim = c(-2, 2),
      xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
      ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
      pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
@@ -133,24 +192,33 @@ abline(h = 0, v = 0, lty = 3)
 box(lwd = 2)
 
 # Add Points & Labels
-points(scores(active.cca, display = "wa"),
-       pch = 19, cex = 3, bg = "gray", col = "gray")
-text(scores(active.cca, display = "wa"), 
-     labels = row.names(scores(active.cca, display = "wa")))
+points(scores(all.cca, display = "wa"),
+       pch = 1, cex = 2, bg = colors, col = colors)
+#text(scores(all.cca, display = "wa"), 
+#     labels = row.names(scores(all.cca, display = "wa")))
+
+legend("topright", legend = levels.short, bty = "n", col = colors.short, 
+       pch = 1)
+
 
 # Add Environmental Vectors
-vectors <- scores(active.cca, display = "bp")
+vectors <- scores(all.cca, display = "bp")
 row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp", "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
 
 arrows(0, 0, vectors[,1] * 2, vectors[, 2] * 2, 
-       lwd = 2, lty = 1, length = 0.2, col = "red")
-text(vectors[,1] * 2, vectors[, 2] * 2, pos = 3, 
+       lwd = 1, lty = 1, length = 0.2, col = "black")
+
+text(vectors[, 1] * 3, vectors[, 2] * 3, pos = 3, 
      labels = row.names(vectors))
+
 axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
      at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[, 1])))
 axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
      at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
+
+dev.off()
 ```
+
 
 
 ```{r, results = "hide"}
@@ -167,6 +235,22 @@ cca1.dist.ls <- liste(cca1.dist, entry="cca1.dist")
 ```{r, results = "hide"}
 metric <- "jaccard"
 x.lab <- "Difference in CCA1 score"
+
+levels.short <- c('BCSP', 'HNF', 'YSF')
+colors.short <- c('firebrick1', 'darkorchid1', 'cornflowerblue')
+  
+colors <- c('firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
+            'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
+            'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
+            'firebrick1',
+            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
+            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
+            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
+            'darkorchid1',
+            'cornflowerblue','cornflowerblue','cornflowerblue','cornflowerblue',
+            'cornflowerblue', 'cornflowerblue','cornflowerblue','cornflowerblue',
+            'cornflowerblue','cornflowerblue', 'cornflowerblue','cornflowerblue',
+            'cornflowerblue','cornflowerblue','cornflowerblue')
 
 
 file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", metric,"_CCA1_Dist.png", sep="")
