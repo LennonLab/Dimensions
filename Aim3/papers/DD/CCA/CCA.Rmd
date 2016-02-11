@@ -18,12 +18,6 @@ setwd("~/GitHub/Dimensions/Aim3")
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load packages
-#require("sp")          # Classes and methods for handling spatial data
-#require("geoR")        # Methods for geostatistical analyses
-#require("rgdal")       # Geospatial Data Abstraction Library
-#require("raster")      # Methods to create a RasterLayer object
-#require("maptools")    # Tools for manipulating and reading geospatial data
-
 require("picante")
 require("ape")
 require("seqinr")
@@ -32,7 +26,6 @@ require("fossil")
 require("simba")
 require("reshape")
 ```
-
 
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
@@ -54,6 +47,13 @@ env <- subset(env, pH > 1)
 env <- subset(env, Salinity > 0.0)
 env <- subset(env, TDS < 5.0)
 
+# Geographic Distances (Kilometers) Among Ponds
+long.lat <- as.matrix(cbind(env$long, env$lat))
+geo.dist <- earth.dist(long.lat, dist = TRUE)
+#geo.dist <- log(geo.dist)
+geo.dist[which(!is.finite(geo.dist))] = NA
+geo.dist.ls <- liste(geo.dist, entry = "geo.dist")
+
 
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
 # The active portion, based on cDNA 
@@ -74,23 +74,16 @@ all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
 active.comm <- active.comm[ , colSums(active.comm) > 0]
 all.comm <- all.comm[ , colSums(all.comm) > 0]
 
+#cutoff <- 4000
+#all.comm <- all.comm[, 1:cutoff]
+#active.comm <- active.comm[, 1:cutoff]
+
 # Geographic variables
-geo.dat <- as.matrix(subset(env, select = lat:Elevation))
+geo.dat <- as.matrix(subset(env, select = lat:long))
 # Pond environmental variables
 env.dat <- as.matrix(subset(env, select = Diameter:DON))
 ```
 
-### Constrained Ordination
-Constrained ordination explores the relationships between two matrices: an **explanatory matrix** and a **response matrix**. 
-Canonical correspondence analysis (CCA) and redundancy analysis (RDA) are two types of constrained ordination.
-Constrained ordination works by first conducting multivariate multiple linear regression followed either by correspondence analysis (CA) with CCA or Principal Components Analysis (PCA) with RDA, while using the matrix of fitted values to obtain a constrained ordination.
-A permutation test can then be used to test for overall significance. 
-
-We will start by creating an explanatory matrix that contains water chemistry data.
-We will then use the `cca()` function from the `vegan` package.
-Note, we have to specify that we want the `cca` function in the `vegan` package because there are `cca` functions in both `vegan` and `ade4`!
-We will then use permutation tests to evaluate the significance of our model. 
-Finally, we will test the influence of each environmental variable on the constrained axes.
 
 
 ```{r}
@@ -110,17 +103,29 @@ colors <- c('firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
             'cornflowerblue','cornflowerblue', 'cornflowerblue','cornflowerblue',
             'cornflowerblue','cornflowerblue','cornflowerblue')
 
+env.dat <- as.matrix(subset(env, select = Diameter:DON))
+env.chem <- env.dat
+# Conduct CCA 
+active.cca <- vegan::cca(active.comm ~ env.chem)
+all.cca <- vegan::cca(all.comm ~ env.chem)
 ```
+
+
 
 ```{r}
 file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA-active.png", sep="")
 png(filename=file)
 
+cca.explainvar1 <- round(active.cca$CCA$eig[1] / 
+                         sum(c(active.cca$CCA$eig, active.cca$CA$eig)), 3) * 100
+cca.explainvar2 <- round(active.cca$CCA$eig[2] / 
+                         sum(c(active.cca$CCA$eig, active.cca$CA$eig)), 3) * 100
+
 # Define Plot Parameters
 par(mfrow=c(1, 1), mar = c(5, 5, 4, 4) + 0.1, pty="s")
 
 # Initiate Plot
-plot(scores(active.cca, display = "wa"), xlim = c(-2, 2), ylim = c(-1, 1.5),
+plot(scores(active.cca, display = "wa"), xlim = c(-2, 2.7), ylim = c(-2.5, 2.5),
      xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
      ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
      pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2,
@@ -135,7 +140,7 @@ box(lwd = 2)
 # Add Points & Labels
 points(scores(active.cca, display = "wa"),
        pch = 1, cex = 2, bg = colors, col = colors)
-legend("bottomleft", legend = levels.short, bty = "n", col = colors.short, 
+legend("topleft", legend = levels.short, bty = "n", col = colors.short, 
        pch = 1)
 
 # Add Environmental Vectors
@@ -143,10 +148,10 @@ vectors <- scores(active.cca, display = "bp")
 row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp",
       "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
 
-arrows(0, 0, vectors[,1] * 2, vectors[, 2] * 2, 
+arrows(0, 0, vectors[,1] * 3, vectors[, 2] * 3, 
        lwd = 1, lty = 1, length = 0.2, col = "black")
 
-text(vectors[,1] * 2.5, vectors[, 2] * 2, pos = 3, 
+text(vectors[,1] * 3.5, vectors[, 2] * 3.5, pos = 3, 
      labels = row.names(vectors))
 
 axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
@@ -156,8 +161,6 @@ axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
 
 dev.off()
 ```
-
-
 
 
 
@@ -168,7 +171,6 @@ png(filename=file)
 # Permutation Tests
 #anova(active.cca, by = "axis")
 #cca.fit <- envfit(active.cca, env.chem, perm = 999)
-#cca.fit
 
 # Calculate Explained Variation
 cca.explainvar1 <- round(all.cca$CCA$eig[1] / 
@@ -177,13 +179,14 @@ cca.explainvar2 <- round(all.cca$CCA$eig[2] /
                          sum(c(all.cca$CCA$eig, all.cca$CA$eig)), 3) * 100
 
 # Define Plot Parameters
-par(mar = c(5, 5, 4, 4) + 0.1)
+par(mfrow=c(1, 1), mar = c(5, 5, 4, 4) + 0.1, pty="s")
 
 # Initiate Plot
-plot(scores(all.cca, display = "wa"), xlim = c(-2, 4), ylim = c(-2, 2),
+plot(scores(all.cca, display = "wa"), xlim = c(-1.5, 3), ylim = c(-1.5, 2.0),
      xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
      ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
-     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
+     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, 
+     cex.axis = 1.2, axes = FALSE)
 
 # Add Axes
 axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
@@ -194,21 +197,19 @@ box(lwd = 2)
 # Add Points & Labels
 points(scores(all.cca, display = "wa"),
        pch = 1, cex = 2, bg = colors, col = colors)
-#text(scores(all.cca, display = "wa"), 
-#     labels = row.names(scores(all.cca, display = "wa")))
-
-legend("topright", legend = levels.short, bty = "n", col = colors.short, 
-       pch = 1)
-
+legend("topleft", legend = levels.short, bty = "n", 
+       col = colors.short, pch = 1)
 
 # Add Environmental Vectors
 vectors <- scores(all.cca, display = "bp")
-row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp", "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
+row.names(vectors) <- c("diameter", "depth", "volume", "ORP", 
+                        "temp", "SpC", "DO", "TDS", "salinity",
+                        "pH", "color", "chla", "DOC", "DON")
 
-arrows(0, 0, vectors[,1] * 2, vectors[, 2] * 2, 
+arrows(0, 0, vectors[,1] * 3, vectors[, 2] * 3, 
        lwd = 1, lty = 1, length = 0.2, col = "black")
 
-text(vectors[, 1] * 3, vectors[, 2] * 3, pos = 3, 
+text(vectors[, 1] * 3.5, vectors[, 2] * 3.5, pos = 3, 
      labels = row.names(vectors))
 
 axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
@@ -222,131 +223,196 @@ dev.off()
 
 
 ```{r, results = "hide"}
-cca.scores <- scores(active.cca)
-cca.sites <- as.data.frame(scores(cca.scores$sites))
-cca1.scores <- as.matrix(subset(cca.sites, select = CCA1))
+active.cca.scores <- scores(active.cca)
+active.cca.sites <- as.data.frame(scores(active.cca.scores$sites))
+active.cca.scores <- as.matrix(subset(active.cca.sites, select = CCA1))
 
-cca1.dist <- vegdist(cca1.scores, "euclidean")
-cca1.dist.ls <- liste(cca1.dist, entry="cca1.dist")
+active.cca.dist <- vegdist(active.cca.scores, "euclidean")
+#active.cca.dist.ls <- liste(cca1.dist, entry="active.cca1.dist")
+
+all.cca.scores <- scores(all.cca)
+all.cca.sites <- as.data.frame(scores(all.cca.scores$sites))
+all.cca.scores <- as.matrix(subset(all.cca.sites, select = CCA1))
+
+all.cca.dist <- vegdist(all.cca.scores, "euclidean")
+#all.cca1.dist.ls <- liste(cca1.dist, entry="all.cca1.dist")
 ```
 
 
 
 ```{r, results = "hide"}
-metric <- "jaccard"
+metric <- "bray"
 x.lab <- "Difference in CCA1 score"
 
-levels.short <- c('BCSP', 'HNF', 'YSF')
-colors.short <- c('firebrick1', 'darkorchid1', 'cornflowerblue')
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/", 
+              metric,"_CCA1_Dist.png", sep="")
   
-colors <- c('firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
-            'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
-            'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
-            'firebrick1',
-            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
-            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
-            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
-            'darkorchid1',
-            'cornflowerblue','cornflowerblue','cornflowerblue','cornflowerblue',
-            'cornflowerblue', 'cornflowerblue','cornflowerblue','cornflowerblue',
-            'cornflowerblue','cornflowerblue', 'cornflowerblue','cornflowerblue',
-            'cornflowerblue','cornflowerblue','cornflowerblue')
-
-
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", metric,"_CCA1_Dist.png", sep="")
-  
-# Taxonomic Distances Among Ponds (Bray-Curits)
-active.weighted.dist <- 1 - vegdist(active.comm, method=metric, binary=FALSE) 
-active.weighted.dist <- log10(active.weighted.dist)
-all.weighted.dist <- 1 - vegdist(all.comm, method=metric, binary=FALSE)
-all.weighted.dist <- log10(all.weighted.dist)
-
-active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
-active.presabs.dist <- log10(active.presabs.dist)
-all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
-all.presabs.dist <- log10(all.presabs.dist)
-
-# Transform All Distances Into List Format:
-active.weighted.dist.ls <- liste(active.weighted.dist, entry = metric)
-all.weighted.dist.ls <- liste(all.weighted.dist, entry = metric)
-active.presabs.dist.ls <- liste(active.presabs.dist, entry = metric)
-all.presabs.dist.ls <- liste(all.presabs.dist, entry = metric)
-
-# Create a Data Frame from the Lists of Distances
-df <- data.frame(cca1.dist.ls, active.weighted.dist.ls[, 3], all.weighted.dist.ls[, 3], active.presabs.dist.ls[, 3], all.presabs.dist.ls[, 3])
-
-names(df)[4:7] <- c("active.weighted", "all.weighted", "active.presabs", "all.presabs")
-attach(df)
-
 png(filename=file)  
 plot.new()
-par(mfrow=c(2, 2), mar = c(5, 4, 3, 2) + 0.1, oma =c(0,1,3,0))
+par(mfrow=c(2, 2), mar = c(5, 5, 4, 2) + 0.1, oma=c(0,0,2,0))
+
+# Taxonomic Distances Among Ponds (Bray-Curits)
+active.weighted.dist <- 1 - vegdist(active.comm, method=metric, binary=FALSE) 
+#active.weighted.dist <- log10(active.weighted.dist)
+all.weighted.dist <- 1 - vegdist(all.comm, method=metric, binary=FALSE)
+#all.weighted.dist <- log10(all.weighted.dist)
+
+active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
+#active.presabs.dist <- log10(active.presabs.dist)
+all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
+#all.presabs.dist <- log10(all.presabs.dist)
+
 
 # Regression for active weighted
-DD.active.weighted <- lm(active.weighted ~ cca1.dist)
-summary(DD.active.weighted, correlation = TRUE)
+DD.active.weighted <- lm(active.weighted.dist ~ active.cca.dist)
 
 # Regression for all weighted
-DD.all.weighted <- lm(all.weighted ~ cca1.dist)
-coeff <- summary(DD.all.weighted, correlation = TRUE)
+DD.all.weighted <- lm(all.weighted.dist ~ all.cca.dist)
 
 # Regression for active presence/absence
-DD.active.presabs <- lm(active.presabs ~ cca1.dist)
-summary(DD.active.presabs, correlation = TRUE)
+DD.active.presabs <- lm(active.presabs.dist ~ active.cca.dist)
 
 # Regression for all presence/absence 
-DD.all.presabs <- lm(all.presabs ~ cca1.dist)
-summary(DD.all.presabs, correlation = TRUE)
+DD.all.presabs <- lm(all.presabs.dist ~ all.cca.dist)
   
 # Make Plot for all weighted 
 slope <- round(coefficients(DD.all.weighted)[2], 3)
 p <- round(summary(DD.all.weighted)$coefficients[8], 3)
-plot(cca1.dist, all.weighted.dist, xaxt = "s", las = 1, 
+plot(all.cca.dist, all.weighted.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab=x.lab, col = "azure3", cex.lab=1.5)
 abline(DD.all.weighted , col = "red")
-legend("topright", paste("All (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
+legend("topright", paste("All (weighted)\nslope=",slope," p = ",p), 
+       bty="n", cex=1.2)
 
 # Make Plot for active weighted
 slope <- round(coefficients(DD.active.weighted)[2], 3)
 p <- round(summary(DD.active.weighted)$coefficients[8],3)
-plot(cca1.dist, active.weighted.dist, xaxt = "s", las = 1, 
+plot(active.cca.dist, active.weighted.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab=x.lab,col = "azure3",cex.lab=1.5)
 abline(DD.active.weighted , col = "red")
-legend("topright", paste("Active (weighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
+legend("topright", paste("Active (weighted)\nslope=",slope," p = ",p),
+       bty="n", cex=1.2)
   
 # Make Plot for all presence/absence
 slope <- round(coefficients(DD.all.presabs)[2], 3)
 p <- round(summary(DD.all.presabs)$coefficients[8],3)
-plot(cca1.dist, all.presabs.dist, xaxt = "s", las = 1, 
+plot(all.cca.dist, all.presabs.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab=x.lab, col = "azure3",cex.lab=1.5)
 abline(DD.all.presabs , col = "red")
-legend("bottomleft", paste("All (unweighted)\nslope=",slope," p = ",p), bty="n", cex=1.2)
+legend("bottomleft", paste("All (unweighted)\nslope=",slope," p = ",p),
+       bty="n", cex=1.2)
 
 # Make Plot for active presence/absence
 slope <- round(coefficients(DD.active.presabs)[2], 3)
 p <- round(summary(DD.active.presabs)$coefficients[8],3)
-plot(cca1.dist, active.presabs.dist, xaxt = "s", las = 1, 
+plot(active.cca.dist, active.presabs.dist, xaxt = "s", las = 1, 
    ylab="log(similarity)", xlab=x.lab, col = "azure3",cex.lab=1.5)
 abline(DD.active.presabs , col = "red")
-legend("bottomleft", paste("Active (unweighted)\nslope = ",slope," p = ",p), bty="n", cex=1.2)
+legend("bottomleft", paste("Active (unweighted)\nslope = ", 
+                          slope," p = ",p), bty="n", cex=1.2)
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
-d1 <- diffslope(cca1.dist, active.weighted, cca1.dist, all.weighted)
-d2 <- diffslope(cca1.dist, active.presabs, cca1.dist, all.presabs)
+d1 <- diffslope(active.cca.dist, active.weighted, all.cca.dist, all.weighted)
+d2 <- diffslope(active.cca.dist, active.presabs, all.cca.dist, all.presabs)
 
-metric <- "Jaccard"
-  
-Mtitle <- paste(metric,"\n",'Weighted: Difference in slope =', 
+Mtitle <- paste('Weighted: Difference in slope =', 
                 round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
                 'Unweighted: Difference in slope =', 
                 round(as.numeric(d2[2]),3), '; p =', d2[3])
 
 title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
-  
 dev.off()
 ```
 
 
 
+```{r, results = "hide"}
+metric <- "bray"
+x.lab <- "Geographic distance, km"
+
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/",
+              metric,"_Geo_Dist.png", sep="")
+  
+png(filename=file)  
+plot.new()
+par(mfrow=c(2, 2), mar = c(5, 5, 4, 2) + 0.1, oma=c(0,0,2,0))
+
+# Taxonomic Distances Among Ponds (Bray-Curits)
+active.weighted.dist <- 1 - vegdist(active.comm, method=metric, binary=FALSE) 
+#active.weighted.dist <- log10(active.weighted.dist)
+all.weighted.dist <- 1 - vegdist(all.comm, method=metric, binary=FALSE)
+#all.weighted.dist <- log10(all.weighted.dist)
+
+active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
+#active.presabs.dist <- log10(active.presabs.dist)
+all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
+#all.presabs.dist <- log10(all.presabs.dist)
+
+# Regression for active weighted
+DD.active.weighted <- lm(active.weighted.dist ~ geo.dist)
+
+# Regression for all weighted
+DD.all.weighted <- lm(all.weighted.dist ~ geo.dist)
+
+# Regression for active presence/absence
+DD.active.presabs <- lm(active.presabs.dist ~ geo.dist)
+
+# Regression for all presence/absence 
+DD.all.presabs <- lm(all.presabs.dist ~ geo.dist)
+  
+# Make Plot for all weighted 
+slope <- round(coefficients(DD.all.weighted)[2], 3)
+p <- round(summary(DD.all.weighted)$coefficients[8], 3)
+plot(geo.dist, all.weighted.dist, xaxt = "s", las = 1, 
+   ylab="log(similarity)", xlab=x.lab, col = "azure3", 
+   cex.lab=1.5, ylim=c(0, 1))
+abline(DD.all.weighted , col = "red")
+legend("topright", paste("All (weighted)\nslope=",slope," p = ",p), 
+       bty="n", cex=1.2)
+
+# Make Plot for active weighted
+slope <- round(coefficients(DD.active.weighted)[2], 3)
+p <- round(summary(DD.active.weighted)$coefficients[8],3)
+plot(geo.dist, active.weighted.dist, xaxt = "s", las = 1, 
+   ylab="log(similarity)", xlab=x.lab,col = "azure3",
+   cex.lab=1.5, ylim=c(0, 1))
+abline(DD.active.weighted , col = "red")
+legend("topright", paste("Active (weighted)\nslope=",slope," p = ",p),
+       bty="n", cex=1.2)
+  
+# Make Plot for all presence/absence
+slope <- round(coefficients(DD.all.presabs)[2], 3)
+p <- round(summary(DD.all.presabs)$coefficients[8],3)
+plot(geo.dist, all.presabs.dist, xaxt = "s", las = 1, 
+   ylab="log(similarity)", xlab=x.lab, col = "azure3",
+   cex.lab=1.5, ylim=c(0, 0.5))
+abline(DD.all.presabs , col = "red")
+legend("bottomleft", paste("All (unweighted)\nslope=",slope," p = ",p),
+       bty="n", cex=1.2)
+
+# Make Plot for active presence/absence
+slope <- round(coefficients(DD.active.presabs)[2], 3)
+p <- round(summary(DD.active.presabs)$coefficients[8],3)
+plot(geo.dist, active.presabs.dist, xaxt = "s", las = 1, 
+   ylab="log(similarity)", xlab=x.lab, col = "azure3",
+   cex.lab=1.5, ylim=c(0, 0.5))
+abline(DD.active.presabs , col = "red")
+legend("bottomleft", paste("Active (unweighted)\nslope = ", 
+                          slope," p = ",p), bty="n", cex=1.2)
+
+# Add X-Axis Label to Plot
+mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
+  
+d1 <- diffslope(active.cca.dist, active.weighted, active.cca.dist, all.weighted)
+d2 <- diffslope(active.cca.dist, active.presabs, active.cca.dist, all.presabs)
+
+Mtitle <- paste('Weighted: Difference in slope =', 
+                round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
+                'Unweighted: Difference in slope =', 
+                round(as.numeric(d2[2]),3), '; p =', d2[3])
+
+title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
+dev.off()
+```

@@ -106,20 +106,21 @@ DD.all <- lm(all.cca1.dist ~ geo.dist)
 
 
 ```{r}
-#file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/Env_Geo_Dist.png", sep="")
-#png(filename=file)
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/Env_Geo_Dist.png", sep="")
+png(filename=file)
   
 plot.new()
-par(mfrow=c(2, 2), mar = c(5, 4, 3, 2) + 0.1, oma =c(0,1,3,0))
+par(mfrow=c(1, 2), mar = c(4, 5, 1, 1) + 0.1, pty="s")
 
 # Make Plot for all geo
 slope <- round(coefficients(DD.all)[2], 3)
 p <- round(summary(DD.all)$coefficients[8], 4)
 
 plot(geo.dist, all.cca1.dist, xaxt = "s", las = 1, 
-   ylab="CCA1", xlab="Distance, km", col = "azure4", cex.lab=1.5)
+   ylab="CCA1", xlab="Distance, km", col = "azure4", 
+   cex.lab=1.5, ylim = c(0, 5.5))
 abline(DD.all, col = "magenta", lwd = 4)
-legend("bottomleft", paste("All: m =",slope), bty="n", cex=1.2)
+legend("topleft", paste("All: m = ",slope,"\np = ",p), bty="n", cex=1.2)
 
 
 # Make Plot for active geo
@@ -127,21 +128,13 @@ slope <- round(coefficients(DD.active)[2], 3)
 p <- round(summary(DD.active)$coefficients[8], 4)
 
 plot(geo.dist, active.cca1.dist, xaxt = "s", las = 1, 
-   ylab="CCA1", xlab="Distance, km",col = "azure4", cex.lab=1.5)
+   ylab="CCA1", xlab="Distance, km",col = "azure4", 
+   cex.lab=1.5, ylim = c(0, 8))
 abline(DD.active, col = "magenta", lwd = 4)
-legend("bottomleft", paste("Active: m = ",slope), bty="n", cex=1.2)
+legend("topleft", paste("Active: m = ",slope,"\np = ",p), bty="n", cex=1.2)
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
-#d1 <- diffslope(geo.dist, active.dist, geo.dist, all.dist)
-#d2 <- diffslope(active.cca1.dist, active.dist, all.cca1.dist, all.dist)
-
-#Mtitle <- paste('Geographic DDRs: Difference in slope =', 
-#                round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
-#                'Environmental DDRs: Difference in slope =', 
-#                round(as.numeric(d2[2]),3), '; p =', d2[3])
-
-#title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
-#dev.off()
+dev.off()
 ```
