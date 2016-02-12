@@ -47,7 +47,7 @@ long.lat <- as.matrix(cbind(env$long, env$lat))
 geo.dist <- earth.dist(long.lat, dist = TRUE)
 #geo.dist <- log(geo.dist)
 geo.dist[which(!is.finite(geo.dist))] = NA
-geo.dist.ls <- liste(geo.dist, entry = "geo.dist")
+#geo.dist.ls <- liste(geo.dist, entry = "geo.dist")
 
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
 # The active portion, based on cDNA 
@@ -88,20 +88,20 @@ all.cca <- vegan::cca(all.comm ~ env.chem)
 dist <- "euclidean"
 active.cca.scores <- scores(active.cca)
 active.cca.sites <- as.data.frame(scores(active.cca.scores$sites))
-active.cca1.scores <- as.matrix(subset(active.cca.sites, select = CCA1))
-active.cca1.dist <- vegdist(active.cca1.scores, dist)
+active.cca.scores <- as.matrix(subset(active.cca.sites, select = CCA1))
+active.cca.dist <- vegdist(active.cca.scores, dist)
 
 all.cca.scores <- scores(all.cca)
 all.cca.sites <- as.data.frame(scores(all.cca.scores$sites))
-all.cca1.scores <- as.matrix(subset(all.cca.sites, select = CCA1))
-all.cca1.dist <- vegdist(all.cca1.scores, dist)
+all.cca.scores <- as.matrix(subset(all.cca.sites, select = CCA1))
+all.cca.dist <- vegdist(all.cca.scores, dist)
 ```
 
 
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=6}
-DD.active <- lm(active.cca1.dist ~ geo.dist)
-DD.all <- lm(all.cca1.dist ~ geo.dist)
+DD.active <- lm(active.cca.dist ~ geo.dist)
+DD.all <- lm(all.cca.dist ~ geo.dist)
 ```
 
 
@@ -116,22 +116,22 @@ par(mfrow=c(1, 2), mar = c(4, 5, 1, 1) + 0.1, pty="s")
 slope <- round(coefficients(DD.all)[2], 3)
 p <- round(summary(DD.all)$coefficients[8], 4)
 
-plot(geo.dist, all.cca1.dist, xaxt = "s", las = 1, 
-   ylab="CCA1", xlab="Distance, km", col = "azure4", 
-   cex.lab=1.5, ylim = c(0, 5.5))
-abline(DD.all, col = "magenta", lwd = 4)
-legend("topleft", paste("All: m = ",slope,"\np = ",p), bty="n", cex=1.2)
+plot(geo.dist, all.cca.dist, xaxt = "s", las = 1, 
+   ylab="Difference in CCA1 score", xlab="Distance, km", col = "azure4", 
+   cex.lab=1, ylim = c(0, 6))
+abline(DD.all, col = "red", lwd = 3)
+legend("topleft", paste("All: m = ",slope), bty="n", cex=1)
 
 
 # Make Plot for active geo
 slope <- round(coefficients(DD.active)[2], 3)
 p <- round(summary(DD.active)$coefficients[8], 4)
 
-plot(geo.dist, active.cca1.dist, xaxt = "s", las = 1, 
-   ylab="CCA1", xlab="Distance, km",col = "azure4", 
-   cex.lab=1.5, ylim = c(0, 8))
-abline(DD.active, col = "magenta", lwd = 4)
-legend("topleft", paste("Active: m = ",slope,"\np = ",p), bty="n", cex=1.2)
+plot(geo.dist, active.cca.dist, xaxt = "s", las = 1, 
+   ylab="Difference in CCA1 score", xlab="Distance, km",col = "azure4", 
+   cex.lab=1, ylim = c(0, 8))
+abline(DD.active, col = "red", lwd = 3)
+legend("topleft", paste("Active: m = ",slope), bty="n", cex=1)
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
