@@ -316,7 +316,7 @@ legend("topleft", paste("Active\nslope = ", slope),
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
 #d1 <- diffslope(active.cca.dist, active.weighted, all.cca.dist, all.weighted)
-d2 <- diffslope(active.cca.dist, active.presabs, all.cca.dist, all.presabs)
+d2 <- diffslope(active.cca.dist, active.presabs.dist, all.cca.dist, all.presabs.dist)
 
 #Mtitle <- paste('Weighted: Difference in slope =', 
 #                round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
@@ -416,7 +416,7 @@ legend("topleft", paste("Active\nslope = ",
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
 #d1 <- diffslope(active.cca.dist, active.weighted, active.cca.dist, all.weighted)
-d2 <- diffslope(active.cca.dist, active.presabs, active.cca.dist, all.presabs)
+d2 <- diffslope(active.cca.dist, active.presabs.dist, active.cca.dist, all.presabs.dist)
 
 #Mtitle <- paste('Weighted: Difference in slope =', 
 #                round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
