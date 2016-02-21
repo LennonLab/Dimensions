@@ -16,11 +16,11 @@ setwd("~/GitHub/Dimensions/Aim3/papers/DD")
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load packages
-require("sp")          # Classes and methods for handling spatial data
-require("geoR")        # Methods for geostatistical analyses
-require("rgdal")       # Geospatial Data Abstraction Library
-require("raster")      # Methods to create a RasterLayer object
-require("maptools")    # Tools for manipulating and reading geospatial data
+#require("sp")          # Classes and methods for handling spatial data
+#require("geoR")        # Methods for geostatistical analyses
+#require("rgdal")       # Geospatial Data Abstraction Library
+#require("raster")      # Methods to create a RasterLayer object
+#require("maptools")    # Tools for manipulating and reading geospatial data
 
 require("picante")
 require("ape")
@@ -71,6 +71,9 @@ all.comm <- all.comm[ , colSums(all.comm) > 0]
 #cutoff <- 2000
 #all.comm <- all.comm[, 1:cutoff]
 #active.comm <- active.comm[, 1:cutoff]
+
+#print(sum(all.comm[1,]))
+#dim(all.comm)
 ```
 
 
