@@ -42,21 +42,11 @@ load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv",
                   sep = ",", header = TRUE)
 
+env <- env[complete.cases(env),]
+
 # Remove 189, 190, 191
 # 236, 237 missing lots of data (very big ponds, outliers of sorts)
-
 # HNF276 Meg fixed pH data
-
-
-#env <- subset(env, chla < 2000)
-env <- subset(env, pH > 1)
-#env <- subset(env, Salinity > 0.0)
-env <- subset(env, TDS < 5.0)
-
-# Geographic Distances (Kilometers) Among Ponds
-long.lat <- as.matrix(cbind(env$long, env$lat))
-geo.dist <- earth.dist(long.lat, dist = TRUE)
-geo.dist[which(!is.finite(geo.dist))] = NA
 
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
 # The active portion, based on cDNA 
@@ -73,67 +63,56 @@ rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
 active.comm <- active.comm[rownames(active.comm)  %in% env$Sample_ID, ]
 all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
 
-# Remove Zero-Occurrence Taxa 
-active.comm <- active.comm[ , colSums(active.comm) > 0]
-all.comm <- all.comm[ , colSums(all.comm) > 0]
+# Remove sites not shared between matrices
+df <- as.data.frame(active.comm)
+all.comm <- all.comm[rownames(all.comm)  %in% row.names(df),]
+env <- env[env$Sample_ID %in% row.names(df),]
 
-cutoff <- 1000
-all.comm <- all.comm[, 1:cutoff]
-active.comm <- active.comm[, 1:cutoff]
+# Geographic Distances (Kilometers) Among Ponds
+long.lat <- as.matrix(cbind(env$long, env$lat))
+geo.dist <- earth.dist(long.lat, dist = TRUE)
+geo.dist[which(!is.finite(geo.dist))] = NA
+
+# Remove Zero-Occurrence Taxa 
+active.comm <- active.comm + 1
+active.comm <- log10(active.comm)
+all.comm <- all.comm + 1
+all.comm <- log10(all.comm)
+
+
+#cutoff <- 1000
+#all.comm <- all.comm[, 1:cutoff]
+#active.comm <- active.comm[, 1:cutoff]
 
 # Geographic variables
 geo.dat <- as.matrix(subset(env, select = lat:long))
 # Pond environmental variables
-env.dat <- as.matrix(subset(env, select = Diameter:DON))
+env.dat <- as.matrix(subset(env, select = Depth:TP))
 ```
 
 
 ```{r}
-levels.short <- c('BCSP', 'HNF', 'YSF')
-colors.short <- c('firebrick1', 'darkorchid1', 'cornflowerblue')
-  
 colors <- c('firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
             'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
             'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
-            'firebrick1',
+            'firebrick1', 'firebrick1',
             'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
             'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
             'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
-            'darkorchid1',
+            'darkorchid1', 'darkorchid1',
             'cornflowerblue','cornflowerblue','cornflowerblue','cornflowerblue',
             'cornflowerblue', 'cornflowerblue','cornflowerblue','cornflowerblue',
             'cornflowerblue','cornflowerblue', 'cornflowerblue','cornflowerblue',
-            'cornflowerblue','cornflowerblue','cornflowerblue')
-
-env.dat <- as.matrix(subset(env, select = Diameter:DON))
-env.chem <- env.dat
+            'cornflowerblue','cornflowerblue','cornflowerblue',
+            'firebrick1', 'darkorchid1', 'cornflowerblue','cornflowerblue',
+            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1')
 
 # Standardize and center
-env.chem <- scale(env.chem, center = TRUE, scale = TRUE)
+env.dat <- scale(env.dat, center = TRUE, scale = TRUE)
 
 # Conduct PCA 
-pca <- princomp(env.chem)
+pca <- princomp(env.dat)
 scores <- as.data.frame(pca$scores[,1:2])
-```
-
-
-
-```{r}
-#file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA-active.png", sep="")
-#png(filename=file)
-
-# Define Plot Parameters
-#par(mfrow=c(1, 1), mar = c(5, 5, 4, 4) + 0.1, pty="s")
-
-# Initiate Plot
-#dev.off()
-```
-
-
-
-```{r, results = "hide"}
-#pca.sites <- as.data.frame(scores(pca.scores$sites))
-#pca.scores <- as.matrix(subset(pca.sites, select = CCA1))
 pca.dist <- vegdist(scores, "euclidean")
 ```
 
@@ -150,39 +129,39 @@ png(filename=file)
 plot.new()
 par(mfrow=c(1, 2), mar = c(5, 5, 2, 2) + 0.1, oma=c(0,0,2,0), pty="s")
 
-active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
-all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
+active.dist <- 1 - vegdist(active.comm, method=metric, binary=F) 
+all.dist <- 1 - vegdist(all.comm, method=metric, binary=F)
 
 # Regression for active presence/absence
-DD.active.presabs <- lm(active.presabs.dist ~ pca.dist)
+DD.active <- lm(active.dist ~ pca.dist)
 
 # Regression for all presence/absence 
-DD.all.presabs <- lm(all.presabs.dist ~ pca.dist)
+DD.all <- lm(all.dist ~ pca.dist)
   
 # Make Plot for all presence/absence
-slope <- round(coefficients(DD.all.presabs)[2], 3)
-p <- round(summary(DD.all.presabs)$coefficients[8],3)
-plot(pca.dist, all.presabs.dist, xaxt = "s", las = 1, 
+slope <- round(coefficients(DD.all)[2], 3)
+p <- round(summary(DD.all)$coefficients[8],3)
+plot(pca.dist, all.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1)
-abline(DD.all.presabs , col = "red", lwd = 3)
+   cex.lab=1, ylim = c(0.15, 0.6))
+abline(DD.all , col = "red", lwd = 3)
 legend("topleft", paste("All\nslope=",slope),
        bty="n", cex=1)
 
 # Make Plot for active presence/absence
-slope <- round(coefficients(DD.active.presabs)[2], 3)
-p <- round(summary(DD.active.presabs)$coefficients[8],3)
-plot(pca.dist, active.presabs.dist, xaxt = "s", las = 1, 
+slope <- round(coefficients(DD.active)[2], 3)
+p <- round(summary(DD.active)$coefficients[8],3)
+plot(pca.dist, active.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1)
-abline(DD.active.presabs , col = "red", lwd = 3)
+   cex.lab=1, ylim = c(0.15, 0.6))
+abline(DD.active , col = "red", lwd = 3)
 legend("topleft", paste("Active\nslope = ", slope),
        bty="n", cex=1)
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
-#d <- diffslope(pca.dist, active.presabs.dist, pca.dist, all.presabs.dist)
+#d <- diffslope(pca.dist, active.dist, pca.dist, all.dist)
 
 
 #Mtitle <- paste('Unweighted: Difference in slope =', 
@@ -207,40 +186,37 @@ par(mfrow=c(1, 2), mar = c(5, 5, 2, 2) + 0.1, oma=c(0,0,2,0), pty="s")
 
 
 # Taxonomic Distances Among Ponds
-active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
-all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
+active.dist <- 1 - vegdist(active.comm, method=metric, binary=F) 
+all.dist <- 1 - vegdist(all.comm, method=metric, binary=F)
 
 # Regression for active presence/absence
-DD.active.presabs <- lm(active.presabs.dist ~ geo.dist)
+DD.active <- lm(active.dist ~ geo.dist)
 
 # Regression for all presence/absence 
-DD.all.presabs <- lm(all.presabs.dist ~ geo.dist)
+DD.all <- lm(all.dist ~ geo.dist)
   
 # Make Plot for all presence/absence
-slope <- round(coefficients(DD.all.presabs)[2], 3)
-p <- round(summary(DD.all.presabs)$coefficients[8],3)
-plot(geo.dist, all.presabs.dist, xaxt = "s", las = 1, 
+slope <- round(coefficients(DD.all)[2], 3)
+p <- round(summary(DD.all)$coefficients[8],3)
+plot(geo.dist, all.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
    cex.lab=1, ylim=c(0.1, 0.6))
-abline(DD.all.presabs , col = "red", lwd = 3)
+abline(DD.all , col = "red", lwd = 3)
 legend("topleft", paste("All\nslope=",slope),
        bty="n", cex=1)
 
 # Make Plot for active presence/absence
-slope <- round(coefficients(DD.active.presabs)[2], 3)
-p <- round(summary(DD.active.presabs)$coefficients[8],3)
-plot(geo.dist, active.presabs.dist, xaxt = "s", las = 1, 
+slope <- round(coefficients(DD.active)[2], 3)
+p <- round(summary(DD.active)$coefficients[8],3)
+plot(geo.dist, active.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
    cex.lab=1, ylim=c(0.1, 0.6))
-abline(DD.active.presabs , col = "red", lwd = 3)
+abline(DD.active , col = "red", lwd = 3)
 legend("topleft", paste("Active\nslope = ", 
                           slope), bty="n", cex=1)
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
-  
-#d1 <- diffslope(active.cca.dist, active.weighted, active.cca.dist, all.weighted)
-d2 <- diffslope(active.cca.dist, active.presabs.dist, active.cca.dist, all.presabs.dist)
 
 dev.off()
 ```
