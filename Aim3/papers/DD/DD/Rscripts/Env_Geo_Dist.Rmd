@@ -80,61 +80,38 @@ active.comm <- active.comm[, 1:cutoff]
 # Pond environmental variables
 env.dat <- as.matrix(subset(env, select = Diameter:DON))
 env.chem <- env.dat
-# Conduct CCA 
-active.cca <- vegan::cca(active.comm ~ env.chem)
-all.cca <- vegan::cca(all.comm ~ env.chem)
 
-# Permutation Tests
-dist <- "euclidean"
-active.cca.scores <- scores(active.cca)
-active.cca.sites <- as.data.frame(scores(active.cca.scores$sites))
-active.cca.scores <- as.matrix(subset(active.cca.sites, select = CCA1))
-active.cca.dist <- vegdist(active.cca.scores, dist)
+# Standardize and center
+env.chem <- scale(env.chem, center = TRUE, scale = TRUE)
 
-all.cca.scores <- scores(all.cca)
-all.cca.sites <- as.data.frame(scores(all.cca.scores$sites))
-all.cca.scores <- as.matrix(subset(all.cca.sites, select = CCA1))
-all.cca.dist <- vegdist(all.cca.scores, dist)
+# Conduct PCA 
+pca <- princomp(env.chem)
+scores <- as.data.frame(pca$scores[,1:2])
+pca.dist <- vegdist(scores, "euclidean")
 ```
 
 
-
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE, fig.width=6, fig.height=6}
-DD.active <- lm(active.cca.dist ~ geo.dist)
-DD.all <- lm(all.cca.dist ~ geo.dist)
+DD.active <- lm(pca.dist ~ geo.dist)
+DD.all <- lm(pca.dist ~ geo.dist)
 ```
 
 
 ```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/Env_Geo_Dist.png", sep="")
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/PCA_vs_Geo.png", sep="")
 png(filename=file)
   
 plot.new()
-par(mfrow=c(1, 2), mar = c(4, 5, 1, 1) + 0.1, pty="s")
+par(mfrow=c(1, 1), mar = c(4, 5, 1, 1) + 0.1, pty="s")
 
-# Make Plot for all geo
 slope <- round(coefficients(DD.all)[2], 3)
 p <- round(summary(DD.all)$coefficients[8], 4)
 
-plot(geo.dist, all.cca.dist, xaxt = "s", las = 1, 
+plot(geo.dist, pca.dist, xaxt = "s", las = 1, 
    ylab="Difference in CCA1 score", xlab="Distance, km", col = "azure4", 
-   cex.lab=1, ylim = c(0, 6))
+   cex.lab=1)
 abline(DD.all, col = "red", lwd = 3)
 legend("topleft", paste("All: m = ",slope), bty="n", cex=1)
 
-
-# Make Plot for active geo
-slope <- round(coefficients(DD.active)[2], 3)
-p <- round(summary(DD.active)$coefficients[8], 4)
-
-plot(geo.dist, active.cca.dist, xaxt = "s", las = 1, 
-   ylab="Difference in CCA1 score", xlab="Distance, km",col = "azure4", 
-   cex.lab=1, ylim = c(0, 8))
-abline(DD.active, col = "red", lwd = 3)
-legend("topleft", paste("Active: m = ",slope), bty="n", cex=1)
-
-# Add X-Axis Label to Plot
-mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
-  
 dev.off()
 ```

@@ -1,0 +1,64 @@
+---
+title: "Sample Map"
+header-includes:
+   - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+
+## 1.) SETUP
+### A. Retrieve and Set Your Working Directory
+
+```{r, results = 'hide'}
+rm(list=ls())
+getwd()
+setwd("~/GitHub/Dimensions/Aim3")
+```
+
+### B. Load Packages 
+
+We will use the `vegan` package for biodiversity estimators and related functions.
+
+```{r, results = 'hide', message = FALSE, warning = FALSE} 
+require("vegan")
+```
+
+Be sure to run **install.packages(PackageName)**, if not previously installed, where PackageName is the name of the package you want installed.
+Or, run **install.packages(PackageName, type="source", dependencies=TRUE)**, if the previous command doesn't work.
+
+```{r, results = 'hide', message = FALSE, warning = FALSE} 
+require("sp")          # Classes and methods for handling spatial data
+require("geoR")        # Methods for geostatistical analyses
+require("rgdal")       # Geospatial Data Abstraction Library
+require("raster")      # Methods to create a RasterLayer object
+require("RgoogleMaps") # For querying the Google server for static maps. 
+require("maptools")    # Tools for manipulating and reading geospatial data
+```
+
+### C. Load and Compile a Large Dataset
+
+```{r, results = 'hide', message = FALSE, warning = FALSE} 
+Ponds <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
+
+Ponds <- subset(Ponds, pH > 1)
+Ponds <- subset(Ponds, long < -86.35)
+Ponds <- subset(Ponds, lat > 39.05)
+Ponds <- subset(Ponds, TDS < 5.0)
+
+lats <- as.numeric(Ponds[, 3]) # latitudes (north and south)
+lons <- as.numeric(Ponds[, 4]) # longitudes (east and west)
+```
+
+
+## 2.) MAP SAMPLES AND DATA
+Let's visualize the spatial distribution of our samples with a basic map in RStudio.
+Let's generate a map of the refuge ponds using the `GetMap` function in the package `RgoogleMaps`.
+This map will be centered on Brown County, Indiana (39.1 latitude, -86.3 longitude).
+
+```{r}
+newmap <- GetMap(center = c(39.1,-86.3), zoom = 10, destfile = "PondsMap.png",
+                 maptype="terrain")
+PlotOnStaticMap(newmap, zoom = 10, cex = 2, col='blue') # Plot map in RStudio
+PlotOnStaticMap(newmap, lats, lons, cex=1, pch=20, col='red', add = TRUE)
+```

@@ -45,6 +45,9 @@ env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.cs
 # Remove 189, 190, 191
 # 236, 237 missing lots of data (very big ponds, outliers of sorts)
 
+# HNF276 Meg fixed pH data
+
+
 #env <- subset(env, chla < 2000)
 env <- subset(env, pH > 1)
 #env <- subset(env, Salinity > 0.0)
@@ -74,16 +77,15 @@ all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
 active.comm <- active.comm[ , colSums(active.comm) > 0]
 all.comm <- all.comm[ , colSums(all.comm) > 0]
 
-#cutoff <- 4000
-#all.comm <- all.comm[, 1:cutoff]
-#active.comm <- active.comm[, 1:cutoff]
+cutoff <- 1000
+all.comm <- all.comm[, 1:cutoff]
+active.comm <- active.comm[, 1:cutoff]
 
 # Geographic variables
 geo.dat <- as.matrix(subset(env, select = lat:long))
 # Pond environmental variables
 env.dat <- as.matrix(subset(env, select = Diameter:DON))
 ```
-
 
 
 ```{r}
@@ -105,165 +107,64 @@ colors <- c('firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
 
 env.dat <- as.matrix(subset(env, select = Diameter:DON))
 env.chem <- env.dat
-# Conduct CCA 
-active.cca <- vegan::cca(active.comm ~ env.chem)
-all.cca <- vegan::cca(all.comm ~ env.chem)
+
+# Standardize and center
+env.chem <- scale(env.chem, center = TRUE, scale = TRUE)
+
+# Conduct PCA 
+pca <- princomp(env.chem)
+scores <- as.data.frame(pca$scores[,1:2])
 ```
 
 
 
 ```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA-active.png", sep="")
-png(filename=file)
-
-cca.explainvar1 <- round(active.cca$CCA$eig[1] / 
-                         sum(c(active.cca$CCA$eig, active.cca$CA$eig)), 3) * 100
-cca.explainvar2 <- round(active.cca$CCA$eig[2] / 
-                         sum(c(active.cca$CCA$eig, active.cca$CA$eig)), 3) * 100
+#file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA-active.png", sep="")
+#png(filename=file)
 
 # Define Plot Parameters
-par(mfrow=c(1, 1), mar = c(5, 5, 4, 4) + 0.1, pty="s")
+#par(mfrow=c(1, 1), mar = c(5, 5, 4, 4) + 0.1, pty="s")
 
 # Initiate Plot
-plot(scores(active.cca, display = "wa"), xlim = c(-2, 2.7), ylim = c(-2.5, 2.5),
-     xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
-     ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
-     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2,
-     axes = FALSE)
-
-# Add Axes
-axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-abline(h = 0, v = 0, lty = 3)
-box(lwd = 2)
-
-# Add Points & Labels
-points(scores(active.cca, display = "wa"),
-       pch = 1, cex = 2, bg = colors, col = colors)
-legend("topleft", legend = levels.short, bty = "n", col = colors.short, 
-       pch = 1)
-
-# Add Environmental Vectors
-vectors <- scores(active.cca, display = "bp")
-row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp",
-      "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
-
-arrows(0, 0, vectors[,1] * 3, vectors[, 2] * 3, 
-       lwd = 1, lty = 1, length = 0.2, col = "black")
-
-text(vectors[,1] * 3.5, vectors[, 2] * 3.5, pos = 3, 
-     labels = row.names(vectors))
-
-axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[, 1])))
-axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
-
-dev.off()
-```
-
-
-
-```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA-all.png", sep="")
-png(filename=file)
-
-# Permutation Tests
-#anova(active.cca, by = "axis")
-#cca.fit <- envfit(active.cca, env.chem, perm = 999)
-
-# Calculate Explained Variation
-cca.explainvar1 <- round(all.cca$CCA$eig[1] / 
-                         sum(c(all.cca$CCA$eig, all.cca$CA$eig)), 3) * 100
-cca.explainvar2 <- round(all.cca$CCA$eig[2] / 
-                         sum(c(all.cca$CCA$eig, all.cca$CA$eig)), 3) * 100
-
-# Define Plot Parameters
-par(mfrow=c(1, 1), mar = c(5, 5, 4, 4) + 0.1, pty="s")
-
-# Initiate Plot
-plot(scores(all.cca, display = "wa"), xlim = c(-1.5, 3), ylim = c(-1.5, 2.0),
-     xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
-     ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
-     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, 
-     cex.axis = 1.2, axes = FALSE)
-
-# Add Axes
-axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
-abline(h = 0, v = 0, lty = 3)
-box(lwd = 2)
-
-# Add Points & Labels
-points(scores(all.cca, display = "wa"),
-       pch = 1, cex = 2, bg = colors, col = colors)
-legend("topleft", legend = levels.short, bty = "n", 
-       col = colors.short, pch = 1)
-
-# Add Environmental Vectors
-vectors <- scores(all.cca, display = "bp")
-row.names(vectors) <- c("diameter", "depth", "volume", "ORP", 
-                        "temp", "SpC", "DO", "TDS", "salinity",
-                        "pH", "color", "chla", "DOC", "DON")
-
-arrows(0, 0, vectors[,1] * 3, vectors[, 2] * 3, 
-       lwd = 1, lty = 1, length = 0.2, col = "black")
-
-text(vectors[, 1] * 3.5, vectors[, 2] * 3.5, pos = 3, 
-     labels = row.names(vectors))
-
-axis(side = 3, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 1])) * 2, labels = pretty(range(vectors[, 1])))
-axis(side = 4, lwd.ticks=2, cex.axis=1.2, las = 1, col = "red", lwd = 2.2,
-     at = pretty(range(vectors[, 2])) * 2, labels = pretty(range(vectors[, 2])))
-
-dev.off()
+#dev.off()
 ```
 
 
 
 ```{r, results = "hide"}
-active.cca.scores <- scores(active.cca)
-active.cca.sites <- as.data.frame(scores(active.cca.scores$sites))
-active.cca.scores <- as.matrix(subset(active.cca.sites, select = CCA1))
-active.cca.dist <- vegdist(active.cca.scores, "euclidean")
-
-all.cca.scores <- scores(all.cca)
-all.cca.sites <- as.data.frame(scores(all.cca.scores$sites))
-all.cca.scores <- as.matrix(subset(all.cca.sites, select = CCA1))
-all.cca.dist <- vegdist(all.cca.scores, "euclidean")
+#pca.sites <- as.data.frame(scores(pca.scores$sites))
+#pca.scores <- as.matrix(subset(pca.sites, select = CCA1))
+pca.dist <- vegdist(scores, "euclidean")
 ```
 
 
 
 ```{r, results = "hide"}
 metric <- "bray"
-x.lab <- "Difference in CCA1 score"
+x.lab <- "Difference in PCA1 score"
 
 file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/", 
-              metric,"_CCA1_Dist.png", sep="")
+              metric,"_PCA1_Dist.png", sep="")
   
 png(filename=file)  
 plot.new()
 par(mfrow=c(1, 2), mar = c(5, 5, 2, 2) + 0.1, oma=c(0,0,2,0), pty="s")
 
 active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
-#active.presabs.dist <- log10(active.presabs.dist)
 all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
-#all.presabs.dist <- log10(all.presabs.dist)
 
 # Regression for active presence/absence
-DD.active.presabs <- lm(active.presabs.dist ~ active.cca.dist)
+DD.active.presabs <- lm(active.presabs.dist ~ pca.dist)
 
 # Regression for all presence/absence 
-DD.all.presabs <- lm(all.presabs.dist ~ all.cca.dist)
+DD.all.presabs <- lm(all.presabs.dist ~ pca.dist)
   
 # Make Plot for all presence/absence
 slope <- round(coefficients(DD.all.presabs)[2], 3)
 p <- round(summary(DD.all.presabs)$coefficients[8],3)
-plot(all.cca.dist, all.presabs.dist, xaxt = "s", las = 1, 
+plot(pca.dist, all.presabs.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1, ylim = c(0.1, 0.5))
+   cex.lab=1)
 abline(DD.all.presabs , col = "red", lwd = 3)
 legend("topleft", paste("All\nslope=",slope),
        bty="n", cex=1)
@@ -271,9 +172,9 @@ legend("topleft", paste("All\nslope=",slope),
 # Make Plot for active presence/absence
 slope <- round(coefficients(DD.active.presabs)[2], 3)
 p <- round(summary(DD.active.presabs)$coefficients[8],3)
-plot(active.cca.dist, active.presabs.dist, xaxt = "s", las = 1, 
+plot(pca.dist, active.presabs.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1, ylim = c(0.1, 0.5))
+   cex.lab=1)
 abline(DD.active.presabs , col = "red", lwd = 3)
 legend("topleft", paste("Active\nslope = ", slope),
        bty="n", cex=1)
@@ -281,12 +182,12 @@ legend("topleft", paste("Active\nslope = ", slope),
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
-d <- diffslope(active.cca.dist, active.presabs.dist, all.cca.dist, all.presabs.dist)
+#d <- diffslope(pca.dist, active.presabs.dist, pca.dist, all.presabs.dist)
 
 
-Mtitle <- paste('Unweighted: Difference in slope =', 
-                round(as.numeric(d2[2]),3), '; p =', d2[3])
-print(Mtitle)
+#Mtitle <- paste('Unweighted: Difference in slope =', 
+#                round(as.numeric(d2[2]),3), '; p =', d2[3])
+#print(Mtitle)
 #title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
 dev.off()
 ```
