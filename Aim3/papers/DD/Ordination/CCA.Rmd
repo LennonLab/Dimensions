@@ -46,11 +46,6 @@ env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.cs
 # 236, 237 missing lots of data (very big ponds, outliers of sorts)
 env <- env[complete.cases(env),]
 
-# Geographic Distances (Kilometers) Among Ponds
-long.lat <- as.matrix(cbind(env$long, env$lat))
-geo.dist <- earth.dist(long.lat, dist = TRUE)
-geo.dist[which(!is.finite(geo.dist))] = NA
-
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
 # The active portion, based on cDNA 
 active.comm <- Pond97[grep("*-cDNA", rownames(Pond97)), ]
@@ -65,18 +60,29 @@ rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
 # Remove Sites Not in the Environmental Data Set
 active.comm <- active.comm[rownames(active.comm)  %in% env$Sample_ID, ]
 all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
+
+# Remove sites not shared between matrices
 df <- as.data.frame(active.comm)
 all.comm <- all.comm[rownames(all.comm)  %in% row.names(df),]
-
 env <- env[env$Sample_ID %in% row.names(df),]
+
+# Geographic Distances (Kilometers) Among Ponds
+long.lat <- as.matrix(cbind(env$long, env$lat))
+geo.dist <- earth.dist(long.lat, dist = TRUE)
+geo.dist[which(!is.finite(geo.dist))] = NA
 
 # Remove Zero-Occurrence Taxa 
 active.comm <- active.comm[ , colSums(active.comm) > 0]
 all.comm <- all.comm[ , colSums(all.comm) > 0]
 
-cutoff <- 4000
-all.comm <- all.comm[, 1:cutoff]
-active.comm <- active.comm[, 1:cutoff]
+active.comm <- active.comm + 1
+active.comm <- log10(active.comm)
+all.comm <- all.comm + 1
+all.comm <- log10(all.comm)
+
+#cutoff <- 4000
+#all.comm <- all.comm[, 1:cutoff]
+#active.comm <- active.comm[, 1:cutoff]
 
 # Geographic variables
 geo.dat <- as.matrix(subset(env, select = lat:long))
@@ -124,7 +130,7 @@ cca.explainvar2 <- round(active.cca$CCA$eig[2] /
 par(mfrow=c(1, 1), mar = c(5, 5, 4, 4) + 0.1, pty="s")
 
 # Initiate Plot
-plot(scores(active.cca, display = "wa"), xlim = c(-2, 2.7), ylim = c(-2.5, 2.5),
+plot(scores(active.cca, display = "wa"), xlim = c(-2.7, 2.7), ylim = c(-2.5, 2.5),
      xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
      ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
      pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2,
@@ -144,8 +150,7 @@ legend("topleft", legend = levels.short, bty = "n", col = colors.short,
 
 # Add Environmental Vectors
 vectors <- scores(active.cca, display = "bp")
-row.names(vectors) <- c("diameter", "depth", "volume", "ORP", "temp",
-      "SpC", "DO", "TDS", "salinity", "pH", "color", "chla", "DOC", "DON")
+row.names(vectors) <- colnames(env.dat)
 
 arrows(0, 0, vectors[,1] * 3, vectors[, 2] * 3, 
        lwd = 1, lty = 1, length = 0.2, col = "black")
@@ -169,7 +174,7 @@ png(filename=file)
 
 # Permutation Tests
 #anova(active.cca, by = "axis")
-#cca.fit <- envfit(active.cca, env.chem, perm = 999)
+#cca.fit <- envfit(active.cca, env.dat, perm = 999)
 
 # Calculate Explained Variation
 cca.explainvar1 <- round(all.cca$CCA$eig[1] / 
@@ -181,7 +186,7 @@ cca.explainvar2 <- round(all.cca$CCA$eig[2] /
 par(mfrow=c(1, 1), mar = c(5, 5, 4, 4) + 0.1, pty="s")
 
 # Initiate Plot
-plot(scores(all.cca, display = "wa"), xlim = c(-1.5, 3), ylim = c(-1.5, 2.0),
+plot(scores(all.cca, display = "wa"), xlim = c(-2.5, 3), ylim = c(-2.0, 2.0),
      xlab = paste("CCA 1 (", cca.explainvar1, "%)", sep = ""),
      ylab = paste("CCA 2 (", cca.explainvar2, "%)", sep = ""),
      pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, 
@@ -201,9 +206,8 @@ legend("topleft", legend = levels.short, bty = "n",
 
 # Add Environmental Vectors
 vectors <- scores(all.cca, display = "bp")
-row.names(vectors) <- c("diameter", "depth", "volume", "ORP", 
-                        "temp", "SpC", "DO", "TDS", "salinity",
-                        "pH", "color", "chla", "DOC", "DON")
+row.names(vectors) <- colnames(env.dat)
+
 
 arrows(0, 0, vectors[,1] * 3, vectors[, 2] * 3, 
        lwd = 1, lty = 1, length = 0.2, col = "black")
@@ -246,23 +250,23 @@ png(filename=file)
 plot.new()
 par(mfrow=c(1, 2), mar = c(5, 5, 2, 2) + 0.1, oma=c(0,0,2,0), pty="s")
 
-active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
-#active.presabs.dist <- log10(active.presabs.dist)
-all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
-#all.presabs.dist <- log10(all.presabs.dist)
+active.dist <- 1 - vegdist(active.comm, method=metric, binary=F) 
+#active.dist <- log10(active.dist)
+all.dist <- 1 - vegdist(all.comm, method=metric, binary=F)
+#all.dist <- log10(all.dist)
 
 # Regression for active presence/absence
-DD.active.presabs <- lm(active.presabs.dist ~ active.cca.dist)
+DD.active.presabs <- lm(active.dist ~ active.cca.dist)
 
 # Regression for all presence/absence 
-DD.all.presabs <- lm(all.presabs.dist ~ all.cca.dist)
+DD.all.presabs <- lm(all.dist ~ all.cca.dist)
   
 # Make Plot for all presence/absence
 slope <- round(coefficients(DD.all.presabs)[2], 3)
 p <- round(summary(DD.all.presabs)$coefficients[8],3)
-plot(all.cca.dist, all.presabs.dist, xaxt = "s", las = 1, 
+plot(all.cca.dist, all.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1, ylim = c(0.1, 0.5))
+   cex.lab=1, ylim = c(0.2, 0.8))
 abline(DD.all.presabs , col = "red", lwd = 3)
 legend("topleft", paste("All\nslope=",slope),
        bty="n", cex=1)
@@ -270,9 +274,9 @@ legend("topleft", paste("All\nslope=",slope),
 # Make Plot for active presence/absence
 slope <- round(coefficients(DD.active.presabs)[2], 3)
 p <- round(summary(DD.active.presabs)$coefficients[8],3)
-plot(active.cca.dist, active.presabs.dist, xaxt = "s", las = 1, 
+plot(active.cca.dist, active.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1, ylim = c(0.1, 0.5))
+   cex.lab=1, ylim = c(0.2, 0.8))
 abline(DD.active.presabs , col = "red", lwd = 3)
 legend("topleft", paste("Active\nslope = ", slope),
        bty="n", cex=1)
@@ -280,13 +284,12 @@ legend("topleft", paste("Active\nslope = ", slope),
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
-d <- diffslope(active.cca.dist, active.presabs.dist, all.cca.dist, all.presabs.dist)
-
-
-Mtitle <- paste('Unweighted: Difference in slope =', 
-                round(as.numeric(d2[2]),3), '; p =', d2[3])
-print(Mtitle)
+#d <- diffslope(active.cca.dist, active.dist, all.cca.dist, all.dist)
+#Mtitle <- paste('Unweighted: Difference in slope =', 
+#                round(as.numeric(d[2]),3), '; p =', d[3])
+#print(Mtitle)
 #title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
+
 dev.off()
 ```
 
@@ -305,21 +308,21 @@ par(mfrow=c(1, 2), mar = c(5, 5, 2, 2) + 0.1, oma=c(0,0,2,0), pty="s")
 
 
 # Taxonomic Distances Among Ponds
-active.presabs.dist <- 1 - vegdist(active.comm, method=metric, binary=TRUE) 
-all.presabs.dist <- 1 - vegdist(all.comm, method=metric, binary=TRUE)
+active.dist <- 1 - vegdist(active.comm, method=metric, binary=F) 
+all.dist <- 1 - vegdist(all.comm, method=metric, binary=F)
 
 # Regression for active presence/absence
-DD.active.presabs <- lm(active.presabs.dist ~ geo.dist)
+DD.active.presabs <- lm(active.dist ~ geo.dist)
 
 # Regression for all presence/absence 
-DD.all.presabs <- lm(all.presabs.dist ~ geo.dist)
+DD.all.presabs <- lm(all.dist ~ geo.dist)
   
 # Make Plot for all presence/absence
 slope <- round(coefficients(DD.all.presabs)[2], 3)
 p <- round(summary(DD.all.presabs)$coefficients[8],3)
-plot(geo.dist, all.presabs.dist, xaxt = "s", las = 1, 
+plot(geo.dist, all.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1, ylim=c(0.1, 0.6))
+   cex.lab=1, ylim=c(0.1, 0.7))
 abline(DD.all.presabs , col = "red", lwd = 3)
 legend("topleft", paste("All\nslope=",slope),
        bty="n", cex=1)
@@ -327,18 +330,16 @@ legend("topleft", paste("All\nslope=",slope),
 # Make Plot for active presence/absence
 slope <- round(coefficients(DD.active.presabs)[2], 3)
 p <- round(summary(DD.active.presabs)$coefficients[8],3)
-plot(geo.dist, active.presabs.dist, xaxt = "s", las = 1, 
+plot(geo.dist, active.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1, ylim=c(0.1, 0.6))
+   cex.lab=1, ylim=c(0.1, 0.7))
 abline(DD.active.presabs , col = "red", lwd = 3)
 legend("topleft", paste("Active\nslope = ", 
                           slope), bty="n", cex=1)
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
-  
-#d1 <- diffslope(active.cca.dist, active.weighted, active.cca.dist, all.weighted)
-d2 <- diffslope(active.cca.dist, active.presabs.dist, active.cca.dist, all.presabs.dist)
+#d <- diffslope(active.cca.dist, active.dist, active.cca.dist, all.dist)
 
 dev.off()
 ```
