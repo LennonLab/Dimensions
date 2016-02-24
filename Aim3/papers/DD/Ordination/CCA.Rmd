@@ -44,11 +44,7 @@ env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.cs
 
 # Remove 189, 190, 191
 # 236, 237 missing lots of data (very big ponds, outliers of sorts)
-
-#env <- subset(env, chla < 2000)
-env <- subset(env, pH > 1)
-#env <- subset(env, Salinity > 0.0)
-env <- subset(env, TDS < 5.0)
+env <- env[complete.cases(env),]
 
 # Geographic Distances (Kilometers) Among Ponds
 long.lat <- as.matrix(cbind(env$long, env$lat))
@@ -69,21 +65,24 @@ rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
 # Remove Sites Not in the Environmental Data Set
 active.comm <- active.comm[rownames(active.comm)  %in% env$Sample_ID, ]
 all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
+df <- as.data.frame(active.comm)
+all.comm <- all.comm[rownames(all.comm)  %in% row.names(df),]
+
+env <- env[env$Sample_ID %in% row.names(df),]
 
 # Remove Zero-Occurrence Taxa 
 active.comm <- active.comm[ , colSums(active.comm) > 0]
 all.comm <- all.comm[ , colSums(all.comm) > 0]
 
-#cutoff <- 4000
-#all.comm <- all.comm[, 1:cutoff]
-#active.comm <- active.comm[, 1:cutoff]
+cutoff <- 4000
+all.comm <- all.comm[, 1:cutoff]
+active.comm <- active.comm[, 1:cutoff]
 
 # Geographic variables
 geo.dat <- as.matrix(subset(env, select = lat:long))
 # Pond environmental variables
-env.dat <- as.matrix(subset(env, select = Diameter:DON))
+env.dat <- as.matrix(subset(env, select = Depth:TP))
 ```
-
 
 
 ```{r}
@@ -93,21 +92,21 @@ colors.short <- c('firebrick1', 'darkorchid1', 'cornflowerblue')
 colors <- c('firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
             'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
             'firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
-            'firebrick1',
+            'firebrick1', 'firebrick1',
             'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
             'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
             'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1',
-            'darkorchid1',
+            'darkorchid1', 'darkorchid1',
             'cornflowerblue','cornflowerblue','cornflowerblue','cornflowerblue',
             'cornflowerblue', 'cornflowerblue','cornflowerblue','cornflowerblue',
             'cornflowerblue','cornflowerblue', 'cornflowerblue','cornflowerblue',
-            'cornflowerblue','cornflowerblue','cornflowerblue')
+            'cornflowerblue','cornflowerblue','cornflowerblue',
+            'firebrick1', 'darkorchid1', 'cornflowerblue','cornflowerblue',
+            'darkorchid1','darkorchid1','darkorchid1','darkorchid1','darkorchid1')
 
-env.dat <- as.matrix(subset(env, select = Diameter:DON))
-env.chem <- env.dat
 # Conduct CCA 
-active.cca <- vegan::cca(active.comm ~ env.chem)
-all.cca <- vegan::cca(all.comm ~ env.chem)
+active.cca <- vegan::cca(active.comm ~ env.dat)
+all.cca <- vegan::cca(all.comm ~ env.dat)
 ```
 
 
