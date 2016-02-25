@@ -127,16 +127,16 @@ slope <- round(coefficients(DD.all)[2], 3)
 p <- round(summary(DD.all)$coefficients[8], 4)
 
 plot(geo.dist, all.cca1.dist, xaxt = "s", las = 1, 
-   ylab="Env. Distance", xlab="Distance, km", col = "azure4", 
-   cex.lab=1.5, cex.main=2, main="CCA, all")
+   ylab="Env. Distance", xlab="Distance, km", col = "black", 
+   cex=0.25, cex.lab=1.5, cex.main=2, main="CCA, all")
 
 # Make Plot for active geo
 slope <- round(coefficients(DD.active)[2], 3)
 p <- round(summary(DD.active)$coefficients[8], 4)
 
 plot(geo.dist, active.cca1.dist, xaxt = "s", las = 1, 
-   ylab="Env. Distance", xlab="Distance, km",col = "azure4", 
-   cex.lab=1.5, cex.main=2, main="CCA, active")
+   ylab="Env. Distance", xlab="Distance, km",col = "black", 
+   cex=0.25, cex.lab=1.5, cex.main=2, main="CCA, active")
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
@@ -163,8 +163,8 @@ pca.dist <- vegdist(scores, "euclidean")
 cor.test(geo.dist, pca.dist)
 
 plot(geo.dist, pca.dist, xaxt = "s", las = 1, 
-   ylab="Env. Distance", xlab="Distance, km", col = "azure4", 
-   cex=1, cex.lab=1.5, cex.axis = 1.5, cex.main=2, main="PCA")
+   ylab="Env. Distance", xlab="Distance, km", col = "black", 
+   cex=0.25, cex.lab=1.5, cex.axis = 1.5, cex.main=2, main="PCA")
 #legend("topleft", paste("All: m = ",slope), bty="n", cex=1)
 
 dev.off()
