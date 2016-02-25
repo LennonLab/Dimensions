@@ -16,12 +16,6 @@ setwd("~/GitHub/Dimensions/Aim3/papers/DD")
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load packages
-require("sp")          # Classes and methods for handling spatial data
-require("geoR")        # Methods for geostatistical analyses
-require("rgdal")       # Geospatial Data Abstraction Library
-require("raster")      # Methods to create a RasterLayer object
-require("maptools")    # Tools for manipulating and reading geospatial data
-
 require("picante")
 require("ape")
 require("seqinr")
@@ -38,16 +32,14 @@ load(file = "~/GitHub/Dimensions/Aim3/Mothur/INPond_Initial.RData")
 
 ```{r, results = 'hide', echo=FALSE, message = FALSE, warning = FALSE}
 # Load Environmental and Geographical Data
-env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv", sep = ",", header = TRUE)
-lats <- as.numeric(env[, 3]) # latitudes (north and south)
-lons <- as.numeric(env[, 4]) # longitudes (east and west)
+env <- read.table("~/GitHub/Dimensions/Aim3/DATA/EnvData/20130801_PondDataMod.csv",
+                  sep = ",", header = TRUE)
 
-# Geographic Distances (Kilometers) Among Ponds
-long.lat <- as.matrix(cbind(env$long, env$lat))
-geo.dist <- earth.dist(long.lat, dist = TRUE)
-#geo.dist <- log(geo.dist)
-geo.dist[which(!is.finite(geo.dist))] = NA
-geo.dist.ls <- liste(geo.dist, entry = "geo.dist")
+env <- env[complete.cases(env),]
+
+# Remove 189, 190, 191
+# 236, 237 missing lots of data (very big ponds, outliers of sorts)
+# HNF276 Meg fixed pH data
 
 # Select DNA Data: Use the `grep()` Command and Rename with `gsub()`
 # The active portion, based on cDNA 
@@ -64,13 +56,31 @@ rownames(all.comm) <- gsub("\\_", "", rownames(all.comm))
 active.comm <- active.comm[rownames(active.comm)  %in% env$Sample_ID, ]
 all.comm <- all.comm[rownames(all.comm)  %in% env$Sample_ID, ]
 
-# Remove Zero-Occurrence Taxa 
-active.comm <- active.comm[ , colSums(active.comm) > 0]
-all.comm <- all.comm[ , colSums(all.comm) > 0]
+# Remove sites not shared between matrices
+df <- as.data.frame(active.comm)
+all.comm <- all.comm[rownames(all.comm)  %in% row.names(df),]
+env <- env[env$Sample_ID %in% row.names(df),]
 
-cutoff <- 1000
+# Geographic Distances (Kilometers) Among Ponds
+long.lat <- as.matrix(cbind(env$long, env$lat))
+geo.dist <- earth.dist(long.lat, dist = TRUE)
+geo.dist[which(!is.finite(geo.dist))] = NA
+
+# Remove Zero-Occurrence Taxa 
+active.comm <- active.comm + 1
+active.comm <- log10(active.comm)
+all.comm <- all.comm + 1
+all.comm <- log10(all.comm)
+
+
+cutoff <- 4000
 all.comm <- all.comm[, 1:cutoff]
 active.comm <- active.comm[, 1:cutoff]
+
+# Geographic variables
+geo.dat <- as.matrix(subset(env, select = lat:long))
+# Pond environmental variables
+env.dat <- as.matrix(subset(env, select = Depth:TP))
 ```
 
 
@@ -78,8 +88,8 @@ active.comm <- active.comm[, 1:cutoff]
 # Conduct CCA and get axis 1
 # Define Environmental Matrix
 # Pond environmental variables
-env.dat <- as.matrix(subset(env, select = Diameter:DON))
 env.chem <- env.dat
+
 # Conduct CCA 
 active.cca <- vegan::cca(active.comm ~ env.chem)
 all.cca <- vegan::cca(all.comm ~ env.chem)
@@ -106,7 +116,7 @@ DD.all <- lm(all.cca1.dist ~ geo.dist)
 
 
 ```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/Env_Geo_Dist.png", sep="")
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA_Geo_Dist.png", sep="")
 png(filename=file)
   
 plot.new()
@@ -117,31 +127,19 @@ slope <- round(coefficients(DD.all)[2], 3)
 p <- round(summary(DD.all)$coefficients[8], 4)
 
 plot(geo.dist, all.cca1.dist, xaxt = "s", las = 1, 
-   ylab="CCA1", xlab="Distance, km", col = "azure4", cex.lab=1.5)
-abline(DD.all, col = "magenta", lwd = 4)
-legend("bottomleft", paste("All: m =",slope), bty="n", cex=1.2)
-
+   ylab="CCA Distance", xlab="Distance, km", col = "azure4", 
+   cex.lab=1.5, cex.main=2, main="All")
 
 # Make Plot for active geo
 slope <- round(coefficients(DD.active)[2], 3)
 p <- round(summary(DD.active)$coefficients[8], 4)
 
 plot(geo.dist, active.cca1.dist, xaxt = "s", las = 1, 
-   ylab="CCA1", xlab="Distance, km",col = "azure4", cex.lab=1.5)
-abline(DD.active, col = "magenta", lwd = 4)
-legend("bottomleft", paste("Active: m = ",slope), bty="n", cex=1.2)
+   ylab="CCA Distance", xlab="Distance, km",col = "azure4", 
+   cex.lab=1.5, cex.main=2, main="Active")
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
   
-#d1 <- diffslope(geo.dist, active.dist, geo.dist, all.dist)
-#d2 <- diffslope(active.cca1.dist, active.dist, all.cca1.dist, all.dist)
-
-#Mtitle <- paste('Geographic DDRs: Difference in slope =', 
-#                round(as.numeric(d1[2]),3), '; p =', d1[3],"\n",
-#                'Environmental DDRs: Difference in slope =', 
-#                round(as.numeric(d2[2]),3), '; p =', d2[3])
-
-#title(main=Mtitle, line=-2, outer=T, cex.main=1.5)
 dev.off()
 ```
