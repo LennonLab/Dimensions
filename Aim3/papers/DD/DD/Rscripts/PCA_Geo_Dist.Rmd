@@ -72,7 +72,7 @@ active.comm <- active.comm[, 1:cutoff]
 
 
 ```{r}
-# Conduct CCA and get axis 1
+# Conduct PCA and get axis 1
 # Define Environmental Matrix
 # Pond environmental variables
 env.dat <- as.matrix(subset(env, select = Depth:TP))
