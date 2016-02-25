@@ -104,3 +104,6 @@ plot(geo.dist, pca.dist, xaxt = "s", las = 1,
 
 dev.off()
 ```
+
+
+
