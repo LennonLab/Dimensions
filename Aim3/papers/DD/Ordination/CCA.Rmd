@@ -243,9 +243,10 @@ all.cca.dist <- vegdist(all.cca.scores, "euclidean")
 metric <- "bray"
 x.lab <- "Difference in CCA1 score"
 
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/", 
-              metric,"_CCA1_Dist.png", sep="")
-  
+#file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/", 
+#              metric,"_CCA1_Dist.png", sep="")
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/sorensen_CCA1_Dist.png", sep="")
+
 png(filename=file)  
 plot.new()
 par(mfrow=c(1, 2), mar = c(5, 5, 2, 2) + 0.1, oma=c(0,0,2,0), pty="s")
@@ -266,7 +267,7 @@ slope <- round(coefficients(DD.all.presabs)[2], 3)
 p <- round(summary(DD.all.presabs)$coefficients[8],3)
 plot(all.cca.dist, all.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1, ylim = c(0.2, 0.8))
+   cex.lab=1, ylim = c(0.2, 0.7))
 abline(DD.all.presabs , col = "red", lwd = 3)
 legend("topleft", paste("All\nslope=",slope),
        bty="n", cex=1)
@@ -276,7 +277,7 @@ slope <- round(coefficients(DD.active.presabs)[2], 3)
 p <- round(summary(DD.active.presabs)$coefficients[8],3)
 plot(active.cca.dist, active.dist, xaxt = "s", las = 1, 
    ylab="Community similarity", xlab=x.lab, col = "azure4",
-   cex.lab=1, ylim = c(0.2, 0.8))
+   cex.lab=1, ylim = c(0.2, 0.7))
 abline(DD.active.presabs , col = "red", lwd = 3)
 legend("topleft", paste("Active\nslope = ", slope),
        bty="n", cex=1)
