@@ -73,7 +73,7 @@ all.comm <- all.comm + 1
 all.comm <- log10(all.comm)
 
 
-cutoff <- 10000
+cutoff <- 1000
 all.comm <- all.comm[, 1:cutoff]
 active.comm <- active.comm[, 1:cutoff]
 
@@ -91,8 +91,8 @@ env.dat <- as.matrix(subset(env, select = Depth:TP))
 env.chem <- env.dat
 
 # Conduct CCA 
-active.cca <- vegan::cca(active.comm ~ env.chem)
-all.cca <- vegan::cca(all.comm ~ env.chem)
+active.cca <- vegan::cca(env.dat ~ active.comm)
+all.cca <- vegan::cca(env.dat ~ all.comm)
 
 # Permutation Tests
 dist <- "euclidean"
@@ -116,8 +116,8 @@ DD.all <- lm(all.cca1.dist ~ geo.dist)
 
 
 ```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/Env_Geo_Dist.png", sep="")
-png(filename=file)
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/Env_Geo_Dist.png", sep="")
+png(filename=file, units="in", width=8, height=8, res=600)
   
 plot.new()
 par(mfrow=c(3, 3), mar = c(5, 4, 3, 2) + 0.1, oma =c(0,1,3,0))
@@ -127,22 +127,20 @@ slope <- round(coefficients(DD.all)[2], 3)
 p <- round(summary(DD.all)$coefficients[8], 4)
 
 plot(geo.dist, all.cca1.dist, xaxt = "s", las = 1, 
-   ylab="Env. Distance", xlab="Distance, km", col = "azure4", 
-   cex.lab=1.5, cex.main=2, main="CCA, all")
+   ylab="Env. Distance", xlab="Distance, km", col = "black", 
+   cex=0.25, cex.lab=1.5, cex.main=2, main="CCA, all")
 
 # Make Plot for active geo
 slope <- round(coefficients(DD.active)[2], 3)
 p <- round(summary(DD.active)$coefficients[8], 4)
 
 plot(geo.dist, active.cca1.dist, xaxt = "s", las = 1, 
-   ylab="Env. Distance", xlab="Distance, km",col = "azure4", 
-   cex.lab=1.5, cex.main=2, main="CCA, active")
+   ylab="Env. Distance", xlab="Distance, km",col = "black", 
+   cex=0.25, cex.lab=1.5, cex.main=2, main="CCA, active")
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
-```
 
-```{r}
 # Conduct PCA and get axis 1
 # Define Environmental Matrix
 # Pond environmental variables
@@ -156,15 +154,13 @@ env.chem <- scale(env.chem, center = TRUE, scale = TRUE)
 pca <- princomp(env.chem)
 scores <- as.data.frame(pca$scores[,1:2])
 pca.dist <- vegdist(scores, "euclidean")
-```
 
 
-```{r}
 cor.test(geo.dist, pca.dist)
 
 plot(geo.dist, pca.dist, xaxt = "s", las = 1, 
-   ylab="Env. Distance", xlab="Distance, km", col = "azure4", 
-   cex=1, cex.lab=1.5, cex.axis = 1.5, cex.main=2, main="PCA")
+   ylab="Env. Distance", xlab="Distance, km", col = "black", 
+   cex=0.25, cex.lab=1.5, cex.axis = 1.5, cex.main=2, main="PCA")
 #legend("topleft", paste("All: m = ",slope), bty="n", cex=1)
 
 dev.off()

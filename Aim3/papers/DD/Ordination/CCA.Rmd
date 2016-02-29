@@ -80,9 +80,9 @@ active.comm <- log10(active.comm)
 all.comm <- all.comm + 1
 all.comm <- log10(all.comm)
 
-#cutoff <- 4000
-#all.comm <- all.comm[, 1:cutoff]
-#active.comm <- active.comm[, 1:cutoff]
+cutoff <- 4000
+all.comm <- all.comm[, 1:cutoff]
+active.comm <- active.comm[, 1:cutoff]
 
 # Geographic variables
 geo.dat <- as.matrix(subset(env, select = lat:long))
@@ -92,6 +92,9 @@ env.dat <- as.matrix(subset(env, select = Depth:TP))
 
 
 ```{r}
+metric <- "jaccard"
+bin <- F
+
 levels.short <- c('BCSP', 'HNF', 'YSF')
 colors.short <- c('firebrick1', 'darkorchid1', 'cornflowerblue')
   
@@ -113,12 +116,14 @@ colors <- c('firebrick1','firebrick1','firebrick1','firebrick1','firebrick1',
 # Conduct CCA 
 active.cca <- vegan::cca(active.comm ~ env.dat)
 all.cca <- vegan::cca(all.comm ~ env.dat)
+#active.cca <- vegan::cca(env.dat ~ active.comm)
+#all.cca <- vegan::cca(env.dat ~ all.comm)
 ```
 
 
 
 ```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA-active.png", sep="")
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/CCA-active.png", sep="")
 png(filename=file)
 
 cca.explainvar1 <- round(active.cca$CCA$eig[1] / 
@@ -169,7 +174,7 @@ dev.off()
 
 
 ```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/CCA-all.png", sep="")
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/CCA-all.png", sep="")
 png(filename=file)
 
 # Permutation Tests
@@ -240,20 +245,19 @@ all.cca.dist <- vegdist(all.cca.scores, "euclidean")
 
 
 ```{r, results = "hide"}
-metric <- "bray"
 x.lab <- "Difference in CCA1 score"
 
-#file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/", 
+#file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", 
 #              metric,"_CCA1_Dist.png", sep="")
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/sorensen_CCA1_Dist.png", sep="")
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/sorensen_CCA1_Dist.png", sep="")
 
-png(filename=file)  
+png(filename=file, units="in", width=8, height=8, res=600)
 plot.new()
 par(mfrow=c(1, 2), mar = c(5, 5, 2, 2) + 0.1, oma=c(0,0,2,0), pty="s")
 
-active.dist <- 1 - vegdist(active.comm, method=metric, binary=F) 
+active.dist <- 1 - vegdist(active.comm, method=metric, binary=bin) 
 #active.dist <- log10(active.dist)
-all.dist <- 1 - vegdist(all.comm, method=metric, binary=F)
+all.dist <- 1 - vegdist(all.comm, method=metric, binary=bin)
 #all.dist <- log10(all.dist)
 
 # Regression for active presence/absence
@@ -300,17 +304,17 @@ dev.off()
 metric <- "bray"
 x.lab <- "Geographic distance, km"
 
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/",
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/",
               metric,"_Geo_Dist.png", sep="")
   
-png(filename=file)  
+png(filename=file, units="in", width=8, height=8, res=600)
 plot.new()
 par(mfrow=c(1, 2), mar = c(5, 5, 2, 2) + 0.1, oma=c(0,0,2,0), pty="s")
 
 
 # Taxonomic Distances Among Ponds
-active.dist <- 1 - vegdist(active.comm, method=metric, binary=F) 
-all.dist <- 1 - vegdist(all.comm, method=metric, binary=F)
+active.dist <- 1 - vegdist(active.comm, method=metric, binary=bin) 
+all.dist <- 1 - vegdist(all.comm, method=metric, binary=bin)
 
 # Regression for active presence/absence
 DD.active.presabs <- lm(active.dist ~ geo.dist)

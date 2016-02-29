@@ -122,7 +122,7 @@ pca.dist <- vegdist(scores, "euclidean")
 metric <- "bray"
 x.lab <- "Difference in PCA1 score"
 
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/", 
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/", 
               metric,"_PCA1_Dist.png", sep="")
   
 png(filename=file)  
@@ -177,10 +177,10 @@ dev.off()
 metric <- "bray"
 x.lab <- "Geographic distance, km"
 
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/",
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/",
               metric,"_Geo_Dist.png", sep="")
   
-png(filename=file)  
+png(filename=file, units="in", width=8, height=8, res=600)
 plot.new()
 par(mfrow=c(1, 2), mar = c(5, 5, 2, 2) + 0.1, oma=c(0,0,2,0), pty="s")
 

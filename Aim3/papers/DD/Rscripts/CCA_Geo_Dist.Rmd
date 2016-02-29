@@ -88,11 +88,10 @@ env.dat <- as.matrix(subset(env, select = Depth:TP))
 # Conduct CCA and get axis 1
 # Define Environmental Matrix
 # Pond environmental variables
-env.chem <- env.dat
 
 # Conduct CCA 
-active.cca <- vegan::cca(active.comm ~ env.chem)
-all.cca <- vegan::cca(all.comm ~ env.chem)
+active.cca <- vegan::cca(env.dat ~ active.comm)
+all.cca <- vegan::cca(env.dat ~ all.comm)
 
 # Permutation Tests
 dist <- "euclidean"
@@ -116,7 +115,7 @@ DD.all <- lm(all.cca1.dist ~ geo.dist)
 
 
 ```{r}
-file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/DD/figs/Env_Geo_Dist.png", sep="")
+file <- paste("~/GitHub/Dimensions/Aim3/papers/DD/figs/CCA_Geo_Dist.png", sep="")
 png(filename=file, units="in", width=8, height=8, res=600)
   
 plot.new()
@@ -128,34 +127,37 @@ p <- round(summary(DD.all)$coefficients[8], 4)
 
 plot(geo.dist, all.cca1.dist, xaxt = "s", las = 1, 
    ylab="Env. Distance", xlab="Distance, km", col = "black", 
-   cex=0.25, cex.lab=1.5, cex.main=2, main="CCA, all")
+   cex.lab=1.5, cex.main=2, main="CCA, all")
 
 # Make Plot for active geo
 slope <- round(coefficients(DD.active)[2], 3)
 p <- round(summary(DD.active)$coefficients[8], 4)
 
 plot(geo.dist, active.cca1.dist, xaxt = "s", las = 1, 
-   ylab="Env. Distance", xlab="Distance, km",col = "black", 
-   cex=0.25, cex.lab=1.5, cex.main=2, main="CCA, active")
+   ylab="Env. Distance", xlab="Distance, km",col = "azure4", 
+   cex.lab=1.5, cex.main=2, main="CCA, active")
 
 # Add X-Axis Label to Plot
 mtext("Geographic Distance, km", side = 1, adj = 0, outer = TRUE)
+```
 
+```{r}
 # Conduct PCA and get axis 1
 # Define Environmental Matrix
 # Pond environmental variables
 env.dat <- as.matrix(subset(env, select = Depth:TP))
-env.chem <- env.dat
 
 # Standardize and center
-env.chem <- scale(env.chem, center = TRUE, scale = TRUE)
+env.dat <- scale(env.dat, center = TRUE, scale = TRUE)
 
 # Conduct PCA 
-pca <- princomp(env.chem)
+pca <- princomp(env.dat)
 scores <- as.data.frame(pca$scores[,1:2])
 pca.dist <- vegdist(scores, "euclidean")
+```
 
 
+```{r}
 cor.test(geo.dist, pca.dist)
 
 plot(geo.dist, pca.dist, xaxt = "s", las = 1, 
