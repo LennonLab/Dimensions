@@ -25,8 +25,33 @@ require("png")
 ```{r}
 stain.der <- read.table("data/staining.derived.txt", head = TRUE, sep = "\t")
 stain.anc <- read.table("data/staining.ancestor.txt", head = TRUE, sep = "\t")
+stain.all <- read.table("data/staining.all.txt", head = TRUE, sep = "\t")
 ```
 
+## Take time differences
+```{r}
+
+strain.anc <- stain.all[which(stain.all$hist == "anc"), ]
+strain.der <- stain.all[which(stain.all$hist == "der"), ]
+
+try <- stain.all[which(stain.all$hist == "der" & stain.all$strain =="KBS0701"), 4] - stain.all[which(stain.all$hist == "anc" & stain.all$strain=="KBS0701"), 4]
+
+for (row in 1:nrow(df)) { 
+    df$newvar[row] <- testFunc(df$x[row], df$z[row]) 
+}
+
+
+try<- apply(stain.all[which(stain.all$hist == "der"), 4], 2, function (x) sum(x))
+
+
+
+rich.rep.ave <- ddply(stain.all, .(strain, treat, qPCR.match), 
+                      summarize, rich = mean(rich.mean))
+
+rich.rep.ave <- ddply(eDNA.div, .(strain), 
+                      summarize, diff = (rich.mean))
+
+stain.all$hist == anc - stain.all$     by strain
 ## Make Kernels
 ```{r}
 kern.der.act <- density(stain.der$Active, bw = 0.1) 
