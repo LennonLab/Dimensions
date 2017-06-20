@@ -26,7 +26,7 @@ Ran into problems where following error was generated:
 I think this was due to having time points where time = 0
 
 ```{r, results='hide', warning=FALSE, message=FALSE}
-KBS0703 <- read.table("KBS0703.txt", header = TRUE)
+KBS0703 <- read.table("data/KBS0703.txt", header = TRUE)
 KBS0703 <- data.frame(KBS0703[,4],KBS0703[,9:10])
 logabund <- log10(KBS0703$Abund)
 KBS0703 <- data.frame(KBS0703, logabund)
