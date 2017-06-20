@@ -19,7 +19,7 @@ Single cell staining classified cells as either active (+ CTC), dead (+ SYTOX Gr
 ```{r, results = 'hide'}
 rm(list = ls())
 getwd()
-setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
+setwd("~/GitHub/Dimensions/Aim1/")
 require(ks)
 ```
 
@@ -68,6 +68,7 @@ newTraits <- na.omit(newTraits)
 
 ```{r}
 # Are delta activities different from zero?
+t.test.bet <- t.test(newTraits$betHedge, mu=0)
 t.test.act <- t.test (newTraits$deltaActive, mu=0)
 t.test.dead <- t.test (newTraits$deltaDead, mu=0)
 t.test.dorm <- t.test (newTraits$deltaDormant, mu=0)
@@ -177,23 +178,18 @@ dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
 ```
 
-<!-- ### Calculate strain means -->
-<!-- ```{r, results = 'hide'} -->
-<!-- # -->
-<!-- meanTraits = newTraits[1:length(unique(der$strain)),] -->
-<!-- meanTraits = meanTraits[,-2] -->
-<!-- meanTraits$strain = sort(unique(der$strain)) -->
-<!-- meanTraits[,2:ncol(meanTraits)] = NA -->
-<!-- for(i in 2:5){ -->
-<!-- 	curMeans = tapply(newTraits[,(i+1)], newTraits$strain, FUN = mean) -->
-<!-- 	meanTraits[,i] = curMeans[order(names(curMeans))] -->
-<!-- } -->
+### Calculate strain means
+```{r, results = 'hide'}
+#
+meanTraits = newTraits[1:length(unique(der$strain)),]
+meanTraits = meanTraits[,-2]
+meanTraits$strain = sort(unique(der$strain))
+meanTraits = meanTraits[!(meanTraits$strain =="KBS0727"),]
+meanTraits[,2:ncol(meanTraits)] = NA
+for(i in 2:5){
+	curMeans = tapply(newTraits[,(i+1)], newTraits$strain, FUN = mean)
+	meanTraits[,i] = curMeans[order(names(curMeans))]
+}
+write.table(meanTraits, "~/GitHub/Dimensions/Aim1/data/bet.hedge.table.txt", 
+            sep = "\t") 
 
-<!-- # plot histograms of mean traits -->
-<!-- dev.new() -->
-<!-- par(mfrow=c(4,1)) -->
-<!-- hist(meanTraits$betHedge,breaks=seq(0,1,0.05),main=NULL,xlab="bet hedging") -->
-<!-- hist(meanTraits$deltaActive,breaks=seq(-1,1,0.1),main=NULL,xlab="delta Active") -->
-<!-- hist(meanTraits$deltaDead,breaks=seq(-1,1,0.1),main=NULL,xlab="delta Dead") -->
-<!-- hist(meanTraits$deltaDormant,breaks=seq(-1,1,0.1),main=NULL,xlab="delta Dormant") -->
-<!-- ``` -->
