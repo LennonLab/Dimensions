@@ -20,9 +20,10 @@ Single cell staining classified cells as either active (+ CTC), dead (+ SYTOX Gr
 rm(list = ls())
 getwd()
 setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
+require(ks)
 ```
 
-### B. Load and Wrangle Data
+## 2) LOAD AND WRANLE DATA
 
 ```{r, results = 'hide'}
 all <- read.table("data/staining.all.txt", header = TRUE, sep = "\t", 
@@ -33,7 +34,7 @@ anc <- all[all$hist == "anc",]
 der <- all[all$hist == "der",]
 ```
 
-Now we'll created new traits based on single-cell metabolic counts at the two time points
+Create new traits based on single-cell metabolic counts at the two time points
 ```{r}
 # Create dataframe to hold new traits
 newTraits = der
@@ -63,20 +64,35 @@ for(i in 1:nrow(der)){
 newTraits <- na.omit(newTraits)
 ```
 
-### Plot Kernel Densities
+## 3) STATISTICS
+
+```{r}
+# Are delta activities different from zero?
+t.test.act <- t.test (newTraits$deltaActive, mu=0)
+t.test.dead <- t.test (newTraits$deltaDead, mu=0)
+t.test.dorm <- t.test (newTraits$deltaDormant, mu=0)
+```
+
+## 4) PLOT KERNEL DENSTIES
 
 ```{r, results = 'hide'}
-# dev.new()
-# par(mfrow=c(4,1))
-# hist(newTraits$betHedge, breaks=seq(0, 1, 0.05), main = NULL, xlab = "bet hedging")
-# hist(newTraits$deltaActive, breaks = seq(-1,1,0.1), main = NULL, xlab = "delta Active")
-# hist(newTraits$deltaDead, breaks = seq(-1,1,0.1), main = NULL, xlab = "delta Dead")
-# hist(newTraits$deltaDormant, breaks = seq(-1,1,0.1), main = NULL, xlab = "delta Dormant")
+# Proportion of dormant cells at time zero
+h_hedge <- hns(newTraits$betHedge,deriv.order=1)
+bet.hedge.kern <- density(newTraits$betHedge, h_hedge)
+mean(newTraits$betHedge)
 
-bet.hedge.kern <- density(newTraits$betHedge)
-delta.act.kern <- density(newTraits$deltaActive)
-delta.dead.kern <- density(newTraits$deltaDead)
-delta.dorm.kern <- density(newTraits$deltaDormant)
+h_act <- hns(newTraits$deltaActive,deriv.order=1)
+delta.act.kern <- density(newTraits$deltaActive, bw = h_act)
+
+h_dead <- hns(newTraits$deltaDead,deriv.order=1)
+delta.dead.kern <- density(newTraits$deltaDead, bw = h_dead)
+
+h_dorm <- hns(newTraits$deltaActive,deriv.order=1)
+delta.dorm.kern <- density(newTraits$deltaDormant, bw = h_dorm)
+
+# https://stats.stackexchange.com/questions/33918/is-there-an-optimal-bandwidth-for-a-kernel-density-estimator-of-derivatives
+
+# Used site above to estimate h, which was used as bandwidth for kernels
 
 png(filename="~/GitHub/Dimensions/Aim1/DeathCurves/KernelShift.png",
     width = 800, height = 1200, res = 96*2)
@@ -161,23 +177,23 @@ dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
 ```
 
-### Calculate strain means
-```{r, results = 'hide'}
-# 
-meanTraits = newTraits[1:length(unique(der$strain)),]
-meanTraits = meanTraits[,-2]
-meanTraits$strain = sort(unique(der$strain))
-meanTraits[,2:ncol(meanTraits)] = NA
-for(i in 2:5){
-	curMeans = tapply(newTraits[,(i+1)], newTraits$strain, FUN = mean)
-	meanTraits[,i] = curMeans[order(names(curMeans))]
-}
+<!-- ### Calculate strain means -->
+<!-- ```{r, results = 'hide'} -->
+<!-- # -->
+<!-- meanTraits = newTraits[1:length(unique(der$strain)),] -->
+<!-- meanTraits = meanTraits[,-2] -->
+<!-- meanTraits$strain = sort(unique(der$strain)) -->
+<!-- meanTraits[,2:ncol(meanTraits)] = NA -->
+<!-- for(i in 2:5){ -->
+<!-- 	curMeans = tapply(newTraits[,(i+1)], newTraits$strain, FUN = mean) -->
+<!-- 	meanTraits[,i] = curMeans[order(names(curMeans))] -->
+<!-- } -->
 
-# plot histograms of mean traits
-dev.new()
-par(mfrow=c(4,1))
-hist(meanTraits$betHedge,breaks=seq(0,1,0.05),main=NULL,xlab="bet hedging")
-hist(meanTraits$deltaActive,breaks=seq(-1,1,0.1),main=NULL,xlab="delta Active")
-hist(meanTraits$deltaDead,breaks=seq(-1,1,0.1),main=NULL,xlab="delta Dead")
-hist(meanTraits$deltaDormant,breaks=seq(-1,1,0.1),main=NULL,xlab="delta Dormant")
-```
+<!-- # plot histograms of mean traits -->
+<!-- dev.new() -->
+<!-- par(mfrow=c(4,1)) -->
+<!-- hist(meanTraits$betHedge,breaks=seq(0,1,0.05),main=NULL,xlab="bet hedging") -->
+<!-- hist(meanTraits$deltaActive,breaks=seq(-1,1,0.1),main=NULL,xlab="delta Active") -->
+<!-- hist(meanTraits$deltaDead,breaks=seq(-1,1,0.1),main=NULL,xlab="delta Dead") -->
+<!-- hist(meanTraits$deltaDormant,breaks=seq(-1,1,0.1),main=NULL,xlab="delta Dormant") -->
+<!-- ``` -->
