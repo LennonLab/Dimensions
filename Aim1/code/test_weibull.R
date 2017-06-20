@@ -1,6 +1,6 @@
 rm(list = ls())
 getwd()
-setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
+setwd("~/GitHub/Dimensions/Aim1/")
 ## Load Data
 obs <- read.csv("data/longtermdormancy_20151112_nocomments.csv", 
                 header = TRUE, stringsAsFactors = FALSE)
@@ -11,7 +11,7 @@ strains <- strains[table(obs$Strain)>10]
 obs <- obs[obs$Strain%in%strains,]
 summ <- matrix(NA,length(strains)*max(obs$Rep),7)
 
-pdf('output/decayFits.pdf') # Uncomment to create pdf that will plot data and fits
+pdf('output/decayFitsWeibull.pdf') # Uncomment to create pdf that will plot data and fits
 counter <- 1
 
 for(i in 1:length(strains)){
@@ -78,7 +78,19 @@ for(i in 1:length(strains)){
       # z
       summ[counter,6]=coef(best.fit)[4]
       summ[counter,7]=AIC(best.fit)
-
+      
+      #### add indicator of non-linearity (****) to plot title if quadratic model is better
+      
+      ### *** Comment/Uncomment following code to make pdf figs*** ###
+      title=paste(strains[i]," rep ",reps[j])
+      plot(repObs$time,log10(repObs$Abund),main=title,ylim=c(0,9))
+      predTime=seq(0,max(repObs$time))
+      lines(repObs$time, coef(best.fit)[3] * (repObs$time / coef(best.fit)[1])^(coef(best.fit)[2]-1) * exp(-1*(repObs$time/coef(best.fit)[1])^coef(best.fit)[2]), lwd=2,lty=2)
+      #curve(coef(best.fit)[3] * (repObs$time / coef(best.fit)[1])^(coef(best.fit)[2]-1) * exp(-1*(repObs$time/coef(best.fit)[1])^coef(best.fit)[2]), 
+      #      from = 0.1, to = 1000, add = TRUE, lty = 2, lwd = 4, col = "red") 
+      # 			lines(predTime,logQuadCur$par[3]-logQuadCur$par[1]*predTime^2-logQuadCur$par[2]*predTime,col='red',lwd=2,lty=2)
+      ### *** Comment/Uncomment above code to make pdf figs*** ###
+      
       counter=counter+1
     }
   }
@@ -88,4 +100,4 @@ dev.off()
 summ=summ[!is.na(summ[,1]),]
 colnames(summ)=c('strain','rep','a','b','c','z','AIC')
 print(summ)
-write.csv(summ,"weibull_results.csv")
+write.csv(summ,"data/weibull_results.csv")
