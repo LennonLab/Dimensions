@@ -16,7 +16,7 @@ setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
 
 ```{r}
 ## Load Data
-obs <- read.csv("longtermdormancy_20150526b.csv", header = TRUE, stringsAsFactors = FALSE)
+obs <- read.csv("data/longtermdormancy_20150526b.csv", header = TRUE, stringsAsFactors = FALSE)
 obs <- obs[!(obs$Notes == "contaminated"),]
 obs$Abund <- as.numeric(obs$Colonies) * 10 ^ as.numeric(obs$Dilution) + 1
 strains <- sort(unique(obs$Strain))
