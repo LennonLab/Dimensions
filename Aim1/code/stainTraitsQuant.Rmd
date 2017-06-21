@@ -95,7 +95,7 @@ delta.dorm.kern <- density(newTraits$deltaDormant, bw = h_dorm)
 
 # Used site above to estimate h, which was used as bandwidth for kernels
 
-png(filename="~/GitHub/Dimensions/Aim1/DeathCurves/KernelShift.png",
+png(filename="~/GitHub/Dimensions/Aim1/output/KernelShift.png",
     width = 800, height = 1200, res = 96*2)
 
 layout <- layout(rbind(1, 2, 3)) 
@@ -181,15 +181,16 @@ graphics.off() # shuts down open devices
 ### Calculate strain means
 ```{r, results = 'hide'}
 #
-meanTraits = newTraits[1:length(unique(der$strain)),]
-meanTraits = meanTraits[,-2]
+meanTraits <- newTraits[1:length(unique(der$strain)),]
+meanTraits <- meanTraits[,-2]
 meanTraits$strain = sort(unique(der$strain))
-meanTraits = meanTraits[!(meanTraits$strain =="KBS0727"),]
-meanTraits[,2:ncol(meanTraits)] = NA
+meanTraits <- meanTraits[which(meanTraits$strain !="KBS0727" & meanTraits$strain !="KBS0725"),]
+
 for(i in 2:5){
-	curMeans = tapply(newTraits[,(i+1)], newTraits$strain, FUN = mean)
+	curMeans <- tapply(newTraits[,(i+1)], newTraits$strain, FUN = mean)
 	meanTraits[,i] = curMeans[order(names(curMeans))]
 }
 write.table(meanTraits, "~/GitHub/Dimensions/Aim1/data/bet.hedge.table.txt", 
             sep = "\t") 
+```
 
