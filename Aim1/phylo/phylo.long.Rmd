@@ -33,22 +33,173 @@ for (package in package.list) {
 }
 ```
 
-## 2) MAKE TREE
-```{r, tidy=TRUE, tidy.opts=list(width.cutoff=60)}
-ml.bootstrap <- read.tree("RAxML_bipartitionsBranchLabels.T15")
+## 2) CREATE TRAIT DATABASE
+```{r, results='hide', warning=FALSE, message=FALSE}
+
+# Load physiological traits and remove strains w/o longevity data
+phys.traits.full <- read.table("traits.txt", sep = "\t", header = TRUE)
+phys.traits <-  data.frame(phys.traits.full[,1],phys.traits.full[,9:18])
+colnames(phys.traits)[1] <- "strain"
+phys.traits <- phys.traits[!(phys.traits$strain =="KBS0727" & phys.traits$strain == "KBS0816"),]
+phys.traits <- phys.traits[which (phys.traits$strain !="KBS0727" & phys.traits$strain != "KBS0816"),]
+
+# Load bet-hedging traits and remove strains w/o longevity data
+bet.hedge.full <- read.table("../data/bet.hedge.table.txt", sep ="\t", header = TRUE, stringsAsFactors=FALSE)
+bet.hedge <- bet.hedge.full[,1:2]
+bet.hedge <- bet.hedge[!(bet.hedge$strain =="KBS0711W"),]
+bet.hedge[nrow(bet.hedge) + 1,] = c("KBS0725", NA)
+bet.hedge[nrow(bet.hedge) + 1,] = c("KBS0714", NA)
+
+# Load longevity traits and remove strains w/o physiological or bet-hedging data
+longev.traits.full <- read.csv("../data/weibull_results.csv", sep =",", header = TRUE)
+longev.traits <- aggregate(longev.traits.full[,4:6], by = list(longev.traits.full$strain), mean)
+colnames(longev.traits)[1] <- "strain"
+longev.traits <- longev.traits[which (longev.traits$strain !="KBS0727" & longev.traits$strain !="KBS0711W"),]
+
+# Merge physiological, bet-hedging, and longevity into a singel dataframe
+m1 <- merge(phys.traits, bet.hedge, by = "strain")
+m2 <- merge(m1, longev.traits, by = "strain")
+m2 <- m2[order(m2$strain),] 
+m2$betHedge <- as.numeric(m2$betHedge)
+
+# Standardize traits (mean = 0, std = 1)
+traits <- data.frame(m2[,-1])
+rownames(traits) <- m2[,1] 
+traits.norm <- scale(traits)
+
+# Check scaling
+check.norm.mean <- round(colMeans(traits.norm, na.rm = TRUE), 1)
+check.norm.sd <- apply(traits.norm, 2, sd, na.rm = TRUE)
+```
+
+## 2) MAKE TREE USING RAxML
+
+Code below run on Mason at IU
+
+```
+#!/bin/bash
+#PBS -k o
+#PBS -l nodes=2:ppn=8,vmem=100gb,walltime=5:00:00
+#PBS -M lennonj@indiana.edu
+#PBS -m abe
+#PBS -j oe
+
+module load raxml/8.0.26
+
+# cd into the directory with your alignment
+
+cd /N/dc2/projects/Lennon_Sequences/LTDE_Tree/June2017
+
+raxmlHPC-PTHREADS -T 4 -f a -m GTRGAMMA -p 12345 -x 12345 -o Methanosarcina -# autoMRE -s ./June2017.clustal.afa.fasta -n LTDE.ML
+
+# -T = number of threads
+# -f = specifies bootstrapping algorithm with ML generating tree at same time
+# -m = substitution model, generalized time reversible gamma
+# -p = starts tree randomly
+# -x = starts tree randomly
+# -o = outgroup (name after fasta entry)
+# -#  = determines number of bootstrap replicates
+# -s = aligned fasta file to be analyzed
+# -n = name of output file 
+```
+
+## 4) MAP TRAITS ONTO TREE
+```{r}
+# Load ML tree
+ml.tree <- read.tree("20170621_Tree//RAxML_bipartitionsBranchLabels.LTDE.ML")
+
+# Define the outgroup
+outgroup <- match("Methanosarcina", ml.tree$tip.label)
+
+# Create a rooted tree {ape}
+ml.rooted <- root(ml.tree, outgroup, resolve.root = TRUE)
+
+# Keep rooted but drop outgroup branch
+ml.rooted <- drop.tip(ml.rooted, "Methanosarcina")
+
+# Define color palette
+mypalette <- colorRampPalette(brewer.pal(9, "YlOrRd"))
+
+# Function to remove NAs from trait database
+# https://cran.r-project.org/web/packages/adephylo/adephylo.pdf
+f1 <- function(vec){
+  if(any(is.na(vec))){
+  m <- mean(vec, na.rm=TRUE)
+  vec[is.na(vec)] <- m
+}
+  return(vec)
+}
+
+traits.norm.na <- f1(traits.norm)
+
+# Map traits {adephylo}
+par(mar=c(1,1,1,1) + 0.1)
+x <- phylo4d(ml.rooted, traits.norm.na)
+table.phylo4d(x, treetype = "phylo", symbol = "colors", show.node = TRUE, 
+              cex.label = 0.5, scale = FALSE, use.edge.length = FALSE, 
+              edge.color = "black", edge.width = 2, box = FALSE, 
+              col=mypalette(25), pch = 15, cex.symbol = 1.25, 
+              ratio.tree = 0.5, cex.legend = 1.5, center = FALSE)  
+```
+
+```{r}
+# Convert scale list back to dataframe
+traits.norm.db <- data.frame(matrix(unlist(traits.norm), 
+              nrow=21, byrow = T), stringsAsFactors = FALSE)
+rownames(traits.norm.db) <- rownames(traits)
+colnames(traits.norm.db) <- colnames(traits)
+```
+
+## 5) Hypothesis testing
+
+# Pagel's Lambda: phylogenetic signal {geiger}
+```{r}
+fitContinuous(ml.rooted, traits.norm.db, model = "lambda")
+fitContinuous(ml.rooted, traits.norm.db,, model = "lambda")
+```
+
+# Blomberg's K: phylogenetic signal
+
+```{r}
+# Correct for zero branch-lengths on our tree
+ml.rooted$edge.length <- ml.rooted$edge.length + 10^-7
+
+# Calculate phylogenetic signal for all traits
+# First, create a blank output matrix
+trait.sig <- matrix(NA, 6, 14)
+colnames(trait.sig) <- colnames(traits.norm.db)
+rownames(trait.sig) <- c("K", "PIC.var.obs", "PIC.var.mean", 
+                             "PIC.var.P", "PIC.var.z", "PIC.P.BH")
+
+
+# Use a for loop to calculate Blomberg's K for each trait
+for (i in 1:14){
+  x <- as.matrix(traits.norm.db[ ,i, drop = FALSE])
+  out <- phylosignal(x, ml.rooted)
+  trait.sig[1:5, i] <- round(t(out), 3)
+}
+
+# Use the BH correction on P-values: 
+trait.sigl[6, ] <- round(p.adjust(trait.sig[4, ], method = "BH"), 3)
+```
+
+
+
+```{r}
+require("psych")
+cor <- corr.test(traits.norm.db, use = "complete")
+cor(na.omit(traits.norm.db))
+```
+
+
+
+
+
+
+ml.bootstrap <- read.tree("RAxML_bipartitionsBranchLabels.LTDE.ML")
 par(mar = c(1,1,2,1) + 0.1)
 plot.phylo(ml.bootstrap, type = "phylogram", direction = "right", show.tip.label=TRUE,
            use.edge.length = FALSE, cex = 0.6, label.offset = 1, main = "Maximum Likelihood with Support Values")
 add.scale.bar(cex = 0.7)
 nodelabels(ml.bootstrap$node.label, font = 2, bg = "white", frame = "r", cex = 0.5)
-```
-
-## 3) LOAD TRAIT DATABASE
-```{r}
-
-phy.traits <- read.table("traits.txt", sep = "\t", header = TRUE, row.names = 1)
-bet.hedge <- read.table("../data/bet.hedge.table.txt", sep ="\t", header = TRUE)
-long.traits.full <- read.csv("../data/weibull_results.csv", sep =",", header = TRUE)
-long.traits <- aggregate(long.traits.full[,4:6], by = list(long.traits.full$strain), mean)
-
 ```
