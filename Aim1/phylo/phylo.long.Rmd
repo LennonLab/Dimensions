@@ -1,7 +1,7 @@
 ---
-title: "Making a Tree Using RAxML"
+title: "Phylogenetic analysis of traits and tradeoffs"
 author: "Jay T. Lennon and William Shoemaker"
-date: "June 20, 2017"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
    - \usepackage{array}
 output: pdf_document
@@ -24,7 +24,7 @@ The `require()` function in `R` returns `TRUE` if the package was successfully l
 This `for` loop loads each package and installs the package when `require()` returns `FALSE`.
 
 ```{r, results = 'hide', message = FALSE, warning = FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60)} 
-package.list <- c('ape', 'seqinr', 'phylobase', 'adephylo', 'geiger', 'picante', 'stats', 'RColorBrewer', 'caper', 'phylolm', 'pmc', 'ggplot2', 'tidyr', 'dplyr', 'phangorn', 'pander') 
+package.list <- c('ape', 'seqinr', 'phylobase', 'adephylo', 'geiger', 'picante', 'stats', 'RColorBrewer', 'caper', 'phylolm', 'pmc', 'ggplot2', 'tidyr', 'dplyr', 'phangorn', 'pander', 'phytools') 
 for (package in package.list) {
   if (!require(package, character.only=TRUE, quietly=TRUE)) {
     install.packages(package)
@@ -34,8 +34,8 @@ for (package in package.list) {
 ```
 
 ## 2) CREATE TRAIT DATABASE
-```{r, results='hide', warning=FALSE, message=FALSE}
 
+```{r, results='hide', warning=FALSE, message=FALSE}
 # Load physiological traits and remove strains w/o longevity data
 phys.traits.full <- read.table("traits.txt", sep = "\t", header = TRUE)
 phys.traits <-  data.frame(phys.traits.full[,1],phys.traits.full[,9:18])
@@ -70,11 +70,17 @@ traits.norm <- scale(traits)
 # Check scaling
 check.norm.mean <- round(colMeans(traits.norm, na.rm = TRUE), 1)
 check.norm.sd <- apply(traits.norm, 2, sd, na.rm = TRUE)
+
+# Convert scaled list back to dataframe
+traits.norm.db <- data.frame(matrix(unlist(traits.norm), 
+              nrow=21, byrow = T), stringsAsFactors = FALSE)
+rownames(traits.norm.db) <- rownames(traits)
+colnames(traits.norm.db) <- colnames(traits)
 ```
 
-## 2) MAKE TREE USING RAxML
+## 3) MAKE TREE USING RAxML
 
-Code below run on Mason at IU
+Code below that was run on Mason at IU to generate 
 
 ```
 #!/bin/bash
@@ -104,6 +110,7 @@ raxmlHPC-PTHREADS -T 4 -f a -m GTRGAMMA -p 12345 -x 12345 -o Methanosarcina -# a
 ```
 
 ## 4) MAP TRAITS ONTO TREE
+
 ```{r}
 # Load ML tree
 ml.tree <- read.tree("20170621_Tree//RAxML_bipartitionsBranchLabels.LTDE.ML")
@@ -120,8 +127,8 @@ ml.rooted <- drop.tip(ml.rooted, "Methanosarcina")
 # Define color palette
 mypalette <- colorRampPalette(brewer.pal(9, "YlOrRd"))
 
-# Function to remove NAs from trait database
-# https://cran.r-project.org/web/packages/adephylo/adephylo.pdf
+# Function to remove NAs from trait database *:
+# *https://cran.r-project.org/web/packages/adephylo/adephylo.pdf
 f1 <- function(vec){
   if(any(is.na(vec))){
   m <- mean(vec, na.rm=TRUE)
@@ -130,110 +137,203 @@ f1 <- function(vec){
   return(vec)
 }
 
+# Normalized traits with na.omit
 traits.norm.na <- f1(traits.norm)
 
 # Map traits {adephylo}
 par(mar=c(1,1,1,1) + 0.1)
 x <- phylo4d(ml.rooted, traits.norm.na)
 table.phylo4d(x, treetype = "phylo", symbol = "colors", show.node = TRUE, 
-              cex.label = 0.5, scale = FALSE, use.edge.length = FALSE, 
+              cex.label = 0.75, scale = FALSE, use.edge.length = FALSE, 
               edge.color = "black", edge.width = 2, box = FALSE, 
-              col=mypalette(25), pch = 15, cex.symbol = 1.25, 
+              col = mypalette(25), pch = 15, cex.symbol = 4.5, 
               ratio.tree = 0.5, cex.legend = 1.5, center = FALSE)  
 ```
 
+## 5) TESTING FOR PHYLOGENETIC SIGNAL
+
+### A. Pagel's Lambda {geiger}
 ```{r}
-# Convert scale list back to dataframe
-traits.norm.db <- data.frame(matrix(unlist(traits.norm), 
-              nrow=21, byrow = T), stringsAsFactors = FALSE)
-rownames(traits.norm.db) <- rownames(traits)
-colnames(traits.norm.db) <- colnames(traits)
+# Data wrangling to make a and b separate dataframes
+init.death <- traits$a
+names(init.death) <-rownames(traits)
+
+bend.death <- traits$b
+names(bend.death) <-rownames(traits)
+
+# Rescale tree
+ml.lambda.0 <- rescale(ml.rooted, "lambda", 0)
+
+# Pagel for initial death
+lambda.a.model <- fitContinuous(ml.rooted, init.death, model = "lambda")
+brownian.a.model <- fitContinuous(ml.rooted, init.death)
+nosig.a.model <- fitContinuous(ml.lambda.0, init.death)
+a.AIC <- c(lambda.a.model$opt$aicc, brownian.a.model$opt$aicc, nosig.a.model$opt$aicc)
+# lambda is better than Brownian and no signal, but not by tons
+# suggest there is signal
+
+# Pagel for bend
+lambda.b.model <- fitContinuous(ml.rooted, bend.death, model = "lambda")
+brownian.b.model <- fitContinuous(ml.rooted, bend.death)
+nosig.b.model <- fitContinuous(ml.lambda.0, bend.death)
+b.AIC <- c(lambda.b.model$opt$aicc, brownian.b.model$opt$aicc, nosig.b.model$opt$aicc)
+# no signal model is better than Brownian and lambda
+# suggest there is no signal
 ```
 
-## 5) Hypothesis testing
-
-# Pagel's Lambda: phylogenetic signal {geiger}
-```{r}
-fitContinuous(ml.rooted, traits.norm.db, model = "lambda")
-fitContinuous(ml.rooted, traits.norm.db,, model = "lambda")
-```
-
-# Blomberg's K: phylogenetic signal
+### Blomberg's K
 
 ```{r}
-# Correct for zero branch-lengths on our tree
-ml.rooted$edge.length <- ml.rooted$edge.length + 10^-7
+# Blomberg for initial death
+blom.a <- phylosignal(init.death, ml.rooted)
+blom.a.test <- phylosig(ml.rooted, init.death, method = "K", test = T)
+# K is 0.278 suggesting les signal than expected under Brownian
+# However, P-value us 0.346, suggesting no signal
 
-# Calculate phylogenetic signal for all traits
-# First, create a blank output matrix
-trait.sig <- matrix(NA, 6, 14)
-colnames(trait.sig) <- colnames(traits.norm.db)
-rownames(trait.sig) <- c("K", "PIC.var.obs", "PIC.var.mean", 
-                             "PIC.var.P", "PIC.var.z", "PIC.P.BH")
-
-
-# Use a for loop to calculate Blomberg's K for each trait
-for (i in 1:14){
-  x <- as.matrix(traits.norm.db[ ,i, drop = FALSE])
-  out <- phylosignal(x, ml.rooted)
-  trait.sig[1:5, i] <- round(t(out), 3)
-}
-
-# Use the BH correction on P-values: 
-trait.sigl[6, ] <- round(p.adjust(trait.sig[4, ], method = "BH"), 3)
+# Blomberg for bend
+blom.b <- phylosignal(bend.death, ml.rooted)
+blom.b.test <- phylosig(ml.rooted, bend.death, method = "K", test = T)
+# K is 0.215 suggesting les signal than expected under Brownian
+# However, P-value us 0.383, suggesting no signal
 ```
 
-
+### C. Correlations of intial death and bend with other traits
 
 ```{r}
-require("psych")
-cor <- corr.test(traits.norm.db, use = "complete")
-cor(na.omit(traits.norm.db))
-
-log.a <- log10(traits$a)
-log.b <- log10(traits$b)
-plot(log.a, log.b)
-plot(log.a, traits$Rmax)
-plot(log.a, traits$Wopt)
-plot(log.a, traits$Breadth)
-plot(log.a, traits$MPamin)
-plot(log.a, traits$O2tol)
-plot(log.a, traits$A) # sig: strains with greater efficiency more susceptible to death 
-plot(log.a, traits$umax) 
-plot(log.a, traits$Lag) #sig: strains with longer lag more susceptible to death
-plot(log.a, traits$Biof)
-plot(log.a, traits$Mot)
-plot(log.a, traits$betHedge)
-
-
-plot(log.b, traits$Rmax)
-plot(log.b, traits$Wopt)
-plot(log.b, traits$Breadth)
-plot(log.b, traits$MPamin)
-plot(log.b, traits$O2tol)
-plot(log.b, traits$A)
-plot(log.b, traits$umax)
-plot(log.b, traits$Lag)
-plot(log.b, traits$Biof)
-plot(log.b, traits$Mot)
-plot(log.b, traits$betHedge)
+# Log transform initial death, which spans > 4 orders of magnitude
+L <- function(x) log10(x)
+log.traits <- cbind(traits[,1:11], apply(traits[12:12], 2, L), traits[,13:14])
+  
+# Run correlation on new dataframe  
+cor.traits <- cor(na.omit(log.traits))
+print(cor.traits[,12]) # initial death
+print(cor.traits[,12]) # bend death
+# plot(log.traits$a, log.traits$A) # r = -0.61, 
+# plot(log.traits$a, log.traits$Lag) # r = -0.44
+# more efficienct strain more susceptible to death 
+# strains with longer lag more susceptible to death 
+# But A and Lag are not correlated
 ```
 
-# Run a simple linear regression
+### Simple linear regression
+
 ```{r}
-fit <- lm(log10(traits$a) ~ traits$A, data = traits)
-plot(log10(traits$a), traits$A,  las = 1, xlab="Initial Death", ylab="Yield")
-abline(a = fit$coefficients[1], b = fit$coefficients[2])
-b1 <- round(fit$coefficients[2],3)
-eqn <- bquote(italic(z) == .(b1))
-# plot the slope
-text(0.5, 4.5, eqn, pos = 4)
+png(filename="non-phylo-tradeoffs.png",
+    width = 1000, height = 1600, res = 96*2)
+
+layout(matrix(c(1:2), byrow = T))
+par(mar = c(1, 6.5, 0.5, 1), oma = c(6, 2, 1.5, 1))
+
+# Plotting yield panel
+plot(log.traits$a, log.traits$A,
+     xlim = c(1.5, 7.5), ylim = c(-0.5, 4.1),
+     pch = 22, bg = "white", lwd = 2, bty = "n",
+     cex = 2, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 1.5,
+     las = 1, ylab = "", xlab = "")
+box(lwd = 2)
+
+mtext(side = 2, expression('Yield (a'[600]*')'), line = 3.5, cex = 1.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+    labels = T, at = c(0, 2, 4))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+   labels = F, at = c(0, 2, 4))
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+    labels = F)
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+    labels = F)
+
+# Yield: non-phylo-corrected regression and 95% CIs
+fit.A <- lm(A ~ a, data = log.traits)
+new.a <- seq(min(log.traits$a, na.rm = TRUE), max(log.traits$a, na.rm = TRUE), 0.2)
+regline.a <- predict(fit.A, newdata = data.frame(a = new.a))
+lines(new.a, regline.a, lwd = 2, lty = 5)
+
+conf95 <- predict(fit.A, newdata = data.frame(a = new.a),
+                  interval = c("confidence"), level = 0.95, type = "response")
+matlines(new.a, conf95[, c("lwr", "upr")], type="l", lty = 1, lwd = 1.5, col = "black")
+
+# Yield: phylo-corrected regression
+
+# A for KBS0801 is NA, remove it
+log.traits.red0801 <- log.traits[rownames(traits) != "KBS0801", ]
+ml.rooted.red0801 <- drop.tip(ml.rooted, c('KBS0801'))
+
+# set bootstrap to 0 if you're in a hurry
+fit.phy.A <- phylolm(A ~ a, data = log.traits.red0801, 
+                   ml.rooted.red0801, model = 'lambda', boot = 1000)
+
+new.a.phy <- seq(min(log.traits.red0801$a, na.rm = TRUE), max(log.traits.red0801$a, na.rm = TRUE), 0.2)
+regline.a.phy <- predict(fit.phy.A, newdata = data.frame(a = new.a.phy))
+phy.a.lines <- cbind(new.a.phy,regline.a.phy)
+colnames(phy.a.lines) <- c("a", "A")
+lines(phy.a.lines[,1], phy.a.lines[,2], lwd = 2, lty = 5, col = "red")
+
+# Plotting lag-time panel
+plot(log.traits$a, log.traits$Lag,
+     xlim = c(1.5, 7.5), ylim = c(-7.5, 35),
+     pch = 22, bg = "white", lwd = 2, bty = "n",
+     cex = 2, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 1.5,
+     las = 1, ylab = "", xlab = "")
+box(lwd = 2)
+
+mtext(side = 2, "Lag time (hrs)", line = 3.5, cex = 1.5)
+mtext(side = 1, "Initial death rate", line = 3.5, cex = 1.5)
+
+# Major Axes
+axis(side = 2, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+    labels = T, at = c(0, 15, 30))
+axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+   labels = F, at = c(0, 15, 30))
+axis(side = 1, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+              labels = c(expression('10'^2*''), expression('10'^3*''),expression('10'^4*''), 
+               expression('10'^5*''), expression('10'^6*''), expression('10'^7*'')), at = c(2, 3, 4, 5, 6, 7))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+    labels = F)
+
+# Lag time: non-phylo-corrected regression and 95% CIs
+fit.L <- lm(Lag ~ a, data = log.traits)
+new.a <- seq(min(log.traits$a, na.rm = TRUE), max(log.traits$a, na.rm = TRUE), 0.2)
+regline.L <- predict(fit.L, newdata = data.frame(a = new.a))
+lines(new.a, regline.L, lwd = 2, lty = 5)
+
+conf95 <- predict(fit.L, newdata = data.frame(a = new.a),
+                  interval = c("confidence"), level = 0.95, type = "response")
+matlines(new.a, conf95[, c("lwr", "upr")], type="l", lty = 1, lwd = 1.5, col = "black")
+
+# Lag time: phylo-corrected regression
+
+# set bootstrap to 0 if you're in a hurry
+fit.phy.L <- phylolm(Lag ~ a, data = log.traits, 
+                   ml.rooted, model = 'lambda', boot = 1000)
+
+new.a.phy <- seq(min(log.traits$a, na.rm = TRUE), max(log.traits$a, na.rm = TRUE), 0.2)
+regline.L.phy <- predict(fit.phy.L, newdata = data.frame(a = new.a.phy))
+phy.L.lines <- cbind(new.a.phy, regline.L.phy)
+colnames(phy.L.lines) <- c("a", "L")
+lines(phy.L.lines[,1], phy.L.lines[,2], lwd = 2, lty = 5, col = "red")
+
+# Close Plot Device
+dev.off()
+graphics.off()
+
+# Show Plot
+img <- readPNG("non-phylo-tradeoffs.png")
+grid.raster(img)
 ```
+
+
+
+
 
 ```{r,  tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 # Run a phylogeny-corrected regression with no bootstrap replicates
 # A for KBS0801 is NA, remove it from the data frame and regression 
-traits.noKBS0801 <- traits[rownames(traits) != "KBS0801", ]
+traits.noKBS0801 <- traits[rownames(traits) != "KBS0801"), ]
+
+phys.traits <- phys.traits[which (phys.traits$strain !="KBS0727" & phys.traits$strain != "KBS0816"),]
+
 # remove the same taxon from the tree
 ml.rooted.noKBS0801 <- drop.tip(ml.rooted, c('KBS0801'))
 # set bootstrap to 0 if you're in a hurry
