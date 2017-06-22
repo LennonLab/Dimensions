@@ -232,9 +232,14 @@ text(0.5, 4.5, eqn, pos = 4)
 
 ```{r,  tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 # Run a phylogeny-corrected regression with no bootstrap replicates
-fit.phy <- phylolm(log10(a) ~ A, data = traits, 
-                   ml.rooted, model = 'lambda', boot = 0)
-plot(log10(pruned.mammal.data$Body_mass_for_BMR_.gr.), log10(pruned.mammal.data$BMR_.mlO2.hour.), las = 1, xlab="Body mass (kg), log", ylab="Basal Metabolic Rate (BMR), log")
+# A for KBS0801 is NA, remove it from the data frame and regression 
+traits.noKBS0801 <- traits[rownames(traits) != "KBS0801", ]
+# remove the same taxon from the tree
+ml.rooted.noKBS0801 <- drop.tip(ml.rooted, c('KBS0801'))
+# set bootstrap to 0 if you're in a hurry
+fit.phy <- phylolm(log10(a) ~ A, data = traits.noKBS0801, 
+                   ml.rooted.noKBS0801, model = 'lambda', boot = 1000)
+plot(traits.noKBS0801$A, log10(traits.noKBS0801$a), las = 1, xlab="Yield", ylab="scale parameter, log")
 abline(a = fit.phy$coefficients[1], b = fit.phy$coefficients[2])
 b1.phy <- round(fit.phy$coefficients[2],3)
 eqn <- bquote(italic(z) == .(b1.phy))
