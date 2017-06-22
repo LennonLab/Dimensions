@@ -189,10 +189,58 @@ trait.sigl[6, ] <- round(p.adjust(trait.sig[4, ], method = "BH"), 3)
 require("psych")
 cor <- corr.test(traits.norm.db, use = "complete")
 cor(na.omit(traits.norm.db))
+
+log.a <- log10(traits$a)
+log.b <- log10(traits$b)
+plot(log.a, log.b)
+plot(log.a, traits$Rmax)
+plot(log.a, traits$Wopt)
+plot(log.a, traits$Breadth)
+plot(log.a, traits$MPamin)
+plot(log.a, traits$O2tol)
+plot(log.a, traits$A) # sig: strains with greater efficiency more susceptible to death 
+plot(log.a, traits$umax) 
+plot(log.a, traits$Lag) #sig: strains with longer lag more susceptible to death
+plot(log.a, traits$Biof)
+plot(log.a, traits$Mot)
+plot(log.a, traits$betHedge)
+
+
+plot(log.b, traits$Rmax)
+plot(log.b, traits$Wopt)
+plot(log.b, traits$Breadth)
+plot(log.b, traits$MPamin)
+plot(log.b, traits$O2tol)
+plot(log.b, traits$A)
+plot(log.b, traits$umax)
+plot(log.b, traits$Lag)
+plot(log.b, traits$Biof)
+plot(log.b, traits$Mot)
+plot(log.b, traits$betHedge)
 ```
 
+# Run a simple linear regression
+```{r}
+fit <- lm(log10(traits$a) ~ traits$A, data = traits)
+plot(log10(traits$a), traits$A,  las = 1, xlab="Initial Death", ylab="Yield")
+abline(a = fit$coefficients[1], b = fit$coefficients[2])
+b1 <- round(fit$coefficients[2],3)
+eqn <- bquote(italic(z) == .(b1))
+# plot the slope
+text(0.5, 4.5, eqn, pos = 4)
+```
 
+```{r,  tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# Run a phylogeny-corrected regression with no bootstrap replicates
+fit.phy <- phylolm(log10(a) ~ A, data = traits, 
+                   ml.rooted, model = 'lambda', boot = 0)
+plot(log10(pruned.mammal.data$Body_mass_for_BMR_.gr.), log10(pruned.mammal.data$BMR_.mlO2.hour.), las = 1, xlab="Body mass (kg), log", ylab="Basal Metabolic Rate (BMR), log")
+abline(a = fit.phy$coefficients[1], b = fit.phy$coefficients[2])
+b1.phy <- round(fit.phy$coefficients[2],3)
+eqn <- bquote(italic(z) == .(b1.phy))
+text(0.5, 4.5, eqn, pos = 4)
 
+```
 
 
 
