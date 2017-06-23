@@ -81,7 +81,7 @@ for(i in 1:length(strains)){
       }
       colnames(res.mat)<-c(names(coef(fit)),"AIC")
       best.fit<-res.mod[[which(res.mat[,'AIC']==min(res.mat[,'AIC']))[1]]]
-      print(slotNames(best.fit) )
+      #print(slotNames(best.fit) )
       summ[counter,1]=strains[i]
       summ[counter,2]=reps[j]
       #CIs <- confint( profile(best.fit))
