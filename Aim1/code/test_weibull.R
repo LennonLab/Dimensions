@@ -12,7 +12,7 @@ obs$Abund <- as.numeric(obs$Colonies) * 10 ^ as.numeric(obs$Dilution) + 1
 strains <- sort(unique(obs$Strain))
 strains <- strains[table(obs$Strain)>10]
 obs <- obs[obs$Strain%in%strains,]
-summ <- matrix(NA,length(strains)*max(obs$Rep),7)
+summ <- matrix(NA,length(strains)*max(obs$Rep),8)
 
 pdf('output/decayFitsWeibull.pdf') # Uncomment to create pdf that will plot data and fits
 counter <- 1
@@ -45,7 +45,7 @@ for(i in 1:length(strains)){
       #B = 1 # Bend (upper = 1 = first-order decay)
       #C = round(max(repObs$logabund),1) # intercept
       #Z = 6 # Error
-      grids<-list(a=c(200),b=c(1),z=c(10))
+      grids<-list(a=c(1,10,50,100,200),b=c(0.1,0.5,1,1.1,1.5),z=c(0.1,1,10))
       start<-list(a=NA,b=NA,c=round(max(repObs$logabund),1),z=NA)
       #start<-list(a=NA, b=NA, z=NA)
       grid.starts<-as.matrix(expand.grid(grids))
@@ -81,18 +81,29 @@ for(i in 1:length(strains)){
       }
       colnames(res.mat)<-c(names(coef(fit)),"AIC")
       best.fit<-res.mod[[which(res.mat[,'AIC']==min(res.mat[,'AIC']))[1]]]
+      print(slotNames(best.fit) )
       summ[counter,1]=strains[i]
       summ[counter,2]=reps[j]
+      #CIs <- confint( profile(best.fit))
       # a
       summ[counter,3]=coef(best.fit)[1]
       # b
       summ[counter,4]=coef(best.fit)[2]
       # c
-      #summ[counter,5]=coef(best.fit)[3]
-      summ[counter,5]= round(max(repObs$logabund),1)
+      summ[counter,5]=coef(best.fit)[3]
+      #summ[counter,5]= round(max(repObs$logabund),1)
       # z
       summ[counter,6]=coef(best.fit)[4]
       summ[counter,7]=AIC(best.fit)
+      #summ[counter,8]=CIs[1,1]
+      #summ[counter,9]=CIs[1,2]
+      #summ[counter,10]=CIs[2,1]
+      #summ[counter,11]=CIs[2,2]
+      #summ[counter,12]=CIs[3,1]
+      #summ[counter,13]=CIs[3,2]
+      #summ[counter,14]=CIs[4,1]
+      #summ[counter,15]=CIs[4,2]
+      summ[counter,8]=length(repObs$time)
       
       #### add indicator of non-linearity (****) to plot title if quadratic model is better
       
@@ -104,11 +115,6 @@ for(i in 1:length(strains)){
       print(reps[j])
       lines(repObs$time, coef(best.fit)[3] * (repObs$time / coef(best.fit)[1])^(coef(best.fit)[2]-1) * exp(-1*(repObs$time/coef(best.fit)[1])^coef(best.fit)[2]), 
               lwd=4, lty=2, col = "red")
-      #curve(coef(best.fit)[3] * (repObs$time / coef(best.fit)[1])^(coef(best.fit)[2]-1) * exp(-1*(repObs$time/coef(best.fit)[1])^coef(best.fit)[2]), 
-      #      from = 0.1, to = 1000, add = TRUE, lty = 2, lwd = 4, col = "red") 
-      # 			lines(predTime,logQuadCur$par[3]-logQuadCur$par[1]*predTime^2-logQuadCur$par[2]*predTime,col='red',lwd=2,lty=2)
-      ### *** Comment/Uncomment above code to make pdf figs*** ###
-      
       counter=counter+1
     }
   }
@@ -116,5 +122,7 @@ for(i in 1:length(strains)){
 
 dev.off() 
 summ=summ[!is.na(summ[,1]),]
-colnames(summ)=c('strain','rep','a','b','c','z','AIC')
+#colnames(summ)=c('strain','rep','a','b','c','z','AIC', 'a.CI.2.5', 'a.CI.97.5', 'b.CI.2.5', 'b.CI.97.5', 'c.CI.2.5', 'c.CI.97.5', 'z.CI.2.5', 'z.CI.97.5')
+colnames(summ)=c('strain','rep','a','b','c','z','AIC', 'N.obs')
+
 write.csv(summ,"data/weibull_results.csv")
