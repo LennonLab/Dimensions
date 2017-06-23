@@ -11,12 +11,13 @@ geometry: margin=2.54cm
 ## OVERVIEW
 In January 2013, we started an experiment using ~24 strains of bacteria -- some "lab" strains others enviornmental strains -- to estimate survivorship during long-term starvation. Each strain was grown un into logarithmic phase and harvested. The cells were pelleted and washed 5x before being put in replicate 50 mL Falcon tubes. Subsamples were taken on overtime and plated onto R2A plates for enumeration as CFUs. After looking at plots of the data, in became apparent that CFUs were declining at a non-constant rate on semi-log plots. Here, we test whether or not the Weibull function can help explain variation in death curves.  
 
-## 1) SET WORKING DIRECTORY AND LOAD DATA
+## 1) SET WORKING DIRECTORY, LOAD DATA, LOAD PACKAGE
 ```{r}
 ## Retrieve and Set Your Working Directory
 rm(list = ls())
 getwd()
-setwd("~/GitHub/Dimensions/Aim1/DeathCurves/")
+setwd("~/GitHub/Dimensions/Aim1/")
+require("bbmle")
 ```
 
 ##2) LOAD DATA
