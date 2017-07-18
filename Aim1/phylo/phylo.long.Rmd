@@ -56,7 +56,7 @@ longev.traits <- aggregate(longev.traits.full[,4:6], by = list(longev.traits.ful
 colnames(longev.traits)[1] <- "strain"
 longev.traits <- longev.traits[which (longev.traits$strain !="KBS0727" & longev.traits$strain !="KBS0711W"),]
 
-# Merge physiological, bet-hedging, and longevity into a singel dataframe
+# Merge physiological, bet-hedging, and longevity into a single dataframe
 m1 <- merge(phys.traits, bet.hedge, by = "strain")
 m2 <- merge(m1, longev.traits, by = "strain")
 m2 <- m2[order(m2$strain),] 
@@ -155,7 +155,8 @@ table.phylo4d(x, treetype = "phylo", symbol = "colors", show.node = TRUE,
 ### A. Pagel's Lambda {geiger}
 ```{r}
 # Data wrangling to make a and b separate dataframes
-init.death <- traits$a
+#init.death <- traits$a
+init.death <- 1/traits$a
 names(init.death) <-rownames(traits)
 
 bend.death <- traits$b
@@ -187,7 +188,7 @@ b.AIC <- c(lambda.b.model$opt$aicc, brownian.b.model$opt$aicc, nosig.b.model$opt
 # Blomberg for initial death
 blom.a <- phylosignal(init.death, ml.rooted)
 blom.a.test <- phylosig(ml.rooted, init.death, method = "K", test = T)
-# K is 0.278 suggesting les signal than expected under Brownian
+# K is 0.278 suggesting less signal than expected under Brownian
 # However, P-value us 0.346, suggesting no signal
 
 # Blomberg for bend
@@ -202,14 +203,17 @@ blom.b.test <- phylosig(ml.rooted, bend.death, method = "K", test = T)
 ```{r}
 # Log transform initial death, which spans > 4 orders of magnitude
 L <- function(x) log10(x)
-log.traits <- cbind(traits[,1:11], apply(traits[12:12], 2, L), traits[,13:14])
+#log.traits <- cbind(traits[,1:11], apply(traits[12:12], 2, L), traits[,13:14])
+log.traits <- cbind(traits[,1:11], log10(init.death), traits[,13:14])
+colnames(log.traits)[12]<- "a"
   
 # Run correlation on new dataframe  
 cor.traits <- cor(na.omit(log.traits))
 print(cor.traits[,12]) # initial death
+cor.test(log.traits$a,log.traits$A) # P = 0.0088, r = 0.57
 print(cor.traits[,12]) # bend death
-# plot(log.traits$a, log.traits$A) # r = -0.61, 
-# plot(log.traits$a, log.traits$Lag) # r = -0.44
+# plot(log.traits$a, log.traits$A) # r = -0.61, 0.58
+# plot(log.traits$a, log.traits$Lag) # r = -0.44, 0.46
 # more efficienct strain more susceptible to death 
 # strains with longer lag more susceptible to death 
 # But A and Lag are not correlated
@@ -219,40 +223,48 @@ print(cor.traits[,12]) # bend death
 
 ```{r}
 png(filename="non-phylo-tradeoffs.png",
-    width = 1000, height = 1600, res = 96*2)
+    width = 1100, height = 900, res = 96*2)
 
-layout(matrix(c(1:2), byrow = T))
-par(mar = c(1, 6.5, 0.5, 1), oma = c(6, 2, 1.5, 1))
+#layout(matrix(c(1:2), byrow = T))
+#par(mar = c(1, 6.5, 0.5, 1), oma = c(6, 2, 1.5, 1))
+par(mar = c(5, 7, 5, 7))
 
 # Plotting yield panel
-plot(log.traits$a, log.traits$A,
-     xlim = c(1.5, 7.5), ylim = c(-0.5, 4.1),
-     pch = 22, bg = "white", lwd = 2, bty = "n",
-     cex = 2, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 1.5,
+plot(log.traits$A,log.traits$a,
+     xlim = c(-0.5, 4.1), ylim = c(-7.5, -0.5),
+     pch = 22, bg = "white", lwd = 3, bty = "n",
+     cex = 2.5, yaxt = "n", xaxt = "n", cex.lab = 2, cex.axis = 1.5,
      las = 1, ylab = "", xlab = "")
-box(lwd = 2)
+box(lwd = 3)
 
-mtext(side = 2, expression('Yield (a'[600]*')'), line = 3.5, cex = 1.5)
+mtext(side = 1, expression('Yield (a'[600]*')'), line = 3.5, cex = 2)
+mtext(expression('Death rate (d'^-1*')'), side = 2, outer = TRUE, cex = 2, 
+      line = -2.5, adj = 0.5)
+
 
 # Major Axes
-axis(side = 2, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+axis(side = 1, lwd.ticks = 3, cex.axis = 1.5, las = 1,
     labels = T, at = c(0, 2, 4))
-axis(side = 4, lwd.ticks = 2, cex.axis = 1.5, las = 1,
+
+axis(side = 3, lwd.ticks = 3, cex.axis = 1.5, las = 1,
    labels = F, at = c(0, 2, 4))
-axis(side = 1, lwd.ticks = 2, cex.axis = 1.5, las = 1,
-    labels = F)
-axis(side = 3, lwd.ticks = 2, cex.axis = 1.5, las = 1,
-    labels = F)
+
+axis(side = 2, lwd.ticks = 3, cex.axis = 1.5, las = 1,
+     labels = expression(10^-7, 10^-5, 10^-3, 10^-1),
+     at = c(-7, -5, -3, -1))
+
+axis(side = 4, lwd.ticks = 3, cex.axis = 1.5, las = 1,
+    at = c(-7, -5, -3, -1), labels = F)
 
 # Yield: non-phylo-corrected regression and 95% CIs
-fit.A <- lm(A ~ a, data = log.traits)
-new.a <- seq(min(log.traits$a, na.rm = TRUE), max(log.traits$a, na.rm = TRUE), 0.2)
-regline.a <- predict(fit.A, newdata = data.frame(a = new.a))
-lines(new.a, regline.a, lwd = 2, lty = 5)
+fit.a <- lm(a ~ A, data = log.traits)
+new.A <- seq(min(log.traits$A, na.rm = TRUE), max(log.traits$A, na.rm = TRUE), 0.2)
+regline.a <- predict(fit.a, newdata = data.frame(A = new.A))
+#lines(new.A, regline.a, lwd = 2, lty = 5)
 
-conf95 <- predict(fit.A, newdata = data.frame(a = new.a),
+conf95 <- predict(fit.a, newdata = data.frame(A = new.A),
                   interval = c("confidence"), level = 0.95, type = "response")
-matlines(new.a, conf95[, c("lwr", "upr")], type="l", lty = 1, lwd = 1.5, col = "black")
+matlines(new.A, conf95[, c("lwr", "upr")], type="l", lty = 3, lwd = 3, col = "red")
 
 # Yield: phylo-corrected regression
 
@@ -261,14 +273,29 @@ log.traits.red0801 <- log.traits[rownames(traits) != "KBS0801", ]
 ml.rooted.red0801 <- drop.tip(ml.rooted, c('KBS0801'))
 
 # set bootstrap to 0 if you're in a hurry
-fit.phy.A <- phylolm(A ~ a, data = log.traits.red0801, 
+fit.phy.a <- phylolm(a ~ A, data = log.traits.red0801, 
                    ml.rooted.red0801, model = 'lambda', boot = 1000)
 
-new.a.phy <- seq(min(log.traits.red0801$a, na.rm = TRUE), max(log.traits.red0801$a, na.rm = TRUE), 0.2)
-regline.a.phy <- predict(fit.phy.A, newdata = data.frame(a = new.a.phy))
-phy.a.lines <- cbind(new.a.phy,regline.a.phy)
-colnames(phy.a.lines) <- c("a", "A")
-lines(phy.a.lines[,1], phy.a.lines[,2], lwd = 2, lty = 5, col = "red")
+new.A.phy <- seq(min(log.traits.red0801$A, na.rm = TRUE), max(log.traits.red0801$A, na.rm = TRUE), 0.2)
+
+regline.a.phy <- predict(fit.phy.a, newdata = data.frame(A = new.A.phy))
+
+phy.a.lines <- cbind(new.A.phy, regline.a.phy)
+
+colnames(phy.a.lines) <- c("A", "a")
+
+lines(phy.a.lines[,1], phy.a.lines[,2], lwd = 3, lty = 1, col = "red")
+
+#conf95 <- predict(fit.phy.a, newdata = data.frame(A = new.A.phy),
+#                  interval = c("confidence"), level = 0.95, type = "response")
+
+#matlines(new.A.phy, conf95[, c("lwr", "upr")], type="l", lty = 1, lwd = 1.5, col = "red")
+
+# Close Plot Device
+dev.off()
+graphics.off()
+```
+
 
 # Plotting lag-time panel
 plot(log.traits$a, log.traits$Lag,
