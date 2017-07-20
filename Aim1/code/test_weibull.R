@@ -12,7 +12,7 @@ obs$Abund <- as.numeric(obs$Colonies) * 10 ^ as.numeric(obs$Dilution) + 1
 strains <- sort(unique(obs$Strain))
 strains <- strains[table(obs$Strain)>10]
 obs <- obs[obs$Strain%in%strains,]
-summ <- matrix(NA,length(strains)*max(obs$Rep),8)
+summ <- matrix(NA,length(strains)*max(obs$Rep),7)
 
 pdf('output/decayFitsWeibull.pdf') # Uncomment to create pdf that will plot data and fits
 counter <- 1
@@ -42,8 +42,8 @@ for(i in 1:length(strains)){
       #C = round(max(repObs$logabund),1) # intercept
       #Z = 6 # Error
       grids<-list(a=c(1,10,50,100,200),b=c(0.1,0.5,1,1.1,1.5),z=c(0.1,1,10))
-      start<-list(a=NA,b=NA,c=round(max(repObs$logabund),1),z=NA)
-      #start<-list(a=NA, b=NA, z=NA)
+      #start<-list(a=NA,b=NA,c=round(max(repObs$logabund),1),z=NA)
+      start<-list(a=NA,b=NA,z=NA)
       grid.starts<-as.matrix(expand.grid(grids))
       ncombos<-dim(grid.starts)[[1]]
       # cycle through each combo
@@ -64,16 +64,15 @@ for(i in 1:length(strains)){
                                 start = new.start, data = repObs, 
                                 control=list(parscale=pscale, maxit=1000), 
                                  method="Nelder-Mead", hessian = T)
-        #lower=c(a=0.0001, b=-10, c=2, z=0.0001)) 
         res.mat[k,]<-c(coef(fit),AIC(fit))		
         res.mod[[k]]<-fit
       }
       colnames(res.mat)<-c(names(coef(fit)),"AIC")
       best.fit<-res.mod[[which(res.mat[,'AIC']==min(res.mat[,'AIC']))[1]]]
-      #print(slotNames(best.fit) )
       summ[counter,1]=strains[i]
       summ[counter,2]=reps[j]
       #CIs <- confint( profile(best.fit))
+      print(coef(best.fit))
       # a
       summ[counter,3]=coef(best.fit)[1]
       # b
@@ -82,8 +81,7 @@ for(i in 1:length(strains)){
       summ[counter,5]=coef(best.fit)[3]
       #summ[counter,5]= round(max(repObs$logabund),1)
       # z
-      summ[counter,6]=coef(best.fit)[4]
-      summ[counter,7]=AIC(best.fit)
+      summ[counter,6]=AIC(best.fit)
       #summ[counter,8]=CIs[1,1]
       #summ[counter,9]=CIs[1,2]
       #summ[counter,10]=CIs[2,1]
@@ -92,7 +90,7 @@ for(i in 1:length(strains)){
       #summ[counter,13]=CIs[3,2]
       #summ[counter,14]=CIs[4,1]
       #summ[counter,15]=CIs[4,2]
-      summ[counter,8]=length(repObs$time)
+      summ[counter,7]=length(repObs$time)
       
 
       ### *** Comment/Uncomment following code to make pdf figs*** ###
@@ -113,6 +111,6 @@ for(i in 1:length(strains)){
 dev.off() 
 summ=summ[!is.na(summ[,1]),]
 #colnames(summ)=c('strain','rep','a','b','c','z','AIC', 'a.CI.2.5', 'a.CI.97.5', 'b.CI.2.5', 'b.CI.97.5', 'c.CI.2.5', 'c.CI.97.5', 'z.CI.2.5', 'z.CI.97.5')
-colnames(summ)=c('strain','rep','a','b','c','z','AIC', 'N.obs')
+colnames(summ)=c('strain','rep','a','b','z','AIC', 'N.obs')
 
 write.csv(summ,"data/weibull_results.csv")
