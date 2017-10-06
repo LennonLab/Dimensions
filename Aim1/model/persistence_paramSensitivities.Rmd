@@ -1,0 +1,116 @@
+---
+title: "Sensitivity analysis of persistence mechanisms"
+author: "Stuart Jones, Jay T. Lennon, William Shoemaker"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+output: pdf_document
+geometry: margin=2.54cm
+---
+
+# Setup Work Environment
+
+```{r}
+rm(list=ls())
+getwd()
+setwd("~/GitHub/Dimensions/Aim1/model")
+```
+
+# Load dependencies
+
+```{r}
+library(deSolve)
+```
+
+# Equations
+
+```{r}
+persist<-function(t,x,parms){
+  with(as.list(c(parms,x)),{
+    dAdt = (A*(C*Va)/(C+Ka)*Ea) - (A*da) - (A*t2d)
+    dDdt = (A*t2d) - (D*dd)
+    dCdt = (A*da*m) - (A*(C*Va)/(C+Ka)) + (D*dd*m)
+    
+    res = c(dAdt,dDdt,dCdt)
+    list(res)
+  })
+}
+
+times = 1:200
+```
+
+# No dormancy (t2d), no scavenging (m)
+
+```{r}
+# Iniital fraction of dormant individals 
+fracD = 0
+
+# General parameters
+parmsNoDormNoScav = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, 
+        t2d = 0, dd = 0.00, m = 0)
+
+# Initial conditions 
+initNoDormNoScav = c(A = 0.02-0.02*fracD, D = 0.02*fracD, C = 0)
+
+# Output 
+outNoDormNoScav=ode(y = initNoDormNoScav, times = times, func = persist, 
+        parms = parmsNoDormNoScav)
+
+# Plot 
+plot(outNoDormNoScav[,1],outNoDormNoScav[,2],type='l')
+```
+
+# Scavenging (m) without dormancy (t2d)
+
+```{r}
+# Create gradient of scavenging
+ms = seq(0,1,0.1)
+
+# Create matrix to fill
+storeMs = matrix(NA,length(times),length(ms))
+
+# Loop over ms
+for(i in 1:length(ms)){
+  fracD=0
+  parms = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, t2d = 0, dd=0.01, m=ms[i])
+  init = c(A = 0.02-0.02*fracD, D=0.02*fracD, C = 0)
+  
+  storeMs[,i]=ode(y=init,times=times,func=persist,parms=parms)[,2]
+}
+
+# Plot
+plot(times,storeMs[,1],type='l',ylab="Bacterial C",xlab="time",log="y")
+for(i in 2:ncol(storeMs)){
+  lines(times,storeMs[,i],lwd=1+i*0.2)
+}
+
+text(70,1e-8,"m from 0 to 1 as lines get thicker")
+```
+
+
+# Dormancy (t2d) with constant scavenging (m)
+
+```{r}
+# Create gradient of dormancy
+t2ds = 10^seq(-6,-1,1)
+
+# Create matrix to fill
+store_t2ds=matrix(NA,length(times),length(t2ds))
+
+# Loop over t2ds
+for(i in 1:length(t2ds)){
+  fracD = 0
+  parms = c(Va = 12, Ka = 0.0011, Ea = 0.75, da = 0.1, t2d = t2ds[i], dd = 0.01, m = 0.5)
+  init = c(A = 0.02-0.02*fracD, D = 0.02*fracD, C = 0)
+    store_t2ds[,i]=ode(y=init,times=times,func=persist,parms=parms)[,2]
+}
+
+# Plot
+plot(times,store_t2ds[,1],type='l', ylab="Bacterial C", xlab="time", log = "y")
+for(i in 2:ncol(store_t2ds)){
+  lines(times,store_t2ds[,i],col=i)
+}
+
+legend('bottomleft', paste("t2d=10^", seq(-6,-1,1), sep=""), lwd = 1, col = 1:6, 
+       box.lty = 0, cex = 0.75)
+```
