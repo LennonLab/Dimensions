@@ -1,6 +1,6 @@
 rm(list = ls())
 getwd()
-setwd("~/GitHub/Dimensions/Aim1/")
+setwd("~/GitHub/LTDE/")
 
 library('bbmle')
 
@@ -12,9 +12,9 @@ obs$Abund <- as.numeric(obs$Colonies) * 10 ^ as.numeric(obs$Dilution) + 1
 strains <- sort(unique(obs$Strain))
 strains <- strains[table(obs$Strain)>10]
 obs <- obs[obs$Strain%in%strains,]
-summ <- matrix(NA,length(strains)*max(obs$Rep),7)
+summ <- matrix(NA,length(strains)*max(obs$Rep),8)
 
-pdf('output/decayFitsWeibull.pdf') # Uncomment to create pdf that will plot data and fits
+pdf('output/decayFitsWeibull_log.pdf') # Uncomment to create pdf that will plot data and fits
 counter <- 1
 
 for(i in 1:length(strains)){
@@ -58,9 +58,9 @@ for(i in 1:length(strains)){
         pscale<-as.numeric(new.start)
         names(pscale)<-names(new.start)
         #fit <- mle2(minuslogl=prop ~ dnorm(mean = exp( -1 * ((time / a)^ b)), sd = z), 
-        #                        start = new.start, data = repObs, 
-        #                        control=list(parscale=pscale, maxit=1000), 
-        #                         method="Nelder-Mead", hessian = T)
+        #            start = new.start, data = repObs, 
+        #            control=list(parscale=pscale, maxit=1000), 
+        #            method="Nelder-Mead", hessian = T)
         fit <- mle2(minuslogl=prop ~ dnorm(mean =  -1 * ((time / a)^ b), sd = z), 
                                 start = new.start, data = repObs, 
                                 control=list(parscale=pscale, maxit=1000), 
@@ -92,8 +92,11 @@ for(i in 1:length(strains)){
       #summ[counter,14]=CIs[4,1]
       #summ[counter,15]=CIs[4,2]
       summ[counter,7]=length(repObs$time)
+      ln_half <- log(0.5, base = exp(1)) *-1
+      half_life <- (ln_half ^ (1 / coef(best.fit)[2])) * coef(best.fit)[1]
+      summ[counter,8]=half_life
       
-
+      
       ### *** Comment/Uncomment following code to make pdf figs*** ###
       title=paste(strains[i],"  rep ",reps[j])
       plot(repObs$time,repObs$prop,main=title,ylim=c(min(repObs$prop),0))
@@ -105,15 +108,16 @@ for(i in 1:length(strains)){
       #lines(repObs$time, exp( -1 * ((repObs$time / coef(best.fit)[1] )^ coef(best.fit)[2])), 
       #        lwd=4, lty=2, col = "red")
       lines(repObs$time, (-1 * ((repObs$time / coef(best.fit)[1] )^ coef(best.fit)[2])), 
-              lwd=4, lty=2, col = "red")
+            lwd=4, lty=2, col = "red")
       counter=counter+1
     }
   }
 }
-  
+
 dev.off() 
 summ=summ[!is.na(summ[,1]),]
 #colnames(summ)=c('strain','rep','a','b','c','z','AIC', 'a.CI.2.5', 'a.CI.97.5', 'b.CI.2.5', 'b.CI.97.5', 'c.CI.2.5', 'c.CI.97.5', 'z.CI.2.5', 'z.CI.97.5')
-colnames(summ)=c('strain','rep','a','b','z','AIC', 'N.obs')
+colnames(summ)=c('strain','rep','a','b','z','AIC', 'N.obs', 'Half_life')
 
-write.csv(summ,"data/weibull_results.csv")
+write.csv(summ,"data/weibull_log_results.csv")
+
